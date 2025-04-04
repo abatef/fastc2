@@ -2,7 +2,9 @@ package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.auth.JwtAuthenticationRequest;
 import com.abatef.fastc2.dtos.auth.JwtAuthenticationResponse;
+import com.abatef.fastc2.dtos.auth.RefreshTokenRequest;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
+import com.abatef.fastc2.dtos.user.UserCreationResponse;
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.security.auth.RefreshToken;
@@ -52,15 +54,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody UserCreationRequest userCreationRequest) {
+    public ResponseEntity<UserCreationResponse> signup(@RequestBody UserCreationRequest userCreationRequest) {
         User user = userService.registerUser(userCreationRequest);
         UserInfo userInfo = modelMapper.map(user, UserInfo.class);
-        Map<String, Object> response = new HashMap<>();
-        response.put("userInfo", userInfo);
         JwtAuthenticationRequest request = new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
         JwtAuthenticationResponse jwtResponse = login(request).getBody();
-        response.put("credentials", jwtResponse);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse));
     }
 
     @PostMapping("/login")
@@ -80,16 +79,12 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<JwtAuthenticationResponse> refresh(@RequestBody JwtAuthenticationResponse request) {
+    public ResponseEntity<JwtAuthenticationResponse> refresh(@RequestBody RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
-        try {
-            RefreshToken validToken = refreshTokenService.validateRefreshToken(refreshToken);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(validToken.getUsername());
-            String newAccessToken = jwtUtil.generateAccessToken(userDetails);
-            String newRefreshToken = refreshTokenService.generateRefreshToken(userDetails).getToken();
-            return ResponseEntity.ok(new JwtAuthenticationResponse(newAccessToken, newRefreshToken));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new JwtAuthenticationResponse(null, e.getMessage()));
-        }
+        RefreshToken validToken = refreshTokenService.validateRefreshToken(refreshToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(validToken.getUsername());
+        String newAccessToken = jwtUtil.generateAccessToken(userDetails);
+        String newRefreshToken = refreshTokenService.generateRefreshToken(userDetails).getToken();
+        return ResponseEntity.ok(new JwtAuthenticationResponse(newAccessToken, newRefreshToken));
     }
 }
