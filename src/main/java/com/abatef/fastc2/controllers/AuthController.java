@@ -1,0 +1,95 @@
+package com.abatef.fastc2.controllers;
+
+import com.abatef.fastc2.dtos.auth.JwtAuthenticationRequest;
+import com.abatef.fastc2.dtos.auth.JwtAuthenticationResponse;
+import com.abatef.fastc2.dtos.user.UserCreationRequest;
+import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.security.auth.RefreshToken;
+import com.abatef.fastc2.security.auth.RefreshTokenService;
+import com.abatef.fastc2.services.UserService;
+import com.abatef.fastc2.utils.JwtUtil;
+import org.modelmapper.ModelMapper;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+public class AuthController {
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
+    private final RefreshTokenService refreshTokenService;
+    private final UserService userService;
+    private final ModelMapper modelMapper;
+
+    private final JwtUtil jwtUtil;
+
+
+    public AuthController(AuthenticationManager authenticationManager,
+                          UserDetailsService userDetailsService,
+                          RefreshTokenService refreshTokenService,
+                          UserService userService, ModelMapper modelMapper,
+                          JwtUtil jwtUtil) {
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.refreshTokenService = refreshTokenService;
+        this.userService = userService;
+        this.modelMapper = modelMapper;
+        this.jwtUtil = jwtUtil;
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody UserCreationRequest userCreationRequest) {
+        User user = userService.registerUser(userCreationRequest);
+        UserInfo userInfo = modelMapper.map(user, UserInfo.class);
+        Map<String, Object> response = new HashMap<>();
+        response.put("userInfo", userInfo);
+        JwtAuthenticationRequest request = new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
+        JwtAuthenticationResponse jwtResponse = login(request).getBody();
+        response.put("credentials", jwtResponse);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<JwtAuthenticationResponse> login(@RequestBody JwtAuthenticationRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                )
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String accessToken = jwtUtil.generateAccessToken(authentication);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String refreshToken = refreshTokenService.generateRefreshToken(userDetails).getToken();
+        return ResponseEntity.ok(new JwtAuthenticationResponse(accessToken, refreshToken));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtAuthenticationResponse> refresh(@RequestBody JwtAuthenticationResponse request) {
+        String refreshToken = request.getRefreshToken();
+        try {
+            RefreshToken validToken = refreshTokenService.validateRefreshToken(refreshToken);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(validToken.getUsername());
+            String newAccessToken = jwtUtil.generateAccessToken(userDetails);
+            String newRefreshToken = refreshTokenService.generateRefreshToken(userDetails).getToken();
+            return ResponseEntity.ok(new JwtAuthenticationResponse(newAccessToken, newRefreshToken));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new JwtAuthenticationResponse(null, e.getMessage()));
+        }
+    }
+}
