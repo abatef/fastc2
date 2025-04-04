@@ -15,7 +15,7 @@ public class NonExistingValueException extends RuntimeException {
     private String value;
 
     public NonExistingValueException(ValueType valueType, String value) {
-        super(String.format(Constants.NONEXISTENT_VALUE, valueType, value));
+        super(String.format(Constants.NONEXISTENT_VALUE, valueType.name().toLowerCase(), value));
         this.valueType = valueType;
         this.value = value;
     }

@@ -1,6 +1,7 @@
-package com.abatef.fastc2.security.auth.exceptions;
+package com.abatef.fastc2.exceptions;
 
 import com.abatef.fastc2.enums.ErrorType;
+import com.abatef.fastc2.enums.ValueType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ErrorResponse {
-    private String error;
-    private String message;
     private ErrorType errorType;
+    private String errorMessage;
+    private ValueType valueType;
+    private String details;
+    private String message;
 }

@@ -15,7 +15,7 @@ public class DuplicateValueException extends RuntimeException {
     private String value;
 
     public DuplicateValueException(ValueType valueType, String value) {
-        super(String.format(Constants.DUPLICATE_VALUE, valueType, value));
+        super(String.format(Constants.DUPLICATE_VALUE, valueType.name().toLowerCase(), value));
         this.valueType = valueType;
         this.value = value;
     }
