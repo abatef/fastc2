@@ -57,4 +57,9 @@ public class Pharmacy {
 
     @Column(name = "location", columnDefinition = "geometry(Point, 4326)")
     private Point location;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "pharmacy")
+    private Set<PharmacyDrug> pharmacyDrugs = new LinkedHashSet<>();
+
 }

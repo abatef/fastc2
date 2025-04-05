@@ -59,6 +59,12 @@ public class UserService {
     }
 
     @Transactional
+    public User updateUserPassword(User user, String newPassword) throws NonExistingValueException {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
+    }
+
+    @Transactional
     public User registerByFirebaseIfNotExist(FirebaseToken fbToken) throws NonExistingValueException {
         String uid = fbToken.getUid();
         Optional<User> optionalUser = userRepository.getUserByFbUid(uid);

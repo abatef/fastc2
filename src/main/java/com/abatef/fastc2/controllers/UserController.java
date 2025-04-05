@@ -1,4 +1,4 @@
-package com.abatef.fastc2.controllers;
+    package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.models.User;
@@ -20,11 +20,4 @@ public class UserController {
         this.userService = userService;
         this.modelMapper = modelMapper;
     }
-
-    @GetMapping("/me")
-    public ResponseEntity<UserInfo> getUser(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(modelMapper.map(user, UserInfo.class));
-    }
-
-
 }

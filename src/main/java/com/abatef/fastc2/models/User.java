@@ -60,9 +60,11 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<Pharmacy> pharmacies = new LinkedHashSet<>();
 
+    @JsonIgnore
     @Column(name = "password", length = Integer.MAX_VALUE)
     private String password;
 
+    @JsonIgnore
     @Column(name = "fb_uid", length = Integer.MAX_VALUE)
     private String fbUid;
 
@@ -75,11 +77,13 @@ public class User implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
+    @JsonIgnore
     @Override
     public String getPassword() {
         return password;
     }
 
+    @JsonIgnore
     @Override
     public String getUsername() {
         return username;
