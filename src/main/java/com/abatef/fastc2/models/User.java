@@ -2,9 +2,12 @@ package com.abatef.fastc2.models;
 
 import com.abatef.fastc2.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.Setter;
+
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -53,9 +56,6 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @OneToOne(mappedBy = "user")
-    private Employee employee;
-
     @JsonIgnore
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<Pharmacy> pharmacies = new LinkedHashSet<>();
@@ -71,6 +71,25 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private UserRole role;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "createdBy")
+    private Set<Drug> drugs = new LinkedHashSet<>();
+
+    @JsonIgnore @OneToMany private Set<Image> images = new LinkedHashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "addedBy")
+    private Set<PharmacyDrug> pharmacyDrugs = new LinkedHashSet<>();
+
+    @JsonIgnore @OneToMany private Set<Receipt> receipts = new LinkedHashSet<>();
+
+    @ColumnDefault("false")
+    @Column(name = "managed_user")
+    private Boolean managedUser;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.EAGER)
+    private Employee employee;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

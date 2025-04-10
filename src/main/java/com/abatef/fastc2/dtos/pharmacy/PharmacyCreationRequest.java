@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PharmacyCreationRequest {
+    private String name;
     private String address;
     private Boolean isBranch = false;
     private Integer mainBranchId;
     private Location location;
+    private Short expiryThreshold;
 }

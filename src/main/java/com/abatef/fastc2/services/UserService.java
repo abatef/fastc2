@@ -8,6 +8,7 @@ import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.UserRepository;
 import com.google.firebase.auth.FirebaseToken;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;

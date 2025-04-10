@@ -1,23 +1,29 @@
 package com.abatef.fastc2.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.*;
 
-import java.time.Instant;
-
+@Slf4j
 @Getter
 @Setter
 @Entity
 @Table(name = "pharmacy_drug")
 @NoArgsConstructor
+@AllArgsConstructor
 public class PharmacyDrug {
-    @EmbeddedId
-    private PharmacyDrugId id;
+    @EmbeddedId private PharmacyDrugId id;
 
     @MapsId("drugId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -54,12 +60,14 @@ public class PharmacyDrug {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    public PharmacyDrug(Drug drug, Pharmacy pharmacy, User user) {
+    @JsonIgnore
+    @OneToMany(mappedBy = "pharmacyDrug")
+    private Set<Receipt> receipts = new LinkedHashSet<>();
+
+    public PharmacyDrug(Drug drug, Pharmacy pharmacy, LocalDate expiryDate, User addedBy) {
         this.drug = drug;
         this.pharmacy = pharmacy;
-        this.id.setPharmacyId(pharmacy.getId());
-        this.id.setDrugId(drug.getId());
-        this.addedBy = user;
+        this.addedBy = addedBy;
+        this.id.setExpiryDate(expiryDate);
     }
-
 }

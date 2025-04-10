@@ -3,17 +3,12 @@ package com.abatef.fastc2.security.auth;
 import com.abatef.fastc2.security.auth.exceptions.ExpiredJwtException;
 import com.abatef.fastc2.security.auth.exceptions.UsedRefreshTokenException;
 import com.abatef.fastc2.utils.JwtUtil;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import org.checkerframework.checker.units.qual.C;
+
 import org.springframework.security.authentication.ott.InvalidOneTimeTokenException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Collection;
 
 @Service
 public class RefreshTokenService {

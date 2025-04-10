@@ -11,6 +11,7 @@ import com.abatef.fastc2.security.auth.RefreshToken;
 import com.abatef.fastc2.security.auth.RefreshTokenService;
 import com.abatef.fastc2.services.UserService;
 import com.abatef.fastc2.utils.JwtUtil;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,10 +21,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -37,12 +36,13 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
 
-
-    public AuthController(AuthenticationManager authenticationManager,
-                          UserDetailsService userDetailsService,
-                          RefreshTokenService refreshTokenService,
-                          UserService userService, ModelMapper modelMapper,
-                          JwtUtil jwtUtil) {
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            UserDetailsService userDetailsService,
+            RefreshTokenService refreshTokenService,
+            UserService userService,
+            ModelMapper modelMapper,
+            JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.refreshTokenService = refreshTokenService;
@@ -52,22 +52,23 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<UserCreationResponse> signup(@RequestBody UserCreationRequest userCreationRequest) {
+    public ResponseEntity<UserCreationResponse> signup(
+            @RequestBody UserCreationRequest userCreationRequest) {
         User user = userService.registerUser(userCreationRequest);
         UserInfo userInfo = modelMapper.map(user, UserInfo.class);
-        JwtAuthenticationRequest request = new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
+        JwtAuthenticationRequest request =
+                new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
         JwtAuthenticationResponse jwtResponse = login(request).getBody();
         return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthenticationResponse> login(@RequestBody JwtAuthenticationRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+    public ResponseEntity<JwtAuthenticationResponse> login(
+            @RequestBody JwtAuthenticationRequest request) {
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                request.getUsername(), request.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String accessToken = jwtUtil.generateAccessToken(authentication);
@@ -77,7 +78,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<JwtAuthenticationResponse> refresh(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<JwtAuthenticationResponse> refresh(
+            @RequestBody RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
         RefreshToken validToken = refreshTokenService.validateRefreshToken(refreshToken);
         UserDetails userDetails = userDetailsService.loadUserByUsername(validToken.getUsername());
@@ -87,10 +89,12 @@ public class AuthController {
     }
 
     @PostMapping("/password")
-    public ResponseEntity<JwtAuthenticationResponse> updatePassword(@RequestBody Map<String, Object> body, @AuthenticationPrincipal User user) {
+    public ResponseEntity<JwtAuthenticationResponse> updatePassword(
+            @RequestBody Map<String, Object> body, @AuthenticationPrincipal User user) {
         User updatedUser = userService.updateUserPassword(user, (String) body.get("password"));
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        JwtAuthenticationRequest request = new JwtAuthenticationRequest(user.getUsername(), (String) body.get("password"));
+        JwtAuthenticationRequest request =
+                new JwtAuthenticationRequest(user.getUsername(), (String) body.get("password"));
         return login(request);
     }
 
@@ -98,6 +102,4 @@ public class AuthController {
     public ResponseEntity<UserInfo> getUser(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(modelMapper.map(user, UserInfo.class));
     }
-
-
 }

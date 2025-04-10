@@ -1,6 +1,5 @@
 package com.abatef.fastc2.dtos.pharmacy;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

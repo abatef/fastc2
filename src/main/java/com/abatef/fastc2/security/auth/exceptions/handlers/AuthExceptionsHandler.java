@@ -33,7 +33,8 @@ public class AuthExceptionsHandler {
     }
 
     @ExceptionHandler(io.jsonwebtoken.ExpiredJwtException.class)
-    public ResponseEntity<ErrorResponse> handleExpiredJwtException(io.jsonwebtoken.ExpiredJwtException e) {
+    public ResponseEntity<ErrorResponse> handleExpiredJwtException(
+            io.jsonwebtoken.ExpiredJwtException e) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setErrorMessage(e.getMessage());
         errorResponse.setMessage("The Access Token has expired, try using the refresh token");

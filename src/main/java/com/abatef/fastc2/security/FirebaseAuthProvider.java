@@ -22,7 +22,8 @@ public class FirebaseAuthProvider implements AuthenticationProvider {
     }
 
     @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    public Authentication authenticate(Authentication authentication)
+            throws AuthenticationException {
         String token = (String) authentication.getCredentials();
         if (token == null) {
             return null;

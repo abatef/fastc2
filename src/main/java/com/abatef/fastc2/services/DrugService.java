@@ -6,8 +6,7 @@ import com.abatef.fastc2.exceptions.DrugNotFoundException;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.DrugRepository;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +25,8 @@ public class DrugService {
         Drug drug = new Drug();
         drug.setName(request.getName());
         drug.setForm(request.getForm());
+        drug.setUnits(request.getUnits());
+        drug.setFullPrice(request.getPrice());
         drug.setCreatedBy(user);
         return drugRepository.save(drug);
     }
@@ -38,7 +39,6 @@ public class DrugService {
         throw new DrugNotFoundException(id);
     }
 
-    @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public Drug updateDrugInfo(DrugInfo info, User user) {
         Drug drug = getDrugById(info.getId());
@@ -48,6 +48,15 @@ public class DrugService {
         if (info.getForm() != null) {
             drug.setForm(info.getForm());
         }
+
+        if (info.getFullPrice() != null) {
+            drug.setFullPrice(info.getFullPrice());
+        }
+
+        if (info.getUnits() != null) {
+            drug.setUnits(info.getUnits());
+        }
+
         drug = drugRepository.save(drug);
         return drug;
     }
@@ -55,4 +64,18 @@ public class DrugService {
     public void deleteDrugById(Integer id) {
         drugRepository.deleteById(id);
     }
+
+
+    /* Main Page
+    * view -> total profit, loss, revenue
+    * filter -> data, time, emp, search
+    * view -> sell and by ops
+    * */
+
+    /* Expiry Page
+    * view -> expiry, expired, when
+    * filter -> search, near expiry, sort(expiry), quantity(asc, desc)
+    *
+    * */
+
 }

@@ -3,14 +3,14 @@ package com.abatef.fastc2.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.*;
 import org.locationtech.jts.geom.Point;
-
-import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -22,6 +22,11 @@ public class Pharmacy {
     @ColumnDefault("nextval('pharmacies_id_seq')")
     @Column(name = "id", nullable = false)
     private Integer id;
+
+    @NotNull
+    @ColumnDefault("''")
+    @Column(name = "name", nullable = false, length = Integer.MAX_VALUE)
+    private String name;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -49,9 +54,6 @@ public class Pharmacy {
     private Instant updatedAt;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "pharmacy", fetch = FetchType.LAZY)
-    private Set<Employee> employees = new LinkedHashSet<>();
-    @JsonIgnore
     @OneToMany(mappedBy = "mainBranch", fetch = FetchType.LAZY)
     private Set<Pharmacy> pharmacies = new LinkedHashSet<>();
 
@@ -62,4 +64,11 @@ public class Pharmacy {
     @OneToMany(mappedBy = "pharmacy")
     private Set<PharmacyDrug> pharmacyDrugs = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "pharmacy")
+    private Set<Employee> employees = new LinkedHashSet<>();
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "expiry_threshold", nullable = false)
+    private Short expiryThreshold;
 }

@@ -41,7 +41,6 @@ public class JwtUtil {
                 .compact();
     }
 
-
     public String generateAccessToken(Authentication auth) {
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         return generateAccessToken(userDetails);
@@ -51,8 +50,6 @@ public class JwtUtil {
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         return generateRefreshToken(userDetails);
     }
-
-
 
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
@@ -65,12 +62,12 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", userDetails.getUsername());
         claims.put("authorities", userDetails.getAuthorities());
-        return createToken(claims, userDetails.getUsername(), jwtConfig.getRefreshTokenExpiration());
+        return createToken(
+                claims, userDetails.getUsername(), jwtConfig.getRefreshTokenExpiration());
     }
 
     public Claims getClaimsFromToken(String token) {
-        return Jwts
-                .parserBuilder()
+        return Jwts.parserBuilder()
                 .setSigningKey(getSecretKey())
                 .build()
                 .parseClaimsJws(token)
@@ -96,7 +93,8 @@ public class JwtUtil {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = getUsernameFromToken(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token)) && validateToken(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token))
+                && validateToken(token);
     }
 
     public boolean validateToken(String token) {

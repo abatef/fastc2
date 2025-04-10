@@ -1,22 +1,22 @@
 package com.abatef.fastc2.dtos.drug;
 
+import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserInfo;
-import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class DrugInfo {
+@AllArgsConstructor
+public class ReceiptInfo {
     private Integer id;
-    private String name;
-    private String form;
-    private UserInfo createdBy;
-    private Short units;
-    private Float fullPrice;
+    private PharmacyInfo pharmacyDrug;
+    private Integer quantity;
+    private Float amountDue;
+    private Float discount;
+    private UserInfo cashier;
     private Instant createdAt;
     private Instant updatedAt;
 }

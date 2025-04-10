@@ -1,14 +1,20 @@
 package com.abatef.fastc2.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
 import lombok.Getter;
 import lombok.Setter;
+
 import org.hibernate.annotations.*;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -42,4 +48,17 @@ public class Drug {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "drug")
+    private Set<PharmacyDrug> pharmacyDrugs = new LinkedHashSet<>();
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "units", nullable = false)
+    private Short units;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "full_price", nullable = false)
+    private Float fullPrice;
 }

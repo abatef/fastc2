@@ -5,7 +5,6 @@ import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
 
-
 public class FirebaseAuthenticationToken extends AbstractAuthenticationToken {
 
     private final Object principal;
@@ -18,8 +17,8 @@ public class FirebaseAuthenticationToken extends AbstractAuthenticationToken {
         setAuthenticated(false);
     }
 
-    public FirebaseAuthenticationToken(Object principal, String fbToken,
-                                       Collection<? extends GrantedAuthority> authorities) {
+    public FirebaseAuthenticationToken(
+            Object principal, String fbToken, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.principal = principal;
         this.fbToken = fbToken;

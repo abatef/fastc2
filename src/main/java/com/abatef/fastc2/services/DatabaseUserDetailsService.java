@@ -1,8 +1,8 @@
 package com.abatef.fastc2.services;
 
-import com.abatef.fastc2.exceptions.FirebaseUserException;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.UserRepository;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

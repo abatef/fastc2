@@ -16,19 +16,22 @@ public class UsernamePasswordAuthProvider implements AuthenticationProvider {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
 
-    public UsernamePasswordAuthProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public UsernamePasswordAuthProvider(
+            UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    public Authentication authenticate(Authentication authentication)
+            throws AuthenticationException {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         if (passwordEncoder.matches(password, userDetails.getPassword())) {
-            return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
+            return new UsernamePasswordAuthenticationToken(
+                    userDetails, password, userDetails.getAuthorities());
         }
         throw new BadCredentialsException("Invalid username or password");
     }

@@ -9,5 +9,4 @@ public class FastC2Application {
     public static void main(String[] args) {
         SpringApplication.run(FastC2Application.class, args);
     }
-
 }

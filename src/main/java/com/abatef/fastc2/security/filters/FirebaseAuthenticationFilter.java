@@ -28,16 +28,16 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
         }
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.startsWith("Basic ")) {
+        if (authHeader == null
+                || !authHeader.startsWith("Bearer ")
+                || authHeader.startsWith("Basic ")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,7 +48,8 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            Authentication auth = authenticationManager.authenticate(new FirebaseAuthenticationToken(authToken));
+            Authentication auth =
+                    authenticationManager.authenticate(new FirebaseAuthenticationToken(authToken));
             if (auth != null) {
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }

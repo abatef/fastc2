@@ -5,7 +5,7 @@ import com.abatef.fastc2.dtos.drug.DrugInfo;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.DrugService;
-import org.geolatte.geom.V;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +20,8 @@ public class DrugController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Drug> createDrug(@RequestBody DrugCreationRequest request, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Drug> createDrug(
+            @RequestBody DrugCreationRequest request, @AuthenticationPrincipal User user) {
         Drug drug = drugService.createNewDrug(request, user);
         return ResponseEntity.ok(drug);
     }
@@ -32,7 +33,8 @@ public class DrugController {
     }
 
     @PatchMapping("/")
-    public ResponseEntity<Drug> updateDrugInfo(@RequestBody DrugInfo info, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Drug> updateDrugInfo(
+            @RequestBody DrugInfo info, @AuthenticationPrincipal User user) {
         Drug drug = drugService.updateDrugInfo(info, user);
         return ResponseEntity.ok(drug);
     }
@@ -42,5 +44,4 @@ public class DrugController {
         drugService.deleteDrugById(id);
         return ResponseEntity.noContent().build();
     }
-
 }
