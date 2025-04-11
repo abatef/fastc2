@@ -10,8 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/v1/drug")
+@RequestMapping("/api/v1/drugs")
 public class DrugController {
     private final DrugService drugService;
 
@@ -28,7 +30,7 @@ public class DrugController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Drug> getDrugInfo(@PathVariable Integer id) {
-        Drug drug = drugService.getDrugById(id);
+        Drug drug = drugService.getDrugByIdOrThrow(id);
         return ResponseEntity.ok(drug);
     }
 
@@ -43,5 +45,53 @@ public class DrugController {
     public ResponseEntity<Void> deleteDrug(@PathVariable Integer id) {
         drugService.deleteDrugById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/full-price")
+    public ResponseEntity<DrugInfo> updateFullPrice(
+            @PathVariable Integer id,
+            @RequestParam("price") Float price,
+            @AuthenticationPrincipal User user) {
+        DrugInfo drugInfo = drugService.updateDrugPrice(id, price, user);
+        return ResponseEntity.ok(drugInfo);
+    }
+
+    @PatchMapping("/{id}/name")
+    public ResponseEntity<DrugInfo> updateName(
+            @PathVariable Integer id,
+            @RequestParam("name") String name,
+            @AuthenticationPrincipal User user) {
+        DrugInfo drugInfo = drugService.updateDrugName(id, name, user);
+        return ResponseEntity.ok(drugInfo);
+    }
+
+    @PatchMapping("/{id}/form")
+    public ResponseEntity<DrugInfo> updateForm(
+            @PathVariable Integer id,
+            @RequestParam("form") String form,
+            @AuthenticationPrincipal User user) {
+        DrugInfo drugInfo = drugService.updateDrugForm(id, form, user);
+        return ResponseEntity.ok(drugInfo);
+    }
+
+    @PatchMapping("/{id}/units")
+    public ResponseEntity<DrugInfo> updateUnits(
+            @PathVariable Integer id,
+            @RequestParam("units") Short units,
+            @AuthenticationPrincipal User user) {
+        DrugInfo drugInfo = drugService.updateDrugUnits(id, units, user);
+        return ResponseEntity.ok(drugInfo);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<DrugInfo>> searchDrugs(
+            @RequestParam("name") String name,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        List<DrugInfo> drugInfos = drugService.searchByName(name, page, size);
+        if (drugInfos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(drugInfos);
     }
 }

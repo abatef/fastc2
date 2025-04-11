@@ -61,4 +61,9 @@ public class Drug {
     @ColumnDefault("0")
     @Column(name = "full_price", nullable = false)
     private Float fullPrice;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "drug")
+    private Set<Image> images = new LinkedHashSet<>();
+
 }

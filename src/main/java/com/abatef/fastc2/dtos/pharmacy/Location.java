@@ -22,8 +22,16 @@ public class Location {
         return location;
     }
 
+    public static Location of(double latitude, double longitude) {
+        Location location = new Location();
+        location.setLatitude(latitude);
+        location.setLongitude(longitude);
+        return location;
+    }
+
     public Point toPoint() {
         final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         return geometryFactory.createPoint(new Coordinate(latitude, longitude));
     }
+
 }

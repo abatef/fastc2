@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, PharmacyDrugId> {}
+public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, PharmacyDrugId> {
+    Boolean existsPharmacyDrugByPharmacy_IdAndDrug_Id(Integer pharmacyId, Integer drugId);
+}

@@ -32,6 +32,35 @@ create table pharmacies
 );
 
 
+-- POSTGRESQL Full-Text Search -- PHARMACIES
+
+create index pharmacy_search_idx on pharmacies using gin (search_vector);
+
+create function pharmacy_search_vector_update() returns trigger as
+$$
+begin
+    new.search_vector :=
+            setweight(to_tsvector('english', coalesce(new.name, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(new.address, '')), 'D');
+    return new;
+end;
+$$ language plpgsql;
+
+
+create trigger pharmacy_search_vector_update
+    before insert or update
+    on pharmacies
+    for each row
+execute function pharmacy_search_vector_update();
+
+-- FUZZY SEARCH
+CREATE EXTENSION pg_trgm;
+create index pharmacy_name_trigram_index on pharmacies using gin (name gin_trgm_ops);
+create index pharmacy_address_trigram_index on pharmacies using gin (address gin_trgm_ops);
+-- FUZZY SEARCH
+
+-- POSTGRESQL Full-Text Search -- PHARMACIES
+
 -- TODO: add shifts table
 
 CREATE TABLE employees
@@ -72,16 +101,46 @@ create table refresh_token
 
 create table drugs
 (
-    id         serial primary key,
-    name       varchar(250) not null,
-    form       text,
-    units      smallint     not null default 0,
-    full_price real         not null,
-    created_by int,
-    created_at timestamp             default CURRENT_TIMESTAMP,
-    updated_at timestamp             default CURRENT_TIMESTAMP,
+    id            serial primary key,
+    name          varchar(250) not null,
+    form          text,
+    units         smallint     not null default 0,
+    full_price    real         not null,
+    search_vector tsvector,
+    created_by    int,
+    created_at    timestamp             default CURRENT_TIMESTAMP,
+    updated_at    timestamp             default CURRENT_TIMESTAMP,
     constraint fk_created_by foreign key (created_by) references users (id) on delete cascade
 );
+
+-- POSTGRESQL Full-Text Search -- DRUGS
+
+create index drug_search_idx on drugs using gin (search_vector);
+
+create function drug_search_vector_update() returns trigger as
+$$
+begin
+    new.search_vector :=
+            setweight(to_tsvector('english', coalesce(new.name, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(new.form, '')), 'B');
+    return new;
+end;
+$$ language plpgsql;
+
+
+create trigger drug_search_vector_update
+    before insert or update
+    on drugs
+    for each row
+execute function drug_search_vector_update();
+
+-- FUZZY SEARCH
+CREATE EXTENSION pg_trgm;
+create index drug_name_trigram_index on drugs using gin (name gin_trgm_ops);
+create index drug_form_trigram_index on drugs using gin (form gin_trgm_ops);
+-- FUZZY SEARCH
+
+-- POSTGRESQL Full-Text Search -- DRUGS
 
 
 ALTER TABLE drugs
@@ -101,8 +160,6 @@ create table pharmacy_drug
     added_by    int  not null,
     stock       int  not null default 0,
     price       real not null default 0,
-    -- TODO: add unit price
-    -- TODO: add expiry date
     expiry_date date not null,
     created_at  timestamp     default current_timestamp,
     updated_at  timestamp     default current_timestamp,
@@ -127,7 +184,6 @@ create table receipt
     units            smallint not null default 0,
     packs            smallint not null default 0,
     drug_expiry_date date,
-    -- TODO: add separate revenue, profit
     created_at       timestamp         default current_timestamp,
     updated_at       timestamp         default current_timestamp,
     constraint fk_pharmacy_drug foreign key (drug_id, pharmacy_id, drug_expiry_date)
@@ -135,6 +191,7 @@ create table receipt
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
 
+-- TODO: add separate revenue, profit
 
 -- TODO: add transactions history
 

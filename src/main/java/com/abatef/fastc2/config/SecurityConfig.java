@@ -62,8 +62,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         request -> {
                             request.requestMatchers("/api/v1/auth/me").authenticated();
-                            request.requestMatchers("/api/v1/pharmacy/**").authenticated();
-                            request.requestMatchers("/api/v1/drug/**").authenticated();
+                            request.requestMatchers("api/v1/pharmacy/search")
+                                    .permitAll()
+                                    .requestMatchers("/api/v1/pharmacy/**")
+                                    .authenticated();
+                            request.requestMatchers("/api/v1/drug/search")
+                                    .permitAll()
+                                    .requestMatchers("api/v1/drug/**")
+                                    .authenticated();
                             request.requestMatchers(
                                             "/api/v1/auth/login",
                                             "/api/v1/auth/refresh",
