@@ -14,6 +14,7 @@ create table users
     updated_at   timestamp default current_timestamp
 );
 
+
 create table pharmacies
 (
     id               serial primary key,
@@ -24,6 +25,7 @@ create table pharmacies
     is_branch        bool                  not null default false,
     main_branch      int,
     expiry_threshold smallint              not null,
+    search_vector    tsvector,
     -- TODO: delivery max time
     created_at       timestamp                      default current_timestamp,
     updated_at       timestamp                      default current_timestamp,
@@ -73,9 +75,9 @@ CREATE TABLE employees
     created_at TIMESTAMP            DEFAULT current_timestamp,
     end_date   date,
     updated_at TIMESTAMP            DEFAULT current_timestamp,
-    CONSTRAINT fk_user_id FOREIGN KEY (id) REFERENCES users (id) ON DELETE CASCADE
+    CONSTRAINT fk_user_id FOREIGN KEY (id) REFERENCES users (id) ON DELETE CASCADE,
+    constraint fk_pharmacy_id foreign key (pharmacy) references pharmacies(id) on delete cascade
 );
-
 
 create table employee_role
 (
@@ -85,10 +87,6 @@ create table employee_role
     constraint fk_emp_id foreign key (emp_id) references employees (id),
     primary key (emp_id, role)
 );
-
-alter table employees
-    add constraint fk_pharmacy_id foreign key (pharmacy) references pharmacies (id) on delete cascade;
-
 
 create table refresh_token
 (
@@ -135,7 +133,6 @@ create trigger drug_search_vector_update
 execute function drug_search_vector_update();
 
 -- FUZZY SEARCH
-CREATE EXTENSION pg_trgm;
 create index drug_name_trigram_index on drugs using gin (name gin_trgm_ops);
 create index drug_form_trigram_index on drugs using gin (form gin_trgm_ops);
 -- FUZZY SEARCH
@@ -160,7 +157,7 @@ create table pharmacy_drug
     added_by    int  not null,
     stock       int  not null default 0,
     price       real not null default 0,
-    expiry_date date not null,
+    expiry_date date not null default current_date + 100,
     created_at  timestamp     default current_timestamp,
     updated_at  timestamp     default current_timestamp,
     constraint fk_drug_id foreign key (drug_id) references drugs (id) on delete cascade,
@@ -169,8 +166,6 @@ create table pharmacy_drug
     primary key (drug_id, pharmacy_id, expiry_date)
 );
 
-alter table pharmacy_drug
-    add column expiry_date date not null default current_date + 100;
 
 create table receipt
 (
