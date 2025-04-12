@@ -3,8 +3,6 @@ package com.abatef.fastc2.exceptions;
 import com.abatef.fastc2.enums.ErrorType;
 import com.abatef.fastc2.enums.ValueType;
 
-import com.abatef.fastc2.models.PharmacyDrug;
-import com.abatef.fastc2.models.PharmacyDrugId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

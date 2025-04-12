@@ -2,7 +2,7 @@ package com.abatef.fastc2.services;
 
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.models.Employee;
-import com.abatef.fastc2.models.Pharmacy;
+import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.EmployeeRepository;
 import org.springframework.stereotype.Service;

@@ -5,7 +5,7 @@ import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
-import com.abatef.fastc2.models.PharmacyDrugId;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.PharmacyService;
 

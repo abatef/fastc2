@@ -1,5 +1,7 @@
 package com.abatef.fastc2.models;
 
+import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
+import com.abatef.fastc2.models.shift.Shift;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -60,4 +62,11 @@ public class Receipt {
     @ColumnDefault("0")
     @Column(name = "packs", nullable = false)
     private Short packs;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "shift_id", nullable = false)
+    private Shift shift;
+
 }

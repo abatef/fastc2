@@ -14,6 +14,13 @@ create table users
     updated_at   timestamp default current_timestamp
 );
 
+create table shifts
+(
+    id         serial primary key,
+    name       text,
+    start_time time not null,
+    end_time   time not null
+);
 
 create table pharmacies
 (
@@ -33,6 +40,13 @@ create table pharmacies
     constraint fk_main_branch foreign key (main_branch) references pharmacies (id) on delete cascade
 );
 
+create table pharmacy_shifts(
+    pharmacy_id int not null,
+    shift_id int not null,
+    constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies(id) on delete cascade,
+    constraint fk_shift_id foreign key (shift_id) references shifts(id) on delete cascade,
+    primary key (pharmacy_id, shift_id)
+);
 
 -- POSTGRESQL Full-Text Search -- PHARMACIES
 
@@ -65,6 +79,7 @@ create index pharmacy_address_trigram_index on pharmacies using gin (address gin
 
 -- TODO: add shifts table
 
+
 CREATE TABLE employees
 (
     id         INT PRIMARY KEY,
@@ -74,10 +89,14 @@ CREATE TABLE employees
     pharmacy   INT         NOT NULL,
     created_at TIMESTAMP            DEFAULT current_timestamp,
     end_date   date,
+    shift_id   int         not null,
     updated_at TIMESTAMP            DEFAULT current_timestamp,
     CONSTRAINT fk_user_id FOREIGN KEY (id) REFERENCES users (id) ON DELETE CASCADE,
-    constraint fk_pharmacy_id foreign key (pharmacy) references pharmacies(id) on delete cascade
+    constraint fk_pharmacy_id foreign key (pharmacy) references pharmacies (id) on delete cascade
 );
+
+alter table employees
+    add constraint fk_shift_id foreign key (shift_id) references shifts (id) on delete set null;
 
 create table employee_role
 (
@@ -185,6 +204,11 @@ create table receipt
         references pharmacy_drug (drug_id, pharmacy_id, expiry_date) on delete set null,
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
+
+alter table receipt
+    add column shift_id int not null;
+alter table receipt
+    add constraint fk_shift_id foreign key (shift_id) references shifts (id) on delete set null;
 
 -- TODO: add separate revenue, profit
 

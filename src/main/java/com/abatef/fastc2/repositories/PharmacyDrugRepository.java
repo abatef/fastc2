@@ -1,7 +1,7 @@
 package com.abatef.fastc2.repositories;
 
-import com.abatef.fastc2.models.PharmacyDrug;
-import com.abatef.fastc2.models.PharmacyDrugId;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

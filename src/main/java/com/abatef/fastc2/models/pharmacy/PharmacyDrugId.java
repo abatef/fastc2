@@ -1,4 +1,4 @@
-package com.abatef.fastc2.models;
+package com.abatef.fastc2.models.pharmacy;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

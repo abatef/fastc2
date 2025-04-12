@@ -1,6 +1,6 @@
 package com.abatef.fastc2.exceptions;
 
-import com.abatef.fastc2.models.PharmacyDrugId;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -9,6 +9,9 @@ import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.models.*;
+import com.abatef.fastc2.models.pharmacy.Pharmacy;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 import com.abatef.fastc2.repositories.PharmacyDrugRepository;
 import com.abatef.fastc2.repositories.PharmacyRepository;
 
@@ -138,7 +141,7 @@ public class PharmacyService {
         return modelMapper.map(pharmacyDrug, PharmacyDrugInfo.class);
     }
 
-    private PharmacyDrug getPharmacyDrugByIdOrThrow(PharmacyDrugId id) {
+    public PharmacyDrug getPharmacyDrugByIdOrThrow(PharmacyDrugId id) {
         Optional<PharmacyDrug> pdOpt = pharmacyDrugRepository.findById(id);
         if (pdOpt.isPresent()) {
             return pdOpt.get();

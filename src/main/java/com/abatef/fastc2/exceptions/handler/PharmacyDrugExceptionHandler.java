@@ -4,10 +4,7 @@ import com.abatef.fastc2.enums.ErrorType;
 import com.abatef.fastc2.exceptions.DrugNotFoundException;
 import com.abatef.fastc2.exceptions.ErrorResponse;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
-import com.abatef.fastc2.models.PharmacyDrugId;
-import com.abatef.fastc2.repositories.DrugRepository;
-import com.abatef.fastc2.repositories.PharmacyDrugRepository;
-import com.abatef.fastc2.repositories.PharmacyRepository;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,5 +1,7 @@
-package com.abatef.fastc2.models;
+package com.abatef.fastc2.models.pharmacy;
 
+import com.abatef.fastc2.models.Employee;
+import com.abatef.fastc2.models.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;

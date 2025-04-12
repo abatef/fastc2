@@ -1,5 +1,7 @@
 package com.abatef.fastc2.models;
 
+import com.abatef.fastc2.models.pharmacy.Pharmacy;
+import com.abatef.fastc2.models.shift.Shift;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -57,4 +59,11 @@ public class Employee {
 
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "shift_id", nullable = false)
+    private Shift shift;
+
 }

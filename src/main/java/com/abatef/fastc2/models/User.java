@@ -1,6 +1,8 @@
 package com.abatef.fastc2.models;
 
 import com.abatef.fastc2.enums.UserRole;
+import com.abatef.fastc2.models.pharmacy.Pharmacy;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
