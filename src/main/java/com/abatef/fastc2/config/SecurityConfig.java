@@ -61,7 +61,7 @@ public class SecurityConfig {
                 .authenticationManager(authenticationManager())
                 .authorizeHttpRequests(
                         request -> {
-                            request.requestMatchers("/api/v1/auth/me").authenticated();
+                            request.requestMatchers("/api/v1/auth/me", "/api/v1/auth/password").authenticated();
                             request.requestMatchers("api/v1/pharmacy/search")
                                     .permitAll()
                                     .requestMatchers("/api/v1/pharmacy/**")
@@ -80,7 +80,7 @@ public class SecurityConfig {
                                     .requestMatchers("/v3/api-docs*/**")
                                     .permitAll();
                         })
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
