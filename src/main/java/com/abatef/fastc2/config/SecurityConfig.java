@@ -63,13 +63,13 @@ public class SecurityConfig {
                         request -> {
                             request.requestMatchers("/api/v1/auth/me", "/api/v1/auth/password")
                                     .authenticated();
-                            request.requestMatchers("api/v1/pharmacy/search")
+                            request.requestMatchers("api/v1/pharmacies/search")
                                     .permitAll()
-                                    .requestMatchers("/api/v1/pharmacy/**")
+                                    .requestMatchers("/api/v1/pharmacies/**")
                                     .authenticated();
-                            request.requestMatchers("/api/v1/drug/search")
+                            request.requestMatchers("/api/v1/drugs/search")
                                     .permitAll()
-                                    .requestMatchers("api/v1/drug/**")
+                                    .requestMatchers("api/v1/drugs/**")
                                     .authenticated();
                             request.requestMatchers(
                                             "/api/v1/auth/login",
@@ -81,6 +81,8 @@ public class SecurityConfig {
                                     .permitAll()
                                     .requestMatchers("/v3/api-docs*/**")
                                     .permitAll();
+                            request.requestMatchers("/api/v1/receipts/**").authenticated();
+                            request.requestMatchers("/api/v1/users/**").authenticated();
                         })
                 .httpBasic(AbstractHttpConfigurer::disable);
 

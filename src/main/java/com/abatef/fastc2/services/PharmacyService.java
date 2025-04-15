@@ -184,6 +184,13 @@ public class PharmacyService {
         return modelMapper.map(pharmacyDrug, PharmacyDrugInfo.class);
     }
 
+    public List<PharmacyDrugInfo> getDrugsByPharmacy(Integer pharmacyId) {
+        List<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId);
+        return drugs.stream()
+                .map(drug -> modelMapper.map(drug, PharmacyDrugInfo.class))
+                .toList();
+    }
+
     public PharmacyDrug getPharmacyDrugByIdOrThrow(PharmacyDrugId id) {
         Optional<PharmacyDrug> pdOpt = pharmacyDrugRepository.findById(id);
         if (pdOpt.isPresent()) {
@@ -234,6 +241,7 @@ public class PharmacyService {
     public Boolean pharmacyHasDrug(Integer pharmacyId, Integer drugId) {
         return pharmacyDrugRepository.existsPharmacyDrugByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
     }
+
 
     public List<PharmacyInfo> searchByName(String pharmacyName, int page, int size) {
         String formattedName = pharmacyName.trim().toLowerCase().replace(' ', '&');
