@@ -44,7 +44,8 @@ public class Shift {
 
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "pharmacy_shifts",
+    @JoinTable(
+            name = "pharmacy_shifts",
             joinColumns = @JoinColumn(name = "shift_id"),
             inverseJoinColumns = @JoinColumn(name = "pharmacy_id"))
     private Set<Pharmacy> pharmacies = new LinkedHashSet<>();
@@ -52,5 +53,4 @@ public class Shift {
     @JsonIgnore
     @OneToMany(mappedBy = "shift", fetch = FetchType.LAZY)
     private Set<Receipt> receipts = new LinkedHashSet<>();
-
 }

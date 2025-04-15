@@ -19,10 +19,13 @@ import java.util.Optional;
 public class DrugService {
     private final DrugRepository drugRepository;
     private final ModelMapper modelMapper;
+    private final UserService userService;
 
-    public DrugService(DrugRepository drugRepository, ModelMapper modelMapper) {
+    public DrugService(
+            DrugRepository drugRepository, ModelMapper modelMapper, UserService userService) {
         this.drugRepository = drugRepository;
         this.modelMapper = modelMapper;
+        this.userService = userService;
     }
 
     @Transactional
@@ -53,7 +56,7 @@ public class DrugService {
     }
 
     @Transactional
-    public Drug updateDrugInfo(DrugInfo info, User user) {
+    public DrugInfo updateDrugInfo(DrugInfo info, User user) {
         Drug drug = getDrugByIdOrThrow(info.getId());
         if (info.getName() != null) {
             drug.setName(info.getName());
@@ -70,8 +73,13 @@ public class DrugService {
             drug.setUnits(info.getUnits());
         }
 
+        if (info.getCreatedBy() != null) {
+            User newUser = userService.getUserById(info.getCreatedBy().getId());
+            drug.setCreatedBy(newUser);
+        }
+
         drug = drugRepository.save(drug);
-        return drug;
+        return modelMapper.map(drug, DrugInfo.class);
     }
 
     @Transactional
@@ -98,7 +106,6 @@ public class DrugService {
         return modelMapper.map(drug, DrugInfo.class);
     }
 
-
     @Transactional
     public DrugInfo updateDrugUnits(Integer id, Short units, User user) {
         Drug drug = getDrugByIdOrThrow(id);
@@ -113,22 +120,22 @@ public class DrugService {
 
     public List<DrugInfo> searchByName(String drugName, int page, int size) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
-        return drugRepository.searchDrugByNamePaginated(drugName, formattedName, PageRequest.of(page, size))
+        return drugRepository
+                .searchDrugByNamePaginated(drugName, formattedName, PageRequest.of(page, size))
                 .stream()
                 .map(drug -> modelMapper.map(drug, DrugInfo.class))
                 .toList();
     }
 
     /* Main Page
-    * view -> total profit, loss, revenue
-    * filter -> data, time, emp, search
-    * view -> sell and by ops
-    * */
+     * view -> total profit, loss, revenue
+     * filter -> data, time, emp, search
+     * view -> sell and by ops
+     * */
 
     /* Expiry Page
-    * view -> expiry, expired, when
-    * filter -> search, near expiry, sort(expiry), quantity(asc, desc)
-    *
-    * */
+     * view -> expiry, expired, when
+     * filter -> search, near expiry, sort(expiry), quantity(asc, desc)
+     * */
 
 }

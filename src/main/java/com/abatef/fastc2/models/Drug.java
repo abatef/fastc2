@@ -66,5 +66,4 @@ public class Drug {
     @JsonIgnore
     @OneToMany(mappedBy = "drug")
     private Set<Image> images = new LinkedHashSet<>();
-
 }

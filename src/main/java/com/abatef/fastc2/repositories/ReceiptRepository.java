@@ -29,13 +29,13 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
 
     @Query(
             value =
-                    "select r from Receipt r " +
-                            "where (:cashierId is null or :cashierId = r.cashier.id) and" +
-                            " (:drugId is null or :drugId = r.pharmacyDrug.id.drugId) and" +
-                            " (:pharamcyId is null or :pharmacyId = r.pharmacyDrug.id.pharmacyId) and" +
-                            " (:shifId is null or :shiftId = r.shift.id) and" +
-                            " (:fromDate is null or :fromDate <= r.createdAt) and" +
-                            " (:toDate is null or :toDate >= r.createdAt)")
+                    "select r from Receipt r "
+                            + "where (:cashierId is null or :cashierId = r.cashier.id) and"
+                            + " (:drugId is null or :drugId = r.pharmacyDrug.id.drugId) and"
+                            + " (:pharamcyId is null or :pharmacyId = r.pharmacyDrug.id.pharmacyId) and"
+                            + " (:shifId is null or :shiftId = r.shift.id) and"
+                            + " (:fromDate is null or :fromDate <= r.createdAt) and"
+                            + " (:toDate is null or :toDate >= r.createdAt)")
     Page<Receipt> applyAllFilters(
             Integer cashierId,
             Integer drugId,

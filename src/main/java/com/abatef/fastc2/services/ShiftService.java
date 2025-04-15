@@ -1,9 +1,13 @@
 package com.abatef.fastc2.services;
 
+import com.abatef.fastc2.exceptions.ShiftNotFoundException;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.repositories.ShiftRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 public class ShiftService {
@@ -18,7 +22,16 @@ public class ShiftService {
         return shiftRepository.save(shift);
     }
 
-    public Shift getById(Integer id) {
-        return shiftRepository.findById(id).get();
+    public Shift getByIdOrThrow(Integer id) {
+        Optional<Shift> optionalShift = shiftRepository.findById(id);
+        if (optionalShift.isPresent()) {
+            return optionalShift.get();
+        }
+        throw new ShiftNotFoundException(id);
+    }
+
+    @Transactional
+    public void delete(Integer id) {
+        shiftRepository.deleteById(id);
     }
 }

@@ -9,6 +9,7 @@ import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -17,15 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @ControllerAdvice(annotations = RestController.class)
 public class PharmacyDrugExceptionHandler {
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    static public class PharmacyDrugError {
-        PharmacyDrugId id;
-        String message;
-        PharmacyDrugNotFoundException.Why why;
-    }
-
     @ExceptionHandler(exception = PharmacyDrugNotFoundException.class)
     public ResponseEntity<PharmacyDrugError> handle(PharmacyDrugNotFoundException e) {
         PharmacyDrugError error = new PharmacyDrugError();
@@ -43,5 +35,14 @@ public class PharmacyDrugExceptionHandler {
         errorResponse.setValueType(ErrorResponse.getValueType(e));
         errorResponse.setDetails(e.getDrugId().toString());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class PharmacyDrugError {
+        PharmacyDrugId id;
+        String message;
+        PharmacyDrugNotFoundException.Why why;
     }
 }

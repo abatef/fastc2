@@ -61,7 +61,8 @@ public class SecurityConfig {
                 .authenticationManager(authenticationManager())
                 .authorizeHttpRequests(
                         request -> {
-                            request.requestMatchers("/api/v1/auth/me", "/api/v1/auth/password").authenticated();
+                            request.requestMatchers("/api/v1/auth/me", "/api/v1/auth/password")
+                                    .authenticated();
                             request.requestMatchers("api/v1/pharmacy/search")
                                     .permitAll()
                                     .requestMatchers("/api/v1/pharmacy/**")
@@ -75,6 +76,7 @@ public class SecurityConfig {
                                             "/api/v1/auth/refresh",
                                             "/api/v1/auth/signup")
                                     .permitAll();
+                            request.requestMatchers("/api/v1/employees/**").authenticated();
                             request.requestMatchers("/swagger-ui/**")
                                     .permitAll()
                                     .requestMatchers("/v3/api-docs*/**")

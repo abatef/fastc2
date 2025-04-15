@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 @ControllerAdvice(annotations = RestController.class)
 public class UserExceptionsHandler {
 
-
     @ExceptionHandler(DuplicateValueException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateValueException(DuplicateValueException e) {
         ErrorResponse errorResponse = new ErrorResponse();

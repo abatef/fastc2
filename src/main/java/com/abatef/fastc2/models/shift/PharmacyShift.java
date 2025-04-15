@@ -1,6 +1,7 @@
 package com.abatef.fastc2.models.shift;
 
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
+
 import jakarta.persistence.*;
 
 import lombok.Getter;

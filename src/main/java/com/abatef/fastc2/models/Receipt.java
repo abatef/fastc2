@@ -68,5 +68,4 @@ public class Receipt {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "shift_id", nullable = false)
     private Shift shift;
-
 }

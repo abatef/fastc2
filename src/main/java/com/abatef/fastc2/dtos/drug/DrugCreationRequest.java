@@ -11,13 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DrugCreationRequest {
-    @NotEmpty
-    @NotNull
-    private String name;
-    @NotNull
-    @NotEmpty
-    private String form;
+    @NotEmpty @NotNull private String name;
+    @NotNull @NotEmpty private String form;
     private Short units;
+
     @Min(1)
     private Float price;
 }

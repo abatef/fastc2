@@ -26,8 +26,7 @@ public class UserService {
     public UserService(
             UserRepository userRepository,
             ModelMapper modelMapper,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
@@ -52,6 +51,9 @@ public class UserService {
         if (request.getUsername() == null || request.getUsername().isEmpty()) {
             user.setUsername(request.getEmail());
         }
+        if (request.getManagedUser()) {
+            user.setManagedUser(true);
+        }
         user.setFbUid(null);
         user.setFbUser(false);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -66,7 +68,8 @@ public class UserService {
     }
 
     @Transactional
-    public User registerByFirebaseIfNotExist(FirebaseToken fbToken) throws NonExistingValueException {
+    public User registerByFirebaseIfNotExist(FirebaseToken fbToken)
+            throws NonExistingValueException {
         String uid = fbToken.getUid();
         Optional<User> optionalUser = userRepository.getUserByFbUid(uid);
         if (optionalUser.isPresent()) {
@@ -83,6 +86,20 @@ public class UserService {
         user.setPhone("NO_PHONE");
         user = userRepository.save(user);
         return user;
+    }
+
+    public UserInfo updateUserInfo(@AuthenticationPrincipal User user, UserInfo userInfo) {
+        if (userInfo.getName() == null || userInfo.getName().isEmpty()) {
+            userInfo.setName(user.getName());
+        }
+        if (userInfo.getPhone() == null || userInfo.getPhone().isEmpty()) {
+            userInfo.setPhone(user.getPhone());
+        }
+        if (userInfo.getEmail() == null || userInfo.getEmail().isEmpty()) {
+            userInfo.setEmail(user.getEmail());
+        }
+        user = userRepository.save(user);
+        return modelMapper.map(userInfo, UserInfo.class);
     }
 
     public User getUserByUsername(String username) throws NonExistingValueException {

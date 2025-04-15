@@ -4,19 +4,23 @@ import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.Receipt;
 import com.abatef.fastc2.models.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
 import org.hibernate.annotations.*;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Slf4j
 @Getter

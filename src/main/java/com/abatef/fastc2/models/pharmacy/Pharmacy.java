@@ -2,17 +2,22 @@ package com.abatef.fastc2.models.pharmacy;
 
 import com.abatef.fastc2.models.Employee;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.models.shift.Shift;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import org.hibernate.annotations.*;
+import org.locationtech.jts.geom.Point;
+
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.*;
-import org.locationtech.jts.geom.Point;
 
 @Getter
 @Setter
@@ -66,6 +71,7 @@ public class Pharmacy {
     @OneToMany(mappedBy = "pharmacy")
     private Set<PharmacyDrug> pharmacyDrugs = new LinkedHashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "pharmacy")
     private Set<Employee> employees = new LinkedHashSet<>();
 
@@ -73,4 +79,13 @@ public class Pharmacy {
     @ColumnDefault("0")
     @Column(name = "expiry_threshold", nullable = false)
     private Short expiryThreshold;
+
+    @ManyToMany(mappedBy = "pharmacies")
+    private Set<Shift> shifts = new LinkedHashSet<>();
+
+/*
+ TODO [Reverse Engineering] create field to map the 'search_vector' column
+ Available actions: Define target Java type | Uncomment as is | Remove column mapping
+    @Column(name = "search_vector", columnDefinition = "tsvector")private java.lang.Object searchVector;
+*/
 }

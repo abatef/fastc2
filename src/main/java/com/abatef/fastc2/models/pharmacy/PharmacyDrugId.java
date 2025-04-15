@@ -3,14 +3,17 @@ package com.abatef.fastc2.models.pharmacy;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDate;
-import java.util.Objects;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.ColumnDefault;
+
+import java.time.LocalDate;
+import java.util.Objects;
 
 @Getter
 @Setter

@@ -11,12 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PharmacyCreationRequest {
-    @NotEmpty
-    @NotNull
-    private String name;
-    @NotEmpty
-    @NotNull
-    private String address;
+    @NotEmpty @NotNull private String name;
+    @NotEmpty @NotNull private String address;
     private Boolean isBranch = false;
     private Integer mainBranchId;
     private Location location;

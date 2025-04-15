@@ -22,7 +22,7 @@ public class ReceiptController {
         this.receiptService = receiptService;
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<ReceiptInfo> createANewReceipt(
             @RequestBody ReceiptCreationRequest request, @AuthenticationPrincipal User user) {
         ReceiptInfo info = receiptService.createANewReceipt(request, user);
@@ -92,7 +92,15 @@ public class ReceiptController {
             @RequestParam(value = "to_date", required = false) LocalDate toDate,
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        List<ReceiptInfo> receipts = receiptService.applyAllFilters(cashierId, drugId, pharmacyId, shiftId, fromDate, toDate, PageRequest.of(page, size));
+        List<ReceiptInfo> receipts =
+                receiptService.applyAllFilters(
+                        cashierId,
+                        drugId,
+                        pharmacyId,
+                        shiftId,
+                        fromDate,
+                        toDate,
+                        PageRequest.of(page, size));
         return noContentOrReturn(receipts);
     }
 }

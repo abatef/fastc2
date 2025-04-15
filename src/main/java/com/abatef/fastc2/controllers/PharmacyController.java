@@ -5,8 +5,9 @@ import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
-import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
+import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.PharmacyService;
 
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class PharmacyController {
         this.pharmacyService = pharmacyService;
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<PharmacyInfo> createPharmacy(
             @RequestBody PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
         PharmacyInfo info = pharmacyService.createPharmacy(request, user);
@@ -69,56 +70,72 @@ public class PharmacyController {
         return ResponseEntity.ok(drug);
     }
 
-    @PatchMapping("/threshold")
-    public ResponseEntity<PharmacyInfo> updateThreshold(
-            @RequestParam("id") Integer id,
-            @RequestParam("threshold") Short threshold,
-            @AuthenticationPrincipal User user) {
-        PharmacyInfo pharmacyInfo = pharmacyService.updateExpiryThreshold(id, threshold, user);
-        return ResponseEntity.ok(pharmacyInfo);
+//    @PatchMapping("/threshold")
+//    public ResponseEntity<PharmacyInfo> updateThreshold(
+//            @RequestParam("id") Integer id,
+//            @RequestParam("threshold") Short threshold,
+//            @AuthenticationPrincipal User user) {
+//        PharmacyInfo pharmacyInfo = pharmacyService.updateExpiryThreshold(id, threshold, user);
+//        return ResponseEntity.ok(pharmacyInfo);
+//    }
+//
+//    @PatchMapping("/{id}/name")
+//    public ResponseEntity<PharmacyInfo> updateName(
+//            @PathVariable Integer id,
+//            @RequestParam("name") String name,
+//            @AuthenticationPrincipal User user) {
+//        PharmacyInfo pharmacyInfo = pharmacyService.updateName(id, name, user);
+//        return ResponseEntity.ok(pharmacyInfo);
+//    }
+//
+//    @PatchMapping("/{id}/address")
+//    public ResponseEntity<PharmacyInfo> updateAddress(
+//            @PathVariable Integer id,
+//            @RequestParam("address") String address,
+//            @AuthenticationPrincipal User user) {
+//        PharmacyInfo pharmacyInfo = pharmacyService.updateAddress(id, address, user);
+//        return ResponseEntity.ok(pharmacyInfo);
+//    }
+//
+//    @PatchMapping("/{id}/location")
+//    public ResponseEntity<PharmacyInfo> updateLocation(
+//            @PathVariable Integer id,
+//            @RequestBody Location location,
+//            @AuthenticationPrincipal User user) {
+//        PharmacyInfo pharmacyInfo = pharmacyService.updateLocation(id, location, user);
+//        return ResponseEntity.ok(pharmacyInfo);
+//    }
+//
+//    @PatchMapping("{id}/owner")
+//    public ResponseEntity<PharmacyInfo> updateOwner(
+//            @PathVariable Integer id,
+//            @RequestParam("owner") Integer owner,
+//            @AuthenticationPrincipal User user) {
+//        PharmacyInfo pharmacyInfo = pharmacyService.updateOwner(id, owner, user);
+//        return ResponseEntity.ok(pharmacyInfo);
+//    }
+
+    @PatchMapping
+    public ResponseEntity<PharmacyInfo> updatePharmacyInfo(
+            @RequestBody PharmacyInfo pharmacyInfo, @AuthenticationPrincipal User user) {
+        PharmacyInfo info = pharmacyService.updatePharmacyInfo(pharmacyInfo, user);
+        return ResponseEntity.ok(info);
     }
 
-    @PatchMapping("/{id}/name")
-    public ResponseEntity<PharmacyInfo> updateName(
-            @PathVariable Integer id,
-            @RequestParam("name") String name,
-            @AuthenticationPrincipal User user) {
-        PharmacyInfo pharmacyInfo = pharmacyService.updateName(id, name, user);
-        return ResponseEntity.ok(pharmacyInfo);
-    }
-
-    @PatchMapping("/{id}/address")
-    public ResponseEntity<PharmacyInfo> updateAddress(
-            @PathVariable Integer id,
-            @RequestParam("address") String address,
-            @AuthenticationPrincipal User user) {
-        PharmacyInfo pharmacyInfo = pharmacyService.updateAddress(id, address, user);
-        return ResponseEntity.ok(pharmacyInfo);
-    }
-
-    @PatchMapping("/{id}/location")
-    public ResponseEntity<PharmacyInfo> updateLocation(
-            @PathVariable Integer id,
-            @RequestBody Location location,
-            @AuthenticationPrincipal User user) {
-        PharmacyInfo pharmacyInfo = pharmacyService.updateLocation(id, location, user);
-        return ResponseEntity.ok(pharmacyInfo);
-    }
-
-    @PatchMapping("{id}/owner")
-    public ResponseEntity<PharmacyInfo> updateOwner(
-            @PathVariable Integer id,
-            @RequestParam("owner") Integer owner,
-            @AuthenticationPrincipal User user) {
-        PharmacyInfo pharmacyInfo = pharmacyService.updateOwner(id, owner, user);
-        return ResponseEntity.ok(pharmacyInfo);
-    }
-
-    @DeleteMapping("/")
+    @DeleteMapping
     public ResponseEntity<Void> deletePharmacyDrug(
             @RequestBody PharmacyDrugId id, @AuthenticationPrincipal User user) {
         pharmacyService.deleteDrug(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/shifts")
+    public ResponseEntity<PharmacyInfo> createPharmacyShift(
+            @RequestBody Shift shift,
+            @PathVariable("id") Integer pharmacyId,
+            @AuthenticationPrincipal User user) {
+        PharmacyInfo info = pharmacyService.addShiftToPharmacy(pharmacyId, shift, user);
+        return ResponseEntity.ok(info);
     }
 
     @GetMapping("/search")

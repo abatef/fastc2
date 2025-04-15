@@ -7,6 +7,7 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
+
 import org.locationtech.jts.geom.Point;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
@@ -43,6 +44,7 @@ public class MappingConfig {
                     info.setIsBranch(pharmacy.getIsBranch());
                     info.setMainBranch(
                             pharmacy.getIsBranch() ? pharmacy.getMainBranch().getId() : null);
+                    info.setShifts(pharmacy.getShifts().stream().toList());
                     info.setCreatedAt(pharmacy.getCreatedAt());
                     info.setUpdatedAt(pharmacy.getUpdatedAt());
                     return info;

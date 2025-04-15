@@ -13,18 +13,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PharmacyDrugCreation {
-    @NotNull
-    private Integer drugId;
-    @NotNull
-    private Integer pharmacyId;
-    @NotNull
-    private Integer addedByUserId;
+    @NotNull private Integer drugId;
+    @NotNull private Integer pharmacyId;
+    @NotNull private Integer addedByUserId;
+
     @NotNull
     @Min(0)
     private Integer stock;
+
     @NotNull
     @Min(0)
     private Float price;
-    @NotNull
-    private LocalDate expiryDate;
+
+    @NotNull private LocalDate expiryDate;
 }

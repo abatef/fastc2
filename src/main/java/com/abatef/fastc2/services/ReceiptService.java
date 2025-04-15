@@ -59,7 +59,7 @@ public class ReceiptService {
         receipt.setAmountDue(request.getAmountDue());
         receipt.setPacks(request.getPacks());
         receipt.setUnits(request.getUnits());
-        Shift shift = shiftService.getById(request.getShiftId());
+        Shift shift = shiftService.getByIdOrThrow(request.getShiftId());
         receipt.setShift(shift);
         receipt = receiptRepository.save(receipt);
         return modelMapper.map(receipt, ReceiptInfo.class);

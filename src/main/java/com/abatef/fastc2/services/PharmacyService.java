@@ -12,8 +12,13 @@ import com.abatef.fastc2.models.*;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
+import com.abatef.fastc2.models.shift.PharmacyShift;
+import com.abatef.fastc2.models.shift.PharmacyShiftId;
+import com.abatef.fastc2.models.shift.Shift;
+import com.abatef.fastc2.repositories.EmployeeRepository;
 import com.abatef.fastc2.repositories.PharmacyDrugRepository;
 import com.abatef.fastc2.repositories.PharmacyRepository;
+import com.abatef.fastc2.repositories.PharmacyShiftRepository;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
@@ -31,19 +36,29 @@ public class PharmacyService {
     private final UserService userService;
     private final DrugService drugService;
     private final ModelMapper modelMapper;
+    private final ShiftService shiftService;
+
     private final PharmacyDrugRepository pharmacyDrugRepository;
+    private final PharmacyShiftRepository pharmacyShiftRepository;
+    private final EmployeeRepository employeeRepository;
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
             UserService userService,
             DrugService drugService,
             ModelMapper modelMapper,
-            PharmacyDrugRepository pharmacyDrugRepository) {
+            ShiftService shiftService,
+            PharmacyDrugRepository pharmacyDrugRepository,
+            PharmacyShiftRepository pharmacyShiftRepository,
+            EmployeeRepository employeeRepository) {
         this.pharmacyRepository = pharmacyRepository;
         this.userService = userService;
         this.drugService = drugService;
         this.modelMapper = modelMapper;
+        this.shiftService = shiftService;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
+        this.pharmacyShiftRepository = pharmacyShiftRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     @Transactional
@@ -131,6 +146,34 @@ public class PharmacyService {
     }
 
     @Transactional
+    public PharmacyInfo updatePharmacyInfo(
+            PharmacyInfo pharmacyInfo, @AuthenticationPrincipal User user) {
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyInfo.getId());
+        if (pharmacyInfo.getName() != null && !pharmacyInfo.getName().isEmpty()) {
+            pharmacy.setName(pharmacyInfo.getName());
+        }
+
+        if (pharmacyInfo.getAddress() != null && !pharmacyInfo.getAddress().isEmpty()) {
+            pharmacy.setAddress(pharmacyInfo.getAddress());
+        }
+
+        if (pharmacyInfo.getLocation() != null) {
+            pharmacy.setLocation(pharmacyInfo.getLocation().toPoint());
+        }
+
+        if (pharmacyInfo.getOwner() != null) {
+            pharmacy.setOwner(userService.getUserById(pharmacyInfo.getOwner().getId()));
+        }
+
+        if (pharmacyInfo.getExpiryThreshold() != null) {
+            pharmacy.setExpiryThreshold(pharmacyInfo.getExpiryThreshold());
+        }
+
+        pharmacy = pharmacyRepository.save(pharmacy);
+        return modelMapper.map(pharmacy, PharmacyInfo.class);
+    }
+
+    @Transactional
     public PharmacyDrugInfo addDrugToPharmacy(PharmacyDrugCreationRequest id, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(id.getPharmacyId());
         Drug drug = drugService.getDrugByIdOrThrow(id.getDrugId());
@@ -200,5 +243,38 @@ public class PharmacyService {
                 .stream()
                 .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
                 .toList();
+    }
+
+    @Transactional
+    public PharmacyInfo addShiftToPharmacy(Integer pharmacyId, Shift shift, User user) {
+        shift = shiftService.create(shift);
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        PharmacyShift pharmacyShift = new PharmacyShift();
+        pharmacyShift.setPharmacy(pharmacy);
+        pharmacyShift.setShift(shift);
+        pharmacyShiftRepository.save(pharmacyShift);
+        return modelMapper.map(getPharmacyByIdOrThrow(pharmacyId), PharmacyInfo.class);
+    }
+
+    @Transactional
+    public void removeShiftFromPharmacy(Integer pharmacyId, Integer shiftId, User user) {
+        PharmacyShiftId id = new PharmacyShiftId();
+        id.setPharmacyId(pharmacyId);
+        id.setShiftId(shiftId);
+        pharmacyShiftRepository.deleteById(id);
+    }
+
+    public List<Shift> getShiftsByPharmacyId(Integer pharmacyId) {
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        return pharmacy.getShifts().stream().toList();
+    }
+
+    @Transactional
+    public List<Employee> addEmployeeToPharmacy(Integer pharmacyId, Integer employeeId, User user) {
+        Employee employee = employeeRepository.getEmployeeById(employeeId);
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        pharmacy.getEmployees().add(employee);
+        pharmacy = pharmacyRepository.save(pharmacy);
+        return pharmacy.getEmployees().stream().toList();
     }
 }
