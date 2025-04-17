@@ -1,5 +1,6 @@
 package com.abatef.fastc2.controllers;
 
+import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.UserService;
@@ -21,7 +22,9 @@ public class UserController {
     }
 
     @PatchMapping
-    public ResponseEntity<UserInfo> updateUserInfo(@RequestBody UserInfo userInfo, @AuthenticationPrincipal User user) {
+    public ResponseEntity<UserInfo> updateUserInfo(
+            @RequestBody UserInfo userInfo, @AuthenticationPrincipal User user) {
+
         UserInfo updatedUser = userService.updateUserInfo(user, userInfo);
         return ResponseEntity.ok(updatedUser);
     }
@@ -30,5 +33,14 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal User user) {
         userService.deleteUser(user);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/pharmacy")
+    public ResponseEntity<PharmacyInfo> getUser(@AuthenticationPrincipal User user) {
+        PharmacyInfo info = userService.getPharmacyInfoByUser(user);
+        if (info == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(info);
     }
 }

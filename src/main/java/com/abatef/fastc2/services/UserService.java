@@ -1,5 +1,6 @@
 package com.abatef.fastc2.services;
 
+import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.enums.ValueType;
@@ -15,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -128,6 +131,16 @@ public class UserService {
 
     public UserInfo me(@AuthenticationPrincipal User user) {
         return modelMapper.map(user, UserInfo.class);
+    }
+
+    public PharmacyInfo getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
+        List<PharmacyInfo> pharmacyInfos =
+                user.getPharmacies() != null
+                        ? user.getPharmacies().stream()
+                                .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
+                                .toList()
+                        : Collections.emptyList();
+        return pharmacyInfos.isEmpty() ? null : pharmacyInfos.getFirst();
     }
 
     @Transactional
