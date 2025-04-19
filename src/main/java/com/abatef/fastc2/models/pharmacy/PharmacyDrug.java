@@ -1,44 +1,41 @@
 package com.abatef.fastc2.models.pharmacy;
 
 import com.abatef.fastc2.models.Drug;
-import com.abatef.fastc2.models.Receipt;
 import com.abatef.fastc2.models.User;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-@Slf4j
 @Getter
 @Setter
 @Entity
 @Table(name = "pharmacy_drug")
-@NoArgsConstructor
-@AllArgsConstructor
 public class PharmacyDrug {
-    @EmbeddedId private PharmacyDrugId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ColumnDefault("nextval('pharmacy_drug_id_seq')")
+    @Column(name = "id", nullable = false)
+    private Integer id;
 
-    @MapsId("drugId")
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "drug_id", nullable = false)
     private Drug drug;
 
-    @MapsId("pharmacyId")
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "pharmacy_id", nullable = false)
@@ -59,22 +56,20 @@ public class PharmacyDrug {
     @Column(name = "price", nullable = false)
     private Float price;
 
-    @CreationTimestamp
+    @NotNull
+    @ColumnDefault("(CURRENT_DATE + 100)")
+    @Column(name = "expiry_date", nullable = false)
+    private LocalDate expiryDate;
+
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @UpdateTimestamp
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "pharmacyDrug")
-    private Set<Receipt> receipts = new LinkedHashSet<>();
+    private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
 
-    public PharmacyDrug(Drug drug, Pharmacy pharmacy, LocalDate expiryDate, User addedBy) {
-        this.drug = drug;
-        this.pharmacy = pharmacy;
-        this.addedBy = addedBy;
-        this.id.setExpiryDate(expiryDate);
-    }
 }

@@ -1,7 +1,6 @@
 package com.abatef.fastc2.models.shift;
 
 import com.abatef.fastc2.models.Employee;
-import com.abatef.fastc2.models.Receipt;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -49,8 +48,4 @@ public class Shift {
             joinColumns = @JoinColumn(name = "shift_id"),
             inverseJoinColumns = @JoinColumn(name = "pharmacy_id"))
     private Set<Pharmacy> pharmacies = new LinkedHashSet<>();
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "shift", fetch = FetchType.LAZY)
-    private Set<Receipt> receipts = new LinkedHashSet<>();
 }

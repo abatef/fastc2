@@ -4,9 +4,11 @@ import com.abatef.fastc2.dtos.drug.DrugInfo;
 import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
+import com.abatef.fastc2.dtos.receipt.ReceiptItemInfo;
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
+import com.abatef.fastc2.models.pharmacy.ReceiptItem;
 
 import org.locationtech.jts.geom.Point;
 import org.modelmapper.Converter;
@@ -63,7 +65,7 @@ public class MappingConfig {
                     info.setDrug(modelMapper.map(pd.getDrug(), DrugInfo.class));
                     info.setPrice(pd.getPrice());
                     info.setStock(pd.getStock());
-                    info.setExpiryDate(pd.getId().getExpiryDate());
+                    info.setExpiryDate(pd.getExpiryDate());
                     info.setCreatedAt(pd.getCreatedAt());
                     info.setUpdatedAt(pd.getUpdatedAt());
                     info.setAddedBy(modelMapper.map(pd.getAddedBy(), UserInfo.class));
@@ -72,6 +74,20 @@ public class MappingConfig {
         modelMapper
                 .createTypeMap(PharmacyDrug.class, PharmacyDrugInfo.class)
                 .setConverter(pharmacyDrugPharmacyInfoConverter);
+        Converter<ReceiptItem, ReceiptItemInfo> receiptItemReceiptItemInfoConverter =
+                (ctx) -> {
+                    ReceiptItem item = ctx.getSource();
+                    ReceiptItemInfo info = new ReceiptItemInfo();
+                    info.setDrugName(item.getPharmacyDrug().getDrug().getName());
+                    info.setPack(item.getPack());
+                    info.setUnits(item.getUnits());
+                    info.setAmountDue(item.getAmountDue());
+                    info.setShift(item.getReceipt().getCashier().getEmployee().getShift());
+                    return info;
+                };
+        modelMapper
+                .createTypeMap(ReceiptItem.class, ReceiptItemInfo.class)
+                .setConverter(receiptItemReceiptItemInfoConverter);
         return modelMapper;
     }
 }

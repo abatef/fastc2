@@ -9,6 +9,7 @@ import com.abatef.fastc2.repositories.DrugRepository;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,10 +119,10 @@ public class DrugService {
         drugRepository.deleteById(id);
     }
 
-    public List<DrugInfo> searchByName(String drugName, int page, int size) {
+    public List<DrugInfo> searchByName(String drugName, Pageable pageable) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
         return drugRepository
-                .searchDrugByNamePaginated(drugName, formattedName, PageRequest.of(page, size))
+                .searchDrugByNamePaginated(drugName, formattedName, pageable)
                 .stream()
                 .map(drug -> modelMapper.map(drug, DrugInfo.class))
                 .toList();

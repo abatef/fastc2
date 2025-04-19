@@ -84,8 +84,6 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "addedBy")
     private Set<PharmacyDrug> pharmacyDrugs = new LinkedHashSet<>();
 
-    @JsonIgnore @OneToMany private Set<Receipt> receipts = new LinkedHashSet<>();
-
     @ColumnDefault("false")
     @Column(name = "managed_user")
     private Boolean managedUser;

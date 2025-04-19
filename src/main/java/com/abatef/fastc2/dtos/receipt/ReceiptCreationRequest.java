@@ -14,14 +14,9 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReceiptCreationRequest {
-    private Integer drugId;
-    private Integer pharmacyId;
-    private LocalDate drugExpiryDate;
-    private Integer quantity;
+    private Integer pharmacyDrugId;
     private Float amountDue;
     private Float discount;
-    private Integer cashierId;
-    private Integer shiftId;
     private Short units;
     private Short packs;
 }

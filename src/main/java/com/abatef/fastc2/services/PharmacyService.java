@@ -5,13 +5,13 @@ import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
+import com.abatef.fastc2.dtos.user.EmployeeInfo;
 import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.models.*;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
-import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 import com.abatef.fastc2.models.shift.PharmacyShift;
 import com.abatef.fastc2.models.shift.PharmacyShiftId;
 import com.abatef.fastc2.models.shift.Shift;
@@ -20,13 +20,17 @@ import com.abatef.fastc2.repositories.PharmacyDrugRepository;
 import com.abatef.fastc2.repositories.PharmacyRepository;
 import com.abatef.fastc2.repositories.PharmacyShiftRepository;
 
+import jakarta.validation.constraints.NotNull;
+
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +45,7 @@ public class PharmacyService {
     private final PharmacyDrugRepository pharmacyDrugRepository;
     private final PharmacyShiftRepository pharmacyShiftRepository;
     private final EmployeeRepository employeeRepository;
+    private final EmployeeService employeeService;
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
@@ -50,7 +55,8 @@ public class PharmacyService {
             ShiftService shiftService,
             PharmacyDrugRepository pharmacyDrugRepository,
             PharmacyShiftRepository pharmacyShiftRepository,
-            EmployeeRepository employeeRepository) {
+            EmployeeRepository employeeRepository,
+            EmployeeService employeeService) {
         this.pharmacyRepository = pharmacyRepository;
         this.userService = userService;
         this.drugService = drugService;
@@ -59,6 +65,7 @@ public class PharmacyService {
         this.pharmacyDrugRepository = pharmacyDrugRepository;
         this.pharmacyShiftRepository = pharmacyShiftRepository;
         this.employeeRepository = employeeRepository;
+        this.employeeService = employeeService;
     }
 
     @Transactional
@@ -147,7 +154,7 @@ public class PharmacyService {
 
     @Transactional
     public PharmacyInfo updatePharmacyInfo(
-            PharmacyInfo pharmacyInfo, @AuthenticationPrincipal User user) {
+            @NotNull PharmacyInfo pharmacyInfo, @AuthenticationPrincipal User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyInfo.getId());
         if (pharmacyInfo.getName() != null && !pharmacyInfo.getName().isEmpty()) {
             pharmacy.setName(pharmacyInfo.getName());
@@ -174,80 +181,135 @@ public class PharmacyService {
     }
 
     @Transactional
-    public PharmacyDrugInfo addDrugToPharmacy(PharmacyDrugCreationRequest id, User user) {
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(id.getPharmacyId());
-        Drug drug = drugService.getDrugByIdOrThrow(id.getDrugId());
-        PharmacyDrug pharmacyDrug = new PharmacyDrug(drug, pharmacy, id.getExpiryDate(), user);
-        pharmacyDrug.setPrice(id.getPrice());
-        pharmacyDrug.setStock(id.getStock());
+    public PharmacyDrugInfo addDrugToPharmacy(PharmacyDrugCreationRequest request, User user) {
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(request.getPharmacyId());
+        Drug drug = drugService.getDrugByIdOrThrow(request.getDrugId());
+        PharmacyDrug pharmacyDrug = new PharmacyDrug();
+        pharmacyDrug.setDrug(drug);
+        pharmacyDrug.setPharmacy(pharmacy);
+        pharmacyDrug.setExpiryDate(request.getExpiryDate());
+        pharmacyDrug.setPrice(drug.getFullPrice());
+        pharmacyDrug.setStock(request.getStock());
+        pharmacyDrug.setAddedBy(user);
         pharmacyDrug = pharmacyDrugRepository.save(pharmacyDrug);
         return modelMapper.map(pharmacyDrug, PharmacyDrugInfo.class);
     }
 
-    public List<PharmacyDrugInfo> getDrugsByPharmacy(Integer pharmacyId) {
-        List<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId);
-        return drugs.stream()
-                .map(drug -> modelMapper.map(drug, PharmacyDrugInfo.class))
-                .toList();
+    public PharmacyDrug getPharmacyDrugByIdOrThrow(Integer id) {
+        Optional<PharmacyDrug> pharmacyDrug = pharmacyDrugRepository.findById(id);
+        if (pharmacyDrug.isPresent()) {
+            return pharmacyDrug.get();
+        }
+        throw new PharmacyDrugNotFoundException(id);
     }
 
-    public PharmacyDrug getPharmacyDrugByIdOrThrow(PharmacyDrugId id) {
-        Optional<PharmacyDrug> pdOpt = pharmacyDrugRepository.findById(id);
-        if (pdOpt.isPresent()) {
-            return pdOpt.get();
-        }
-
-        PharmacyDrugNotFoundException exception = new PharmacyDrugNotFoundException();
-        exception.setId(id);
-        if (!drugService.existsById(id.getDrugId())) {
-            exception.setWhy(PharmacyDrugNotFoundException.Why.NONEXISTENT_DRUG);
-        }
-        if (!existsPharmacyById(id.getPharmacyId()) && exception.getWhy() == null) {
-            exception.setWhy(PharmacyDrugNotFoundException.Why.NONEXISTENT_PHARMACY);
-        }
-
-        if (!pharmacyDrugRepository.existsPharmacyDrugByPharmacy_IdAndDrug_Id(
-                id.getPharmacyId(), id.getDrugId())) {
-            exception.setWhy(PharmacyDrugNotFoundException.Why.NONEXISTENT_DRUG_PHARMACY);
-        }
-
-        if (exception.getWhy() == null) {
-            exception.setWhy(PharmacyDrugNotFoundException.Why.NONEXISTENT_WITH_EXPIRY_DATE);
-        }
-        throw exception;
+    public PharmacyDrugInfo getPharmacyDrugInfoById(Integer id) {
+        return modelMapper.map(getPharmacyDrugByIdOrThrow(id), PharmacyDrugInfo.class);
     }
 
     @Transactional
-    public PharmacyDrugInfo updateStock(PharmacyDrugId id, Integer addedStock, User user) {
-        PharmacyDrug drug = getPharmacyDrugByIdOrThrow(id);
-        drug.setStock(drug.getStock() + addedStock);
-        drug = pharmacyDrugRepository.save(drug);
-        return modelMapper.map(drug, PharmacyDrugInfo.class);
-    }
-
-    @Transactional
-    public PharmacyDrugInfo updatePrice(PharmacyDrugId id, Float newPrice, User user) {
-        PharmacyDrug drug = getPharmacyDrugByIdOrThrow(id);
-        drug.setPrice(newPrice);
-        drug = pharmacyDrugRepository.save(drug);
-        return modelMapper.map(drug, PharmacyDrugInfo.class);
-    }
-
-    @Transactional
-    public void deleteDrug(PharmacyDrugId id) {
+    public void removeDrugFromPharmacy(Integer id, User user) {
         pharmacyDrugRepository.deleteById(id);
+    }
+
+    private List<PharmacyDrugInfo> streamAndReturn(Page<PharmacyDrug> drugs) {
+        if (drugs.isEmpty()) {
+            return List.of();
+        }
+        return drugs.stream().map(drug -> modelMapper.map(drug, PharmacyDrugInfo.class)).toList();
+    }
+
+    public List<PharmacyDrugInfo> getDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getExpiredDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateAfter(
+                        pharmacyId, LocalDate.now(), pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getNonExpiredDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateBefore(
+                        pharmacyId, LocalDate.now(), pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getNearExpiredDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Short expiryThreshold = getPharmacyByIdOrThrow(pharmacyId).getExpiryThreshold();
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateAfter(
+                        pharmacyId, LocalDate.now().plusDays(expiryThreshold), pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getNearExpiredDrugsAfterNDayByPharmacyId(
+            Integer pharmacyId, Integer N, Pageable pageable) {
+        Page<PharmacyDrug> pharmacyDrugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateAfter(
+                        pharmacyId, LocalDate.now().plusDays(N), pageable);
+        return streamAndReturn(pharmacyDrugs);
+    }
+
+    public List<PharmacyDrugInfo> getOutOfStockDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsLessThanEqual(
+                        pharmacyId, 0, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getInStockDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsGreaterThanEqual(
+                        pharmacyId, 1, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getDrugsWithStockOverNByPharmacyId(
+            Integer pharmacyId, Integer N, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsGreaterThanEqual(
+                        pharmacyId, N, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getDrugsWithStockLessThanNByPharmacyId(
+            Integer pharmacyId, Integer N, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsLessThanEqual(
+                        pharmacyId, N, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> searchDrugInPharmacy(
+            String drugName, Integer pharmacyId, Pageable pageable) {
+        String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
+        Page<PharmacyDrug> pharmacyDrugs =
+                pharmacyDrugRepository.searchByDrugName(
+                        pharmacyId, drugName, formattedName, pageable);
+        if (pharmacyDrugs.isEmpty()) {
+            return List.of();
+        }
+        return streamAndReturn(pharmacyDrugs);
     }
 
     public Boolean pharmacyHasDrug(Integer pharmacyId, Integer drugId) {
         return pharmacyDrugRepository.existsPharmacyDrugByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
     }
 
-
-    public List<PharmacyInfo> searchByName(String pharmacyName, int page, int size) {
+    public List<PharmacyInfo> searchByName(String pharmacyName, Pageable pageable) {
         String formattedName = pharmacyName.trim().toLowerCase().replace(' ', '&');
         return pharmacyRepository
-                .searchPharmacyByNamePaginated(
-                        pharmacyName, formattedName, PageRequest.of(page, size))
+                .searchPharmacyByNamePaginated(pharmacyName, formattedName, pageable)
                 .stream()
                 .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
                 .toList();
@@ -279,10 +341,28 @@ public class PharmacyService {
 
     @Transactional
     public List<Employee> addEmployeeToPharmacy(Integer pharmacyId, Integer employeeId, User user) {
-        Employee employee = employeeRepository.getEmployeeById(employeeId);
+        Employee employee = employeeService.getEmployeeByIdOrThrow(employeeId);
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
         pharmacy.getEmployees().add(employee);
         pharmacy = pharmacyRepository.save(pharmacy);
         return pharmacy.getEmployees().stream().toList();
+    }
+
+    public List<EmployeeInfo> getEmployeesByPharmacyId(Integer pharmacyId, Pageable pageable) {
+        Page<Employee> employees =
+                employeeRepository.getEmployeesByPharmacy_Id(pharmacyId, pageable);
+        return employees.stream().map(emp -> modelMapper.map(emp, EmployeeInfo.class)).toList();
+    }
+
+    @Transactional
+    public void removeEmployeeFromPharmacy(Integer pharmacyId, Integer employeeId, User user) {
+        Optional<Employee> employee =
+                employeeRepository.getEmployeeByIdAndPharmacy_Id(employeeId, pharmacyId);
+        if (employee.isPresent()) {
+            Employee employeeToRemove = employee.get();
+            employeeToRemove.setPharmacy(null);
+            employeeRepository.save(employeeToRemove);
+            return;
+        }
     }
 }

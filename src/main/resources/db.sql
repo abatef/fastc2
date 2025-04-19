@@ -40,11 +40,12 @@ create table pharmacies
     constraint fk_main_branch foreign key (main_branch) references pharmacies (id) on delete cascade
 );
 
-create table pharmacy_shifts(
+create table pharmacy_shifts
+(
     pharmacy_id int not null,
-    shift_id int not null,
-    constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies(id) on delete cascade,
-    constraint fk_shift_id foreign key (shift_id) references shifts(id) on delete cascade,
+    shift_id    int not null,
+    constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies (id) on delete cascade,
+    constraint fk_shift_id foreign key (shift_id) references shifts (id) on delete cascade,
     primary key (pharmacy_id, shift_id)
 );
 
@@ -171,6 +172,7 @@ ALTER TABLE drugs
 
 create table pharmacy_drug
 (
+    id          serial primary key,
     drug_id     int  not null,
     pharmacy_id int  not null,
     added_by    int  not null,
@@ -179,31 +181,43 @@ create table pharmacy_drug
     expiry_date date not null default current_date + 100,
     created_at  timestamp     default current_timestamp,
     updated_at  timestamp     default current_timestamp,
+
     constraint fk_drug_id foreign key (drug_id) references drugs (id) on delete cascade,
     constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies (id) on delete cascade,
-    constraint fk_added_by foreign key (added_by) references users (id) on delete no action,
-    primary key (drug_id, pharmacy_id, expiry_date)
+    constraint fk_added_by foreign key (added_by) references users (id) on delete no action
 );
+
+
+alter table pharmacy_drug
+    add column receipt_id int;
 
 
 create table receipt
 (
-    id               serial primary key,
-    drug_id          int      not null,
-    pharmacy_id      int      not null,
+    id         serial primary key,
+    cashier    int not null,
+    created_at timestamp default current_timestamp,
+    updated_at timestamp default current_timestamp,
+
+    constraint fk_cashier foreign key (cashier) references users (id) on delete set null
+);
+
+create table sales_receipt
+(
+    receipt_id       int      not null,
+    pharmacy_drug_id int      not null,
     quantity         int      not null default 1,
     amount_due       real     not null default 0.0,
     discount         real,
-    cashier          int      not null,
     units            smallint not null default 0,
-    packs            smallint not null default 0,
-    drug_expiry_date date,
-    created_at       timestamp         default current_timestamp,
-    updated_at       timestamp         default current_timestamp,
-    constraint fk_pharmacy_drug foreign key (drug_id, pharmacy_id, drug_expiry_date)
-        references pharmacy_drug (drug_id, pharmacy_id, expiry_date) on delete set null,
-    constraint fk_cashier foreign key (cashier) references users (id) on delete set null
+    pack             smallint not null default 0,
+    constraint fk_receipt_id foreign key (receipt_id) references receipt(id) on delete cascade,
+    constraint fk_pd_id foreign key (pharmacy_drug_id) references pharmacy_drug(id) on delete cascade,
+    primary key (receipt_id, pharmacy_drug_id)
 );
+
+alter table pharmacy_drug
+    add constraint fk_receipt_id foreign key (receipt_id) references receipt (id);
 
 alter table receipt
     add column shift_id int not null;

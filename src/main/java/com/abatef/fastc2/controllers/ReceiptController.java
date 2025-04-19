@@ -24,7 +24,7 @@ public class ReceiptController {
 
     @PostMapping
     public ResponseEntity<ReceiptInfo> createANewReceipt(
-            @RequestBody ReceiptCreationRequest request, @AuthenticationPrincipal User user) {
+            @RequestBody List<ReceiptCreationRequest> request, @AuthenticationPrincipal User user) {
         ReceiptInfo info = receiptService.createANewReceipt(request, user);
         return ResponseEntity.ok(info);
     }

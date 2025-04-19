@@ -3,11 +3,13 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
 import com.abatef.fastc2.exceptions.EmployeeNotFoundException;
+import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.Employee;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.repositories.EmployeeRepository;
+import com.abatef.fastc2.repositories.PharmacyRepository;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,18 +21,20 @@ import java.util.Optional;
 @Service
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
+    private final PharmacyRepository pharmacyRepository;
     private final UserService userService;
-    private final PharmacyService pharmacyService;
     private final ShiftService shiftService;
     private final ModelMapper modelMapper;
 
     public EmployeeService(
             EmployeeRepository employeeRepository,
             UserService userService,
-            PharmacyService pharmacyService, ShiftService shiftService, ModelMapper modelMapper) {
+            PharmacyRepository pharmacyRepository,
+            ShiftService shiftService,
+            ModelMapper modelMapper) {
         this.employeeRepository = employeeRepository;
         this.userService = userService;
-        this.pharmacyService = pharmacyService;
+        this.pharmacyRepository = pharmacyRepository;
         this.shiftService = shiftService;
         this.modelMapper = modelMapper;
     }
@@ -44,7 +48,10 @@ public class EmployeeService {
         employee.setSalary(request.getSalary());
         employee.setAge(request.getAge());
         employee.setGender(request.getGender());
-        Pharmacy pharmacy = pharmacyService.getPharmacyByIdOrThrow(request.getPharmacyId());
+        Pharmacy pharmacy =
+                pharmacyRepository
+                        .getPharmacyById(request.getPharmacyId())
+                        .orElseThrow(() -> new PharmacyNotFoundException(request.getPharmacyId()));
         employee.setPharmacy(pharmacy);
         employee = employeeRepository.save(employee);
         return modelMapper.map(employee, EmployeeInfo.class);

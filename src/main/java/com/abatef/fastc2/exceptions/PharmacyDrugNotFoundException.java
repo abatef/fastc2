@@ -1,7 +1,5 @@
 package com.abatef.fastc2.exceptions;
 
-import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,16 +8,20 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 public class PharmacyDrugNotFoundException extends RuntimeException {
-    private PharmacyDrugId id;
+    private Integer id;
     private Why why;
 
     public PharmacyDrugNotFoundException(String message) {
         super(message);
     }
 
-    public PharmacyDrugNotFoundException(PharmacyDrugId id, Why why) {
+    public PharmacyDrugNotFoundException(Integer id, Why why) {
         this.id = id;
         this.why = why;
+    }
+
+    public PharmacyDrugNotFoundException(Integer id) {
+        this.id = id;
     }
 
     public enum Why {

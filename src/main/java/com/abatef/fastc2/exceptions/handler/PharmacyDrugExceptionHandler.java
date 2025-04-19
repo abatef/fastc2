@@ -4,7 +4,6 @@ import com.abatef.fastc2.enums.ErrorType;
 import com.abatef.fastc2.exceptions.DrugNotFoundException;
 import com.abatef.fastc2.exceptions.ErrorResponse;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
-import com.abatef.fastc2.models.pharmacy.PharmacyDrugId;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -41,7 +40,7 @@ public class PharmacyDrugExceptionHandler {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class PharmacyDrugError {
-        PharmacyDrugId id;
+        Integer id;
         String message;
         PharmacyDrugNotFoundException.Why why;
     }
