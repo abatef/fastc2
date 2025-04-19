@@ -1,17 +1,17 @@
 package com.abatef.fastc2.models.pharmacy;
 
+import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.User;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -34,11 +34,14 @@ public class Receipt {
     @JoinColumn(name = "cashier", nullable = false)
     private User cashier;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ReceiptStatus status;
+
+    @CreationTimestamp
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
 

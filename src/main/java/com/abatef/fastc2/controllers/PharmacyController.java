@@ -4,6 +4,7 @@ import com.abatef.fastc2.dtos.drug.PharmacyDrugCreationRequest;
 import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
 import com.abatef.fastc2.models.User;
@@ -157,7 +158,7 @@ public class PharmacyController {
 
     @PatchMapping
     public ResponseEntity<PharmacyInfo> updatePharmacyInfo(
-            @RequestBody PharmacyInfo pharmacyInfo, @AuthenticationPrincipal User user) {
+            @RequestBody PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
         PharmacyInfo info = pharmacyService.updatePharmacyInfo(pharmacyInfo, user);
         return ResponseEntity.ok(info);
     }

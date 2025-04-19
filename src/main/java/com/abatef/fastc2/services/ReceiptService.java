@@ -3,6 +3,7 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
 import com.abatef.fastc2.dtos.receipt.ReceiptInfo;
 import com.abatef.fastc2.dtos.receipt.ReceiptItemInfo;
+import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.exceptions.ReceiptNotFoundException;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
@@ -43,7 +44,8 @@ public class ReceiptService {
             UserService userService,
             ModelMapper modelMapper,
             ShiftService shiftService,
-            ReceiptItemRepository receiptItemRepository, PharmacyDrugRepository pharmacyDrugRepository) {
+            ReceiptItemRepository receiptItemRepository,
+            PharmacyDrugRepository pharmacyDrugRepository) {
         this.receiptRepository = receiptRepository;
         this.pharmacyService = pharmacyService;
         this.userService = userService;
@@ -57,6 +59,7 @@ public class ReceiptService {
     public ReceiptInfo createANewReceipt(List<ReceiptCreationRequest> requests, User cashier) {
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
+        receipt.setStatus(ReceiptStatus.ISSUED);
         receiptRepository.save(receipt);
         for (ReceiptCreationRequest request : requests) {
             PharmacyDrug drug =
@@ -87,7 +90,7 @@ public class ReceiptService {
         return info;
     }
 
-    public Receipt getReceiptById(Integer id) {
+    public Receipt getReceiptByIdOrThrow(Integer id) {
         Optional<Receipt> receipt = receiptRepository.findById(id);
         if (receipt.isPresent()) {
             return receipt.get();
@@ -96,13 +99,30 @@ public class ReceiptService {
     }
 
     public ReceiptInfo getReceiptInfoById(Integer id) {
-        return modelMapper.map(getReceiptById(id), ReceiptInfo.class);
+        return modelMapper.map(getReceiptByIdOrThrow(id), ReceiptInfo.class);
     }
 
     private List<ReceiptInfo> streamAndMap(List<Receipt> receipts) {
         return receipts.stream()
                 .map(receipt -> modelMapper.map(receipt, ReceiptInfo.class))
                 .toList();
+    }
+
+
+    // TODO: Complete This
+    @Transactional
+    public ReceiptInfo updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {
+        Receipt receipt = getReceiptByIdOrThrow(id);
+        receipt.setStatus(status);
+        receiptRepository.save(receipt);
+        if (status == ReceiptStatus.RETURNED) {
+            for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
+                PharmacyDrug pharmacyDrug = receiptItem.getPharmacyDrug();
+                pharmacyDrug.setStock(pharmacyDrug.getStock() + receiptItem.getPack());
+                pharmacyDrugRepository.save(pharmacyDrug);
+            }
+        }
+        return modelMapper.map(receipt, ReceiptInfo.class);
     }
 
     public List<ReceiptInfo> getReceiptsByCashierId(Integer id, Pageable pageable) {
@@ -121,8 +141,7 @@ public class ReceiptService {
     }
 
     public List<ReceiptInfo> getReceiptsByShiftId(Integer id, Pageable pageable) {
-        Page<Receipt> receipts = Page.empty();
-
+        Page<Receipt> receipts = receiptRepository.findReceiptsByShiftId(id, pageable);
         return streamAndMap(receipts.getContent());
     }
 

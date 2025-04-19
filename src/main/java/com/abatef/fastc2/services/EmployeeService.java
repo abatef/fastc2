@@ -2,6 +2,7 @@ package com.abatef.fastc2.services;
 
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
+import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
 import com.abatef.fastc2.exceptions.EmployeeNotFoundException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.Employee;
@@ -71,8 +72,8 @@ public class EmployeeService {
 
     @PreAuthorize("hasRole('OWNER')")
     @Transactional
-    public EmployeeInfo updateEmployee(EmployeeInfo employeeInfo, User principal) {
-        Employee employee = getEmployeeByIdOrThrow(employeeInfo.getUser().getId());
+    public EmployeeInfo updateEmployee(EmployeeUpdateRequest employeeInfo, User principal) {
+        Employee employee = getEmployeeByIdOrThrow(employeeInfo.getId());
         if (employeeInfo.getSalary() != null) {
             employee.setSalary(employeeInfo.getSalary());
         }
@@ -90,8 +91,8 @@ public class EmployeeService {
             employee.setShift(shift);
         }
 
-        if (employeeInfo.getUser().getRole() != null) {
-            employee.getUser().setRole(employeeInfo.getUser().getRole());
+        if (employeeInfo.getRole() != null) {
+            employee.getUser().setRole(employeeInfo.getRole());
         }
         employee = employeeRepository.save(employee);
         return modelMapper.map(employee, EmployeeInfo.class);

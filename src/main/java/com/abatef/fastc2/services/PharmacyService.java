@@ -5,6 +5,7 @@ import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
 import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
@@ -25,6 +26,7 @@ import jakarta.validation.constraints.NotNull;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -152,9 +154,10 @@ public class PharmacyService {
         return modelMapper.map(pharmacy, PharmacyInfo.class);
     }
 
+    @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public PharmacyInfo updatePharmacyInfo(
-            @NotNull PharmacyInfo pharmacyInfo, @AuthenticationPrincipal User user) {
+            @NotNull PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyInfo.getId());
         if (pharmacyInfo.getName() != null && !pharmacyInfo.getName().isEmpty()) {
             pharmacy.setName(pharmacyInfo.getName());
@@ -166,10 +169,6 @@ public class PharmacyService {
 
         if (pharmacyInfo.getLocation() != null) {
             pharmacy.setLocation(pharmacyInfo.getLocation().toPoint());
-        }
-
-        if (pharmacyInfo.getOwner() != null) {
-            pharmacy.setOwner(userService.getUserById(pharmacyInfo.getOwner().getId()));
         }
 
         if (pharmacyInfo.getExpiryThreshold() != null) {

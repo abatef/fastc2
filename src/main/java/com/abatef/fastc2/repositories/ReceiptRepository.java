@@ -39,6 +39,12 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
     Page<Receipt> findReceiptsByPharmacyId(@NotNull Integer id, Pageable pageable);
 
     @Query(
+            value = "select r from Receipt r where r.cashier.employee.shift.id = :shiftId",
+            countQuery =
+                    "select count(*) from Receipt r where r.cashier.employee.shift.id = :shiftId")
+    Page<Receipt> findReceiptsByShiftId(@NotNull Integer shiftId, Pageable pageable);
+
+    @Query(
             value =
                     "select r from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"

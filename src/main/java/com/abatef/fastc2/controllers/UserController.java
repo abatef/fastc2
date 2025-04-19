@@ -36,7 +36,7 @@ public class UserController {
     }
 
     @GetMapping("/pharmacy")
-    public ResponseEntity<PharmacyInfo> getUser(@AuthenticationPrincipal User user) {
+    public ResponseEntity<PharmacyInfo> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
         PharmacyInfo info = userService.getPharmacyInfoByUser(user);
         if (info == null) {
             return ResponseEntity.notFound().build();

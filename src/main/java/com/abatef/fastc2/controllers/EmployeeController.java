@@ -2,6 +2,8 @@ package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
+import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
+import com.abatef.fastc2.models.Employee;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.EmployeeService;
 
@@ -33,7 +35,7 @@ public class EmployeeController {
 
     @PatchMapping
     public ResponseEntity<EmployeeInfo> updateEmployee(
-            @RequestBody EmployeeInfo employee, @AuthenticationPrincipal User user) {
+            @RequestBody EmployeeUpdateRequest employee, @AuthenticationPrincipal User user) {
         EmployeeInfo info = employeeService.updateEmployee(employee, user);
         return ResponseEntity.ok(info);
     }

@@ -2,10 +2,11 @@ package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
 import com.abatef.fastc2.dtos.receipt.ReceiptInfo;
+import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.ReceiptService;
 
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class ReceiptController {
         return ResponseEntity.ok(info);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{receipt_id}")
     public ResponseEntity<ReceiptInfo> getReceiptById(@PathVariable("id") Integer id) {
         ReceiptInfo info = receiptService.getReceiptInfoById(id);
         return ResponseEntity.ok(info);
@@ -42,44 +43,13 @@ public class ReceiptController {
         return ResponseEntity.ok(receipts);
     }
 
-    @GetMapping("/drug/{id}")
-    public ResponseEntity<List<ReceiptInfo>> getReceiptsByDrugId(
-            @PathVariable Integer id,
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        List<ReceiptInfo> receipts =
-                receiptService.getReceiptsByDrugId(id, PageRequest.of(page, size));
-        return noContentOrReturn(receipts);
-    }
-
-    @GetMapping("/cashier/{id}")
-    public ResponseEntity<List<ReceiptInfo>> getReceiptsByCashierId(
-            @PathVariable Integer id,
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        List<ReceiptInfo> receipts =
-                receiptService.getReceiptsByCashierId(id, PageRequest.of(page, size));
-        return noContentOrReturn(receipts);
-    }
-
-    @GetMapping("/pharmacy/{id}")
-    public ResponseEntity<List<ReceiptInfo>> getReceiptsByPharmacyId(
-            @PathVariable Integer id,
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        List<ReceiptInfo> receipts =
-                receiptService.getReceiptsByPharmacyId(id, PageRequest.of(page, size));
-        return noContentOrReturn(receipts);
-    }
-
-    @GetMapping("/shift/{id}")
-    public ResponseEntity<List<ReceiptInfo>> getReceiptsByShiftId(
-            @PathVariable Integer id,
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        List<ReceiptInfo> receipts =
-                receiptService.getReceiptsByShiftId(id, PageRequest.of(page, size));
-        return noContentOrReturn(receipts);
+    @PatchMapping("/{receipt_id}/status")
+    public ResponseEntity<ReceiptInfo> updateReceiptStatus(
+            @PathVariable("receipt_id") Integer id,
+            @RequestParam ReceiptStatus status,
+            @AuthenticationPrincipal User user) {
+        ReceiptInfo info = receiptService.updateReceiptStatus(id, status, user);
+        return ResponseEntity.ok(info);
     }
 
     @GetMapping("/filter")
@@ -90,17 +60,10 @@ public class ReceiptController {
             @RequestParam(value = "shift_id", required = false) Integer shiftId,
             @RequestParam(value = "from_date", required = false) LocalDate fromDate,
             @RequestParam(value = "to_date", required = false) LocalDate toDate,
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+            Pageable pageable) {
         List<ReceiptInfo> receipts =
                 receiptService.applyAllFilters(
-                        cashierId,
-                        drugId,
-                        pharmacyId,
-                        shiftId,
-                        fromDate,
-                        toDate,
-                        PageRequest.of(page, size));
+                        cashierId, drugId, pharmacyId, shiftId, fromDate, toDate, pageable);
         return noContentOrReturn(receipts);
     }
 }

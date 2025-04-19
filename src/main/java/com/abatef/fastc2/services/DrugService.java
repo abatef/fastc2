@@ -2,6 +2,7 @@ package com.abatef.fastc2.services;
 
 import com.abatef.fastc2.dtos.drug.DrugCreationRequest;
 import com.abatef.fastc2.dtos.drug.DrugInfo;
+import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.exceptions.DrugNotFoundException;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
@@ -57,7 +58,7 @@ public class DrugService {
     }
 
     @Transactional
-    public DrugInfo updateDrugInfo(DrugInfo info, User user) {
+    public DrugInfo updateDrugInfo(DrugUpdateRequest info, User user) {
         Drug drug = getDrugByIdOrThrow(info.getId());
         if (info.getName() != null) {
             drug.setName(info.getName());
@@ -72,11 +73,6 @@ public class DrugService {
 
         if (info.getUnits() != null) {
             drug.setUnits(info.getUnits());
-        }
-
-        if (info.getCreatedBy() != null) {
-            User newUser = userService.getUserById(info.getCreatedBy().getId());
-            drug.setCreatedBy(newUser);
         }
 
         drug = drugRepository.save(drug);

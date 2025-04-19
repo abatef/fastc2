@@ -188,19 +188,19 @@ create table pharmacy_drug
 );
 
 
-alter table pharmacy_drug
-    add column receipt_id int;
 
 
 create table receipt
 (
     id         serial primary key,
     cashier    int not null,
+    status     text,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp,
 
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
+
 
 create table sales_receipt
 (
@@ -215,9 +215,6 @@ create table sales_receipt
     constraint fk_pd_id foreign key (pharmacy_drug_id) references pharmacy_drug(id) on delete cascade,
     primary key (receipt_id, pharmacy_drug_id)
 );
-
-alter table pharmacy_drug
-    add constraint fk_receipt_id foreign key (receipt_id) references receipt (id);
 
 alter table receipt
     add column shift_id int not null;

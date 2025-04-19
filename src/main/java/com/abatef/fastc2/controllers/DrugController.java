@@ -2,6 +2,7 @@ package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.drug.DrugCreationRequest;
 import com.abatef.fastc2.dtos.drug.DrugInfo;
+import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.DrugService;
@@ -40,7 +41,7 @@ public class DrugController {
 
     @PatchMapping
     public ResponseEntity<DrugInfo> updateDrugInfo(
-            @RequestBody DrugInfo info, @AuthenticationPrincipal User user) {
+            @RequestBody DrugUpdateRequest info, @AuthenticationPrincipal User user) {
         DrugInfo drug = drugService.updateDrugInfo(info, user);
         return ResponseEntity.ok(drug);
     }
