@@ -5,6 +5,7 @@ import com.abatef.fastc2.dtos.drug.DrugInfo;
 import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.repositories.UserRepository;
 import com.abatef.fastc2.services.DrugService;
 
 import org.modelmapper.ModelMapper;
@@ -20,10 +21,12 @@ import java.util.List;
 public class DrugController {
     private final DrugService drugService;
     private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
-    public DrugController(DrugService drugService, ModelMapper modelMapper) {
+    public DrugController(DrugService drugService, ModelMapper modelMapper, UserRepository userRepository) {
         this.drugService = drugService;
         this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -31,6 +34,13 @@ public class DrugController {
             @RequestBody DrugCreationRequest request, @AuthenticationPrincipal User user) {
         Drug drug = drugService.createNewDrug(request, user);
         return ResponseEntity.ok(drug);
+    }
+
+    @PostMapping("/fill")
+    public ResponseEntity<DrugInfo> fillDB(@RequestBody DrugCreationRequest request) {
+        User user = userRepository.getUserById(1).get();
+        Drug drug = drugService.createNewDrug(request, user);
+        return ResponseEntity.ok(modelMapper.map(drug, DrugInfo.class));
     }
 
     @GetMapping("/{id}")
