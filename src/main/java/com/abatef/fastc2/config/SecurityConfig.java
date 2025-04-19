@@ -69,7 +69,7 @@ public class SecurityConfig {
                                     .authenticated();
                             request.requestMatchers("/api/v1/drugs/search", "/api/v1/drugs/fill")
                                     .permitAll()
-                                    .requestMatchers("api/v1/drugs/**")
+                                    .requestMatchers("/api/v1/drugs/**")
                                     .authenticated();
                             request.requestMatchers(
                                             "/api/v1/auth/login",
