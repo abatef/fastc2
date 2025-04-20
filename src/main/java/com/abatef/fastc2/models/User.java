@@ -34,7 +34,7 @@ public class User implements UserDetails {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "name", nullable = false, length = Integer.MAX_VALUE)
+    @Column(name = "name", length = Integer.MAX_VALUE)
     private String name;
 
     @Column(name = "username", nullable = false)
