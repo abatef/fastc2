@@ -3,6 +3,7 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
 import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
+import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.exceptions.EmployeeNotFoundException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.Employee;
@@ -43,6 +44,7 @@ public class EmployeeService {
     @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public EmployeeInfo createNewEmployee(EmployeeCreationRequest request, User principal) {
+        request.getUser().setRole(UserRole.CASHIER);
         User userInfo = userService.registerUser(request.getUser());
         Employee employee = new Employee();
         employee.setUser(userInfo);

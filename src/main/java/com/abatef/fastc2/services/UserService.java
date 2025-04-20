@@ -57,6 +57,7 @@ public class UserService {
         user.setFbUid(null);
         user.setFbUser(false);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(request.getRole());
         user = userRepository.save(user);
         return user;
     }
