@@ -3,6 +3,7 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
 import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.DuplicateValueException;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
@@ -57,7 +58,7 @@ public class UserService {
         user.setFbUid(null);
         user.setFbUser(false);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(request.getRole());
+        user.setRole(UserRole.OWNER);
         user = userRepository.save(user);
         return user;
     }
