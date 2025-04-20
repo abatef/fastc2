@@ -42,9 +42,6 @@ public class UserService {
         if (userRepository.existsUserByEmail(request.getEmail())) {
             throw new DuplicateValueException(ValueType.EMAIL, request.getEmail());
         }
-        if (userRepository.existsUserByPhone(request.getPhone())) {
-            throw new DuplicateValueException(ValueType.PHONE, request.getPhone());
-        }
     }
 
     @Transactional
