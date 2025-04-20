@@ -44,7 +44,7 @@ public class EmployeeService {
     @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public EmployeeInfo createNewEmployee(EmployeeCreationRequest request, User principal) {
-        request.getUser().setRole(UserRole.CASHIER);
+        request.getUser().setManagedUser(true);
         User userInfo = userService.registerUser(request.getUser());
         Employee employee = new Employee();
         employee.setUser(userInfo);

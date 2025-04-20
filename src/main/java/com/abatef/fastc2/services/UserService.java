@@ -54,11 +54,14 @@ public class UserService {
         }
         if (request.getManagedUser()) {
             user.setManagedUser(true);
+            user.setRole(UserRole.CASHIER);
+        } else {
+            user.setRole(UserRole.OWNER);
         }
         user.setFbUid(null);
         user.setFbUser(false);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(UserRole.OWNER);
+
         user = userRepository.save(user);
         return user;
     }
