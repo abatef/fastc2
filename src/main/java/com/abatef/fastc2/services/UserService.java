@@ -45,7 +45,7 @@ public class UserService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public User registerUser(UserCreationRequest request) throws DuplicateValueException {
         uniqueUser(request);
         User user = modelMapper.map(request, User.class);
@@ -61,7 +61,6 @@ public class UserService {
         user.setFbUid(null);
         user.setFbUser(false);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         user = userRepository.save(user);
         return user;
     }
