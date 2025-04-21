@@ -3,9 +3,10 @@ package com.abatef.fastc2.controllers;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
 import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
-import com.abatef.fastc2.models.Employee;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.EmployeeService;
+
+import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,7 +23,8 @@ public class EmployeeController {
 
     @PostMapping
     public ResponseEntity<EmployeeInfo> createEmployee(
-            @RequestBody EmployeeCreationRequest employee, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody EmployeeCreationRequest employee,
+            @AuthenticationPrincipal User user) {
         EmployeeInfo info = employeeService.createNewEmployee(employee, user);
         return ResponseEntity.ok(info);
     }
@@ -35,7 +37,8 @@ public class EmployeeController {
 
     @PatchMapping
     public ResponseEntity<EmployeeInfo> updateEmployee(
-            @RequestBody EmployeeUpdateRequest employee, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody EmployeeUpdateRequest employee,
+            @AuthenticationPrincipal User user) {
         EmployeeInfo info = employeeService.updateEmployee(employee, user);
         return ResponseEntity.ok(info);
     }

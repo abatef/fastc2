@@ -12,6 +12,8 @@ import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,7 +34,8 @@ public class PharmacyController {
 
     @PostMapping
     public ResponseEntity<PharmacyInfo> createPharmacy(
-            @RequestBody PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody PharmacyCreationRequest request,
+            @AuthenticationPrincipal User user) {
         PharmacyInfo info = pharmacyService.createPharmacy(request, user);
         return ResponseEntity.ok(info);
     }
@@ -62,7 +65,8 @@ public class PharmacyController {
 
     @PostMapping("/add")
     public ResponseEntity<PharmacyDrugInfo> addDrugToPharmacy(
-            @RequestBody PharmacyDrugCreationRequest request, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody PharmacyDrugCreationRequest request,
+            @AuthenticationPrincipal User user) {
         PharmacyDrugInfo drug = pharmacyService.addDrugToPharmacy(request, user);
         return ResponseEntity.ok(drug);
     }
@@ -158,7 +162,7 @@ public class PharmacyController {
 
     @PatchMapping
     public ResponseEntity<PharmacyInfo> updatePharmacyInfo(
-            @RequestBody PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
         PharmacyInfo info = pharmacyService.updatePharmacyInfo(pharmacyInfo, user);
         return ResponseEntity.ok(info);
     }
@@ -201,7 +205,7 @@ public class PharmacyController {
     @PostMapping("/{pharmacy_id}/employees")
     public ResponseEntity<EmployeeInfo> addEmployeeToPharmacy(
             @PathVariable("pharmacy_id") Integer id,
-            @RequestBody EmployeeCreationRequest request,
+            @Valid @RequestBody EmployeeCreationRequest request,
             @AuthenticationPrincipal User user) {
         request.setPharmacyId(id);
         EmployeeInfo employee = employeeService.createNewEmployee(request, user);

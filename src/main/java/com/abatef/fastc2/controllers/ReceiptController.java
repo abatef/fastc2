@@ -6,6 +6,7 @@ import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.ReceiptService;
 
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,13 +26,13 @@ public class ReceiptController {
 
     @PostMapping
     public ResponseEntity<ReceiptInfo> createANewReceipt(
-            @RequestBody List<ReceiptCreationRequest> request, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody List<ReceiptCreationRequest> request, @AuthenticationPrincipal User user) {
         ReceiptInfo info = receiptService.createANewReceipt(request, user);
         return ResponseEntity.ok(info);
     }
 
     @GetMapping("/{receipt_id}")
-    public ResponseEntity<ReceiptInfo> getReceiptById(@PathVariable("id") Integer id) {
+    public ResponseEntity<ReceiptInfo> getReceiptById(@PathVariable("receipt_id") Integer id) {
         ReceiptInfo info = receiptService.getReceiptInfoById(id);
         return ResponseEntity.ok(info);
     }

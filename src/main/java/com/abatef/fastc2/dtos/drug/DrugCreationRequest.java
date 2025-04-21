@@ -30,6 +30,7 @@ public class DrugCreationRequest {
     @Schema(
             description = "Number of Units of the drug (e.g Number of Sachets)",
             requiredMode = Schema.RequiredMode.REQUIRED)
+    @Min(1)
     private Short units;
 
     @Min(1)

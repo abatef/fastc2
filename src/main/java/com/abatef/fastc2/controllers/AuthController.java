@@ -3,14 +3,18 @@ package com.abatef.fastc2.controllers;
 import com.abatef.fastc2.dtos.auth.JwtAuthenticationRequest;
 import com.abatef.fastc2.dtos.auth.JwtAuthenticationResponse;
 import com.abatef.fastc2.dtos.auth.RefreshTokenRequest;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
 import com.abatef.fastc2.dtos.user.UserCreationResponse;
 import com.abatef.fastc2.dtos.user.UserInfo;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.security.auth.RefreshToken;
 import com.abatef.fastc2.security.auth.RefreshTokenService;
+import com.abatef.fastc2.services.PharmacyService;
 import com.abatef.fastc2.services.UserService;
 import com.abatef.fastc2.utils.JwtUtil;
+
+import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +39,7 @@ public class AuthController {
     private final ModelMapper modelMapper;
 
     private final JwtUtil jwtUtil;
+    private final PharmacyService pharmacyService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -42,29 +47,31 @@ public class AuthController {
             RefreshTokenService refreshTokenService,
             UserService userService,
             ModelMapper modelMapper,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil, PharmacyService pharmacyService) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.refreshTokenService = refreshTokenService;
         this.userService = userService;
         this.modelMapper = modelMapper;
         this.jwtUtil = jwtUtil;
+        this.pharmacyService = pharmacyService;
     }
 
     @PostMapping("/signup")
     public ResponseEntity<UserCreationResponse> signup(
-            @RequestBody UserCreationRequest userCreationRequest) {
+            @Valid @RequestBody UserCreationRequest userCreationRequest) {
         User user = userService.registerUser(userCreationRequest);
+        PharmacyInfo pharmacyInfo = pharmacyService.createPharmacy(userCreationRequest.getPharmacy(), user);
         UserInfo userInfo = modelMapper.map(user, UserInfo.class);
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
         JwtAuthenticationResponse jwtResponse = login(request).getBody();
-        return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse));
+        return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse, pharmacyInfo));
     }
 
     @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> login(
-            @RequestBody JwtAuthenticationRequest request) {
+            @Valid @RequestBody JwtAuthenticationRequest request) {
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -79,7 +86,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<JwtAuthenticationResponse> refresh(
-            @RequestBody RefreshTokenRequest request) {
+            @Valid @RequestBody RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
         RefreshToken validToken = refreshTokenService.validateRefreshToken(refreshToken);
         UserDetails userDetails = userDetailsService.loadUserByUsername(validToken.getUsername());

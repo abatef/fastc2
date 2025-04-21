@@ -2,6 +2,7 @@ package com.abatef.fastc2.dtos.pharmacy;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -43,5 +44,7 @@ public class PharmacyCreationRequest {
     @Schema(
             description = "a global expiry threshold for the each pharmacy",
             requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull
+    @Min(0)
     private Short expiryThreshold;
 }

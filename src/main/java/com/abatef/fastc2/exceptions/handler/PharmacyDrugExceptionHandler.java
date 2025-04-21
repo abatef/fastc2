@@ -22,7 +22,7 @@ public class PharmacyDrugExceptionHandler {
         PharmacyDrugError error = new PharmacyDrugError();
         error.setId(e.getId());
         error.setMessage(e.getMessage());
-        error.setWhy(e.getWhy());
+        error.setWhy(PharmacyDrugNotFoundException.Why.NONEXISTENT_DRUG_PHARMACY);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 

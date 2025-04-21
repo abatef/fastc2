@@ -8,6 +8,8 @@ import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.UserRepository;
 import com.abatef.fastc2.services.DrugService;
 
+import jakarta.validation.Valid;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +25,8 @@ public class DrugController {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
 
-    public DrugController(DrugService drugService, ModelMapper modelMapper, UserRepository userRepository) {
+    public DrugController(
+            DrugService drugService, ModelMapper modelMapper, UserRepository userRepository) {
         this.drugService = drugService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
@@ -31,16 +34,9 @@ public class DrugController {
 
     @PostMapping
     public ResponseEntity<Drug> createDrug(
-            @RequestBody DrugCreationRequest request, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody DrugCreationRequest request, @AuthenticationPrincipal User user) {
         Drug drug = drugService.createNewDrug(request, user);
         return ResponseEntity.ok(drug);
-    }
-
-    @PostMapping("/fill")
-    public ResponseEntity<DrugInfo> fillDB(@RequestBody DrugCreationRequest request) {
-        User user = userRepository.getUserById(1).get();
-        Drug drug = drugService.createNewDrug(request, user);
-        return ResponseEntity.ok(modelMapper.map(drug, DrugInfo.class));
     }
 
     @GetMapping("/{id}")
@@ -51,7 +47,7 @@ public class DrugController {
 
     @PatchMapping
     public ResponseEntity<DrugInfo> updateDrugInfo(
-            @RequestBody DrugUpdateRequest info, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody DrugUpdateRequest info, @AuthenticationPrincipal User user) {
         DrugInfo drug = drugService.updateDrugInfo(info, user);
         return ResponseEntity.ok(drug);
     }
@@ -62,46 +58,45 @@ public class DrugController {
         return ResponseEntity.noContent().build();
     }
 
-//    @PatchMapping("/{id}/full-price")
-//    public ResponseEntity<DrugInfo> updateFullPrice(
-//            @PathVariable Integer id,
-//            @RequestParam("price") Float price,
-//            @AuthenticationPrincipal User user) {
-//        DrugInfo drugInfo = drugService.updateDrugPrice(id, price, user);
-//        return ResponseEntity.ok(drugInfo);
-//    }
-//
-//    @PatchMapping("/{id}/name")
-//    public ResponseEntity<DrugInfo> updateName(
-//            @PathVariable Integer id,
-//            @RequestParam("name") String name,
-//            @AuthenticationPrincipal User user) {
-//        DrugInfo drugInfo = drugService.updateDrugName(id, name, user);
-//        return ResponseEntity.ok(drugInfo);
-//    }
-//
-//    @PatchMapping("/{id}/form")
-//    public ResponseEntity<DrugInfo> updateForm(
-//            @PathVariable Integer id,
-//            @RequestParam("form") String form,
-//            @AuthenticationPrincipal User user) {
-//        DrugInfo drugInfo = drugService.updateDrugForm(id, form, user);
-//        return ResponseEntity.ok(drugInfo);
-//    }
-//
-//    @PatchMapping("/{id}/units")
-//    public ResponseEntity<DrugInfo> updateUnits(
-//            @PathVariable Integer id,
-//            @RequestParam("units") Short units,
-//            @AuthenticationPrincipal User user) {
-//        DrugInfo drugInfo = drugService.updateDrugUnits(id, units, user);
-//        return ResponseEntity.ok(drugInfo);
-//    }
+    //    @PatchMapping("/{id}/full-price")
+    //    public ResponseEntity<DrugInfo> updateFullPrice(
+    //            @PathVariable Integer id,
+    //            @RequestParam("price") Float price,
+    //            @AuthenticationPrincipal User user) {
+    //        DrugInfo drugInfo = drugService.updateDrugPrice(id, price, user);
+    //        return ResponseEntity.ok(drugInfo);
+    //    }
+    //
+    //    @PatchMapping("/{id}/name")
+    //    public ResponseEntity<DrugInfo> updateName(
+    //            @PathVariable Integer id,
+    //            @RequestParam("name") String name,
+    //            @AuthenticationPrincipal User user) {
+    //        DrugInfo drugInfo = drugService.updateDrugName(id, name, user);
+    //        return ResponseEntity.ok(drugInfo);
+    //    }
+    //
+    //    @PatchMapping("/{id}/form")
+    //    public ResponseEntity<DrugInfo> updateForm(
+    //            @PathVariable Integer id,
+    //            @RequestParam("form") String form,
+    //            @AuthenticationPrincipal User user) {
+    //        DrugInfo drugInfo = drugService.updateDrugForm(id, form, user);
+    //        return ResponseEntity.ok(drugInfo);
+    //    }
+    //
+    //    @PatchMapping("/{id}/units")
+    //    public ResponseEntity<DrugInfo> updateUnits(
+    //            @PathVariable Integer id,
+    //            @RequestParam("units") Short units,
+    //            @AuthenticationPrincipal User user) {
+    //        DrugInfo drugInfo = drugService.updateDrugUnits(id, units, user);
+    //        return ResponseEntity.ok(drugInfo);
+    //    }
 
     @GetMapping("/search")
     public ResponseEntity<List<DrugInfo>> searchDrugs(
-            @RequestParam("name") String name,
-            Pageable pageable) {
+            @RequestParam("name") String name, Pageable pageable) {
         List<DrugInfo> drugInfos = drugService.searchByName(name, pageable);
         if (drugInfos.isEmpty()) {
             return ResponseEntity.noContent().build();
