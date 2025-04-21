@@ -64,9 +64,8 @@ public class ReceiptController {
             @RequestParam(value = "from_date", required = false) LocalDate fromDate,
             @RequestParam(value = "to_date", required = false) LocalDate toDate,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        PageRequest pageable = PageRequest.of(page, size);
         List<ReceiptInfo> receipts =
                 receiptService.applyAllFilters(
                         cashierId, drugId, pharmacyId, shiftId, fromDate, toDate, pageable);

@@ -100,10 +100,9 @@ public class DrugController {
     public ResponseEntity<List<DrugInfo>> searchDrugs(
             @RequestParam("name") String name,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+            @RequestParam(value = "size", defaultValue = "10") int size) {
 
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
+        PageRequest pageable = PageRequest.of(page, size);
         List<DrugInfo> drugInfos = drugService.searchByName(name, pageable);
         if (drugInfos.isEmpty()) {
             return ResponseEntity.noContent().build();
