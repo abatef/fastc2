@@ -8,6 +8,8 @@ import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.DuplicateValueException;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.models.pharmacy.Pharmacy;
+import com.abatef.fastc2.repositories.PharmacyRepository;
 import com.abatef.fastc2.repositories.UserRepository;
 import com.google.firebase.auth.FirebaseToken;
 
@@ -17,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,14 +27,17 @@ public class UserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
+    private final PharmacyRepository pharmacyRepository;
 
     public UserService(
             UserRepository userRepository,
             ModelMapper modelMapper,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            PharmacyRepository pharmacyRepository) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
+        this.pharmacyRepository = pharmacyRepository;
     }
 
     private void uniqueUser(UserCreationRequest request) throws DuplicateValueException {
@@ -134,14 +138,14 @@ public class UserService {
         return modelMapper.map(user, UserInfo.class);
     }
 
+    @Transactional(readOnly = true)
     public PharmacyInfo getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
-        List<PharmacyInfo> pharmacyInfos =
-                user.getPharmacies() != null
-                        ? user.getPharmacies().stream()
-                                .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
-                                .toList()
-                        : Collections.emptyList();
-        return pharmacyInfos.isEmpty() ? null : pharmacyInfos.getFirst();
+        List<Pharmacy> pharmacies = pharmacyRepository.getPharmaciesByOwner_Id(user.getId());
+        if (pharmacies.isEmpty()) {
+            return null;
+        }
+        Pharmacy ph = pharmacies.getFirst();
+        return modelMapper.map(ph, PharmacyInfo.class);
     }
 
     @Transactional
