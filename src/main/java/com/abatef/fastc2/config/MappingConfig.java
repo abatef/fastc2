@@ -47,6 +47,7 @@ public class MappingConfig {
                     info.setMainBranch(
                             pharmacy.getIsBranch() ? pharmacy.getMainBranch().getId() : null);
                     info.setShifts(pharmacy.getShifts().stream().toList());
+                    info.setExpiryThreshold(pharmacy.getExpiryThreshold());
                     info.setCreatedAt(pharmacy.getCreatedAt());
                     info.setUpdatedAt(pharmacy.getUpdatedAt());
                     return info;
