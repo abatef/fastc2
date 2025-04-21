@@ -11,7 +11,9 @@ import com.abatef.fastc2.services.DrugService;
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -96,7 +98,12 @@ public class DrugController {
 
     @GetMapping("/search")
     public ResponseEntity<List<DrugInfo>> searchDrugs(
-            @RequestParam("name") String name, Pageable pageable) {
+            @RequestParam("name") String name,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<DrugInfo> drugInfos = drugService.searchByName(name, pageable);
         if (drugInfos.isEmpty()) {
             return ResponseEntity.noContent().build();

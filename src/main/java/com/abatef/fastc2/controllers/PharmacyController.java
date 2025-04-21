@@ -14,7 +14,8 @@ import com.abatef.fastc2.services.PharmacyService;
 
 import jakarta.validation.Valid;
 
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -48,7 +49,11 @@ public class PharmacyController {
 
     @GetMapping("/search")
     public ResponseEntity<List<PharmacyInfo>> search(
-            @RequestParam("name") String name, Pageable pageable) {
+            @RequestParam("name") String name,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyInfo> list = pharmacyService.searchByName(name, pageable);
         if (list.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -82,28 +87,43 @@ public class PharmacyController {
     public ResponseEntity<List<PharmacyDrugInfo>> getDrugsOfPharmacy(
             @PathVariable("pharmacy_id") Integer id,
             @AuthenticationPrincipal User user,
-            Pageable pageable) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs = pharmacyService.getDrugsByPharmacyId(id, pageable);
         return noContentOrReturn(drugs);
     }
 
     @GetMapping("/{pharmacy_id}/expired")
     public ResponseEntity<List<PharmacyDrugInfo>> getExpiredDrugs(
-            @PathVariable("pharmacy_id") Integer id, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs = pharmacyService.getExpiredDrugsByPharmacyId(id, pageable);
         return noContentOrReturn(drugs);
     }
 
     @GetMapping("/{pharmacy_id}/non-expired")
     public ResponseEntity<List<PharmacyDrugInfo>> getNonExpiredDrugs(
-            @PathVariable("pharmacy_id") Integer id, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs = pharmacyService.getNonExpiredDrugsByPharmacyId(id, pageable);
         return noContentOrReturn(drugs);
     }
 
     @GetMapping("/{pharmacy_id}/past-threshold")
     public ResponseEntity<List<PharmacyDrugInfo>> getNearExpiryDrugs(
-            @PathVariable("pharmacy_id") Integer id, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs =
                 pharmacyService.getNearExpiredDrugsByPharmacyId(id, pageable);
         return noContentOrReturn(drugs);
@@ -113,7 +133,10 @@ public class PharmacyController {
     public ResponseEntity<List<PharmacyDrugInfo>> getAfterDaysDrugs(
             @PathVariable("pharmacy_id") Integer id,
             @RequestParam(value = "days", defaultValue = "0") Integer N,
-            Pageable pageable) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs =
                 pharmacyService.getNearExpiredDrugsAfterNDayByPharmacyId(id, N, pageable);
         return noContentOrReturn(drugs);
@@ -121,14 +144,22 @@ public class PharmacyController {
 
     @GetMapping("/{pharmacy_id}/out-of-stock")
     public ResponseEntity<List<PharmacyDrugInfo>> getOutOfStockDrugs(
-            @PathVariable("pharmacy_id") Integer id, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs = pharmacyService.getOutOfStockDrugsByPharmacyId(id, pageable);
         return noContentOrReturn(drugs);
     }
 
     @GetMapping("/{pharmacy_id}/in-stock")
     public ResponseEntity<List<PharmacyDrugInfo>> getInStockDrugs(
-            @PathVariable("pharmacy_id") Integer id, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs = pharmacyService.getInStockDrugsByPharmacyId(id, pageable);
         return noContentOrReturn(drugs);
     }
@@ -137,7 +168,10 @@ public class PharmacyController {
     public ResponseEntity<List<PharmacyDrugInfo>> getStockOverNDrugs(
             @PathVariable("pharmacy_id") Integer id,
             @RequestParam(value = "n", defaultValue = "0") Integer N,
-            Pageable pageable) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs =
                 pharmacyService.getDrugsWithStockOverNByPharmacyId(id, N, pageable);
         return noContentOrReturn(drugs);
@@ -145,7 +179,12 @@ public class PharmacyController {
 
     @GetMapping("/{pharmacy_id}/stock-under-n")
     public ResponseEntity<List<PharmacyDrugInfo>> getStockUnderNDrugs(
-            @PathVariable("pharmacy_id") Integer id, Integer N, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            Integer N,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs =
                 pharmacyService.getDrugsWithStockLessThanNByPharmacyId(id, N, pageable);
         return noContentOrReturn(drugs);
@@ -155,14 +194,18 @@ public class PharmacyController {
     public ResponseEntity<List<PharmacyDrugInfo>> searchDrugs(
             @PathVariable("pharmacy_id") Integer id,
             @RequestParam("q") String query,
-            Pageable pageable) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<PharmacyDrugInfo> drugs = pharmacyService.searchDrugInPharmacy(query, id, pageable);
         return noContentOrReturn(drugs);
     }
 
     @PatchMapping
     public ResponseEntity<PharmacyInfo> updatePharmacyInfo(
-            @Valid @RequestBody PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
+            @Valid @RequestBody PharmacyUpdateRequest pharmacyInfo,
+            @AuthenticationPrincipal User user) {
         PharmacyInfo info = pharmacyService.updatePharmacyInfo(pharmacyInfo, user);
         return ResponseEntity.ok(info);
     }
@@ -223,7 +266,11 @@ public class PharmacyController {
 
     @GetMapping("/{pharmacy_id}/employees")
     public ResponseEntity<List<EmployeeInfo>> getEmployeesByPharmacy(
-            @PathVariable("pharmacy_id") Integer id, Pageable pageable) {
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", required = false, defaultValue = "id") String sort) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sort));
         List<EmployeeInfo> employees = pharmacyService.getEmployeesByPharmacyId(id, pageable);
         if (employees.isEmpty()) {
             return ResponseEntity.noContent().build();
