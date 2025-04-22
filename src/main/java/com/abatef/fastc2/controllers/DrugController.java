@@ -3,6 +3,7 @@ package com.abatef.fastc2.controllers;
 import com.abatef.fastc2.dtos.drug.DrugCreationRequest;
 import com.abatef.fastc2.dtos.drug.DrugInfo;
 import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
+import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.UserRepository;
@@ -50,6 +51,7 @@ public class DrugController {
     public ResponseEntity<Drug> fillDB(@RequestBody DrugCreationRequest request) {
         User user = new User();
         user.setId(1);
+        user.setRole(UserRole.OWNER);
         Drug drug = drugService.createNewDrug(request, user);
         return ResponseEntity.ok(drug);
     }
