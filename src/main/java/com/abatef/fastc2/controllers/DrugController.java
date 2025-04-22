@@ -7,18 +7,18 @@ import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.UserRepository;
 import com.abatef.fastc2.services.DrugService;
+import com.abatef.fastc2.services.SearchService;
 
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/drugs")
@@ -26,12 +26,17 @@ public class DrugController {
     private final DrugService drugService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
+    private final SearchService searchService;
 
     public DrugController(
-            DrugService drugService, ModelMapper modelMapper, UserRepository userRepository) {
+            DrugService drugService,
+            ModelMapper modelMapper,
+            UserRepository userRepository,
+            SearchService searchService) {
         this.drugService = drugService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
+        this.searchService = searchService;
     }
 
     @PostMapping
@@ -103,7 +108,10 @@ public class DrugController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
         PageRequest pageable = PageRequest.of(page, size);
-        List<DrugInfo> drugInfos = drugService.searchByName(name, pageable);
+        List<DrugInfo> drugInfos =
+                searchService.fuzzySearchByName(name, pageable).stream()
+                        .map(drug -> modelMapper.map(drug, DrugInfo.class))
+                        .collect(Collectors.toList());
         if (drugInfos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
