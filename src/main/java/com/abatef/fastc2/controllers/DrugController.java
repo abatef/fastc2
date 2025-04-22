@@ -46,6 +46,14 @@ public class DrugController {
         return ResponseEntity.ok(drug);
     }
 
+    @PostMapping("/fill")
+    public ResponseEntity<Drug> fillDB(@RequestBody DrugCreationRequest request) {
+        User user = new User();
+        user.setId(1);
+        Drug drug = drugService.createNewDrug(request, user);
+        return ResponseEntity.ok(drug);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Drug> getDrugInfo(@PathVariable Integer id) {
         Drug drug = drugService.getDrugByIdOrThrow(id);

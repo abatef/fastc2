@@ -18,10 +18,10 @@ public class DrugDocument {
     @Id
     private Integer id;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String name;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String form;
 
     private Short units;

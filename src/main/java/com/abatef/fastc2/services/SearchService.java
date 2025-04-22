@@ -68,13 +68,14 @@ public class SearchService {
 
 
     public List<DrugDocument> fuzzySearchByName(String name, Pageable pageable) {
-        Criteria nameCriteria = new Criteria("name").fuzzy(name).or(new Criteria("form").fuzzy(name));
+        Criteria nameCriteria = new Criteria("name").fuzzy(name);
         Query query = new CriteriaQuery(nameCriteria).setPageable(pageable);
 
         SearchHits<DrugDocument> hits = elasticsearchOperations.search(query, DrugDocument.class);
 
         return hits.stream().map(SearchHit::getContent).toList();
     }
+
 
 
     public List<DrugDocument> searchByPriceRange(Float minPrice, Float maxPrice) {

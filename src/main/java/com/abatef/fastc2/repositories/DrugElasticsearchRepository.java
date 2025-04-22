@@ -9,7 +9,16 @@ import java.util.List;
 
 public interface DrugElasticsearchRepository extends ElasticsearchRepository<DrugDocument, Integer> {
     // Add custom fuzzy query method
-    @Query("{\"fuzzy\": {\"name\": {\"value\": \"?0\", \"fuzziness\": \"AUTO\"}}}")
+    @Query("""
+    {
+      "match": {
+        "name": {
+          "query": "?0",
+          "fuzziness": "AUTO"
+        }
+      }
+    }
+    """)
     List<DrugDocument> findByNameFuzzy(String name, Pageable pageable);
 
     // Original methods
