@@ -17,20 +17,24 @@ public interface DrugRepository extends JpaRepository<Drug, Integer> {
 
     @Query(
             value =
-                    "select * from drugs d"
-                            + " where d.search_vector @@ to_tsquery('english', :tsquery)"
-                            + " or d.name % :query or d.form % :query"
-                            + " order by ts_rank(d.search_vector, to_tsquery('english', :tsquery)) desc,"
-                            + " similarity(d.name, :query) + similarity(d.form, :query) desc",
+                    """
+        SELECT * FROM drugs d
+        WHERE plainto_tsquery('english', :query) @@ d.search_vector
+           OR similarity(d.name, :query) > 0.1
+           OR similarity(d.form, :query) > 0.1
+        ORDER BY
+            ts_rank(d.search_vector, plainto_tsquery('english', :query)) DESC,
+            similarity(d.name, :query) + similarity(d.form, :query) DESC
+        """,
             countQuery =
-                    "select count(*) from drugs d"
-                            + " where d.search_vector @@ to_tsquery('english', :tsquery)"
-                            + " or d.name % :query or d.form % :query"
-                            + " order by ts_rank(d.search_vector, to_tsquery('english', :tsquery)) desc,"
-                            + " similarity(d.name, :query) + similarity(d.form, :query) desc",
+                    """
+        SELECT COUNT(*) FROM drugs d
+        WHERE plainto_tsquery('english', :query) @@ d.search_vector
+           OR similarity(d.name, :query) > 0.1
+           OR similarity(d.form, :query) > 0.1
+        """,
             nativeQuery = true)
-    Page<Drug> searchDrugByNamePaginated(
-            @Param("query") String query, @Param("tsquery") String tsquery, Pageable pageable);
+    Page<Drug> searchDrugByNamePaginated(@Param("query") String query, Pageable pageable);
 
     Boolean existsDrugById(Integer id);
 }

@@ -118,7 +118,7 @@ public class DrugService {
     public List<DrugInfo> searchByName(String drugName, Pageable pageable) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
         return drugRepository
-                .searchDrugByNamePaginated(drugName, formattedName, pageable)
+                .searchDrugByNamePaginated(formattedName, pageable)
                 .stream()
                 .map(drug -> modelMapper.map(drug, DrugInfo.class))
                 .toList();
