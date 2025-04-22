@@ -44,7 +44,6 @@ public class PharmacyCreationRequest {
     @Schema(
             description = "a global expiry threshold for the each pharmacy",
             requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull
     @Min(0)
     private Short expiryThreshold;
 }
