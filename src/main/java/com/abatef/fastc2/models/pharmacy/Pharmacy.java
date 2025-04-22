@@ -77,7 +77,7 @@ public class Pharmacy {
 
     @NotNull
     @ColumnDefault("0")
-    @Column(name = "expiry_threshold", nullable = false)
+    @Column(name = "expiry_threshold")
     private Short expiryThreshold;
 
     @ManyToMany(mappedBy = "pharmacies")
