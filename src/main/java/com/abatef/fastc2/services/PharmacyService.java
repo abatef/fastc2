@@ -7,6 +7,7 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
+import com.abatef.fastc2.enums.FilterOption;
 import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
@@ -299,6 +300,24 @@ public class PharmacyService {
             return List.of();
         }
         return streamAndReturn(pharmacyDrugs);
+    }
+
+    /*
+     * filter -> available, shortage, unavailable shortage, unavailable
+     *
+     * available -> at least one drug exists in the pharmacy
+     * shortage  -> if we have 10, and we require n
+     * unavailable shortage -> if we have 0 and require n
+     * unavailable -> if we have 0 and require 0
+     * */
+
+
+    public List<PharmacyDrugInfo> filter(Integer pharmacyId, FilterOption filterOption, Pageable pageable) {
+        return switch (filterOption) {
+            case AVAILABLE -> getDrugsWithStockOverNByPharmacyId(pharmacyId, 1, pageable);
+            case SHORTAGE -> getDrugsWithStockLessThanNByPharmacyId(pharmacyId, 10, pageable);
+            case UNAVAILABLE_SHORTAGE, UNAVAILABLE -> getOutOfStockDrugsByPharmacyId(pharmacyId, pageable);
+        };
     }
 
     public Boolean pharmacyHasDrug(Integer pharmacyId, Integer drugId) {

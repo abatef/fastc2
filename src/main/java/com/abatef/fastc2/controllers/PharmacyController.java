@@ -7,6 +7,7 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeInfo;
+import com.abatef.fastc2.enums.FilterOption;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
@@ -15,7 +16,6 @@ import com.abatef.fastc2.services.PharmacyService;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -188,6 +188,17 @@ public class PharmacyController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<PharmacyDrugInfo> drugs = pharmacyService.searchDrugInPharmacy(query, id, pageable);
+        return noContentOrReturn(drugs);
+    }
+
+    @GetMapping("/{pharmacy_id}/drugs/filter")
+    public ResponseEntity<List<PharmacyDrugInfo>> filterDrugs(
+            @PathVariable("pharmacy_id") Integer id,
+            @RequestParam("filter") FilterOption option,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        List<PharmacyDrugInfo> drugs = pharmacyService.filter(id, option, pageable);
         return noContentOrReturn(drugs);
     }
 
