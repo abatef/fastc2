@@ -3,9 +3,9 @@ import requests
 
 
 def create_drug(row):
-    payload = {"name": row[0], "form": row[1], "units": 5, "price": 10}
+    payload = {"name": row[1], "form": row[2], "units": row[4], "price": row[3]}
     response = requests.post(
-        "http://localhost:8080/api/v1/drugs/fill",  # Use HTTPS instead of HTTP
+        "http://localhost:8080/api/v1/drugs/fill",
         json=payload,
         headers={"Content-Type": "application/json"},
         verify=False,

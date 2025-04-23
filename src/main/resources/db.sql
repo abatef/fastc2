@@ -131,6 +131,7 @@ create table drugs
     constraint fk_created_by foreign key (created_by) references users (id) on delete cascade
 );
 
+
 -- POSTGRESQL Full-Text Search -- DRUGS
 
 create index drug_search_idx on drugs using gin (search_vector);
@@ -187,8 +188,16 @@ create table pharmacy_drug
     constraint fk_added_by foreign key (added_by) references users (id) on delete no action
 );
 
-
-
+create table drug_order
+(
+    drug_id int not null,
+    pharmacy_id int not null,
+    required int default 0,
+    n_orders int default 0,
+    constraint fk_drug_id foreign key (drug_id) references drugs(id) on delete cascade,
+    constraint fk_phar_id foreign key (pharmacy_id) references pharmacies(id) on delete cascade,
+    primary key (drug_id, pharmacy_id)
+);
 
 create table receipt
 (
@@ -211,8 +220,8 @@ create table sales_receipt
     discount         real,
     units            smallint not null default 0,
     pack             smallint not null default 0,
-    constraint fk_receipt_id foreign key (receipt_id) references receipt(id) on delete cascade,
-    constraint fk_pd_id foreign key (pharmacy_drug_id) references pharmacy_drug(id) on delete cascade,
+    constraint fk_receipt_id foreign key (receipt_id) references receipt (id) on delete cascade,
+    constraint fk_pd_id foreign key (pharmacy_drug_id) references pharmacy_drug (id) on delete cascade,
     primary key (receipt_id, pharmacy_drug_id)
 );
 

@@ -12,15 +12,14 @@ import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.models.*;
+import com.abatef.fastc2.models.pharmacy.DrugOrder;
+import com.abatef.fastc2.models.pharmacy.DrugOrderId;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.shift.PharmacyShift;
 import com.abatef.fastc2.models.shift.PharmacyShiftId;
 import com.abatef.fastc2.models.shift.Shift;
-import com.abatef.fastc2.repositories.EmployeeRepository;
-import com.abatef.fastc2.repositories.PharmacyDrugRepository;
-import com.abatef.fastc2.repositories.PharmacyRepository;
-import com.abatef.fastc2.repositories.PharmacyShiftRepository;
+import com.abatef.fastc2.repositories.*;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -49,6 +48,7 @@ public class PharmacyService {
     private final PharmacyShiftRepository pharmacyShiftRepository;
     private final EmployeeRepository employeeRepository;
     private final EmployeeService employeeService;
+    private final DrugOrderRepository drugOrderRepository;
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
@@ -59,7 +59,8 @@ public class PharmacyService {
             PharmacyDrugRepository pharmacyDrugRepository,
             PharmacyShiftRepository pharmacyShiftRepository,
             EmployeeRepository employeeRepository,
-            EmployeeService employeeService) {
+            EmployeeService employeeService,
+            DrugOrderRepository drugOrderRepository) {
         this.pharmacyRepository = pharmacyRepository;
         this.userService = userService;
         this.drugService = drugService;
@@ -69,6 +70,7 @@ public class PharmacyService {
         this.pharmacyShiftRepository = pharmacyShiftRepository;
         this.employeeRepository = employeeRepository;
         this.employeeService = employeeService;
+        this.drugOrderRepository = drugOrderRepository;
     }
 
     @Transactional
@@ -192,6 +194,24 @@ public class PharmacyService {
         pharmacyDrug.setStock(request.getStock());
         pharmacyDrug.setAddedBy(user);
         pharmacyDrug = pharmacyDrugRepository.save(pharmacyDrug);
+        Optional<DrugOrder> drugOrderOptional =
+                drugOrderRepository.getDrugOrderById(
+                        new DrugOrderId(drug.getId(), pharmacy.getId()));
+        DrugOrder order;
+        if (drugOrderOptional.isPresent()) {
+            order = drugOrderOptional.get();
+            Integer oldRequired = order.getRequired();
+            Integer oldNOrderes = order.getNOrders();
+            order.setNOrders(oldNOrderes + 1);
+            order.setRequired(oldRequired + request.getStock());
+        } else {
+            order = new DrugOrder();
+            order.setDrug(drug);
+            order.setPharmacy(pharmacy);
+            order.setRequired(request.getStock());
+            order.setNOrders(1);
+        }
+        drugOrderRepository.save(order);
         return modelMapper.map(pharmacyDrug, PharmacyDrugInfo.class);
     }
 
@@ -311,12 +331,28 @@ public class PharmacyService {
      * unavailable -> if we have 0 and require 0
      * */
 
+    public List<PharmacyDrugInfo> getShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsWithShortage(pharmacyId, pageable);
+        return streamAndReturn(drugs);
+    }
 
-    public List<PharmacyDrugInfo> filter(Integer pharmacyId, FilterOption filterOption, Pageable pageable) {
+    public List<PharmacyDrugInfo> getUnavailableShortageByPharmacyId(Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getUnavailableShortagePharmacyDrugs(pharmacyId, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> getUnavailableDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getUnavailablePharmacyDrugs(pharmacyId, pageable);
+        return streamAndReturn(drugs);
+    }
+
+    public List<PharmacyDrugInfo> filter(
+            Integer pharmacyId, FilterOption filterOption, Pageable pageable) {
         return switch (filterOption) {
             case AVAILABLE -> getDrugsWithStockOverNByPharmacyId(pharmacyId, 1, pageable);
-            case SHORTAGE -> getDrugsWithStockLessThanNByPharmacyId(pharmacyId, 10, pageable);
-            case UNAVAILABLE_SHORTAGE, UNAVAILABLE -> getOutOfStockDrugsByPharmacyId(pharmacyId, pageable);
+            case SHORTAGE -> getShortageDrugsByPharmacyId(pharmacyId, pageable);
+            case UNAVAILABLE_SHORTAGE -> getUnavailableShortageByPharmacyId(pharmacyId, pageable);
+            case UNAVAILABLE -> getUnavailableDrugsByPharmacyId(pharmacyId, pageable);
         };
     }
 

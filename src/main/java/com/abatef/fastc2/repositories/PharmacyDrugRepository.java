@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Repository
 public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Integer> {
@@ -38,6 +37,30 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
 
     Page<PharmacyDrug> getPharmacyDrugsByPharmacy_IdAndStockIsLessThanEqual(
             Integer pharmacyId, Integer stockIsLessThan, Pageable pageable);
+
+    @Query(
+            value =
+                    "select pd from PharmacyDrug pd"
+                            + " join DrugOrder dr on dr.drug.id = pd.drug.id"
+                            + " and dr.pharmacy.id = pd.pharmacy.id"
+                            + " where pd.pharmacy.id = :pharmacyId and pd.stock < (dr.required / dr.nOrders)")
+    Page<PharmacyDrug> getPharmacyDrugsWithShortage(Integer pharmacyId, Pageable pageable);
+
+    @Query(
+            value =
+                    "select pd from PharmacyDrug pd"
+                            + " join DrugOrder dr on dr.drug.id = pd.drug.id"
+                            + " and dr.pharmacy.id = pd.pharmacy.id"
+                            + " where pd.pharmacy.id = :pharmacyId and pd.stock = 0 and (dr.required / dr.nOrders) != 0")
+    Page<PharmacyDrug> getUnavailableShortagePharmacyDrugs(Integer pharmacyId, Pageable pageable);
+
+    @Query(
+            value =
+                    "select pd from PharmacyDrug pd"
+                            + " join DrugOrder dr on dr.drug.id = pd.drug.id"
+                            + " and dr.pharmacy.id = pd.pharmacy.id"
+                            + " where pd.pharmacy.id = :pharmacyId and pd.stock = 0 and dr.required = 0")
+    Page<PharmacyDrug> getUnavailablePharmacyDrugs(Integer pharmacyId, Pageable pageable);
 
     @Query(
             value =
