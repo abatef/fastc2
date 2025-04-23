@@ -20,8 +20,6 @@ public class PharmacyCreationRequest {
     private String name;
 
     @Schema(description = "Pharmacy Address", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotEmpty
-    @NotNull
     private String address;
 
     @Schema(

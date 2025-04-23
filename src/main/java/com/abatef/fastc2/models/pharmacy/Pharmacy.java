@@ -40,7 +40,7 @@ public class Pharmacy {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @Column(name = "address", nullable = false, length = Integer.MAX_VALUE)
+    @Column(name = "address", length = Integer.MAX_VALUE)
     private String address;
 
     @ColumnDefault("false")
@@ -82,10 +82,4 @@ public class Pharmacy {
 
     @ManyToMany(mappedBy = "pharmacies")
     private Set<Shift> shifts = new LinkedHashSet<>();
-
-/*
- TODO [Reverse Engineering] create field to map the 'search_vector' column
- Available actions: Define target Java type | Uncomment as is | Remove column mapping
-    @Column(name = "search_vector", columnDefinition = "tsvector")private java.lang.Object searchVector;
-*/
 }
