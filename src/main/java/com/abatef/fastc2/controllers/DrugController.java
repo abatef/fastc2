@@ -115,13 +115,24 @@ public class DrugController {
     public ResponseEntity<List<DrugInfo>> searchDrugs(
             @RequestParam("name") String name,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(value = "size", defaultValue = "75") int size) {
 
         PageRequest pageable = PageRequest.of(page, size);
         List<DrugInfo> drugInfos =
                 searchService.fuzzySearchByName(name, pageable).stream()
                         .map(drug -> modelMapper.map(drug, DrugInfo.class))
                         .collect(Collectors.toList());
+        if (drugInfos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(drugInfos);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<DrugInfo>> getAllDrugs(
+            @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "size", defaultValue = "75") int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        List<DrugInfo> drugInfos = drugService.getAllDrugs(pageable);
         if (drugInfos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

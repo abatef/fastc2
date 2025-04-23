@@ -115,6 +115,14 @@ public class DrugService {
         drugRepository.deleteById(id);
     }
 
+    public List<DrugInfo> getAllDrugs(Pageable pageable) {
+        return drugRepository
+                .findAll(pageable)
+                .stream()
+                .map(drug -> modelMapper.map(drug, DrugInfo.class))
+                .toList();
+    }
+
     public List<DrugInfo> searchByName(String drugName, Pageable pageable) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
         return drugRepository
@@ -123,7 +131,6 @@ public class DrugService {
                 .map(drug -> modelMapper.map(drug, DrugInfo.class))
                 .toList();
     }
-
     /* Main Page
      * view -> total profit, loss, revenue
      * filter -> data, time, emp, search

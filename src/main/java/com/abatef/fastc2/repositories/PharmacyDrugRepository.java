@@ -43,15 +43,36 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
                     "select pd from PharmacyDrug pd"
                             + " join DrugOrder dr on dr.drug.id = pd.drug.id"
                             + " and dr.pharmacy.id = pd.pharmacy.id"
-                            + " where pd.pharmacy.id = :pharmacyId and pd.stock < (dr.required / dr.nOrders)")
+                            + " where pd.pharmacy.id = :pharmacyId and sum(pd.stock) < (dr.required / dr.nOrders)")
     Page<PharmacyDrug> getPharmacyDrugsWithShortage(Integer pharmacyId, Pageable pageable);
+
+    @Query(
+            value =
+                    "select pd.* from pharmacy_drug pd"
+                            + " join drug_order dr on dr.drug_id = pd.drug_id"
+                            + " and dr.pharmacy_id = pd.pharmacy_id"
+                            + " where pd.pharmacy_id = :pharmacyId and"
+                            + " ((dr.required / dr.n_orders) > (select coalesce(sum(stock), 0) from pharmacy_drug pd2"
+                            + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id))"
+                            + " order by ((dr.required / dr.n_orders) - ("
+                            + " select coalesce(sum(stock), 0) from pharmacy_drug"
+                            + " where pd.drug_id = drug_id and pd.pharmacy_id = pharmacy_id))",
+            countQuery =
+                    "select count(*) from pharmacy_drug pd"
+                            + " join drug_order dr on dr.drug_id = pd.drug_id"
+                            + " and dr.pharmacy_id = pd.pharmacy_id"
+                            + " where pd.pharmacy_id = :pharmacyId and"
+                            + " ((dr.required / dr.n_orders) > (select coalesce(sum(stock), 0)"
+                            + " from pharmacy_drug where drug_id = pd.drug_id and pharmacy_id = pd.pharmacy_id))",
+            nativeQuery = true)
+    Page<PharmacyDrug> getPharmacyDrugsTotalWithShortage(Integer pharmacyId, Pageable pageable);
 
     @Query(
             value =
                     "select pd from PharmacyDrug pd"
                             + " join DrugOrder dr on dr.drug.id = pd.drug.id"
                             + " and dr.pharmacy.id = pd.pharmacy.id"
-                            + " where pd.pharmacy.id = :pharmacyId and pd.stock = 0 and (dr.required / dr.nOrders) != 0")
+                            + " where pd.pharmacy.id = :pharmacyId and sum(pd.stock) = 0 and (dr.required / dr.nOrders) != 0")
     Page<PharmacyDrug> getUnavailableShortagePharmacyDrugs(Integer pharmacyId, Pageable pageable);
 
     @Query(
@@ -59,7 +80,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
                     "select pd from PharmacyDrug pd"
                             + " join DrugOrder dr on dr.drug.id = pd.drug.id"
                             + " and dr.pharmacy.id = pd.pharmacy.id"
-                            + " where pd.pharmacy.id = :pharmacyId and pd.stock = 0 and dr.required = 0")
+                            + " where pd.pharmacy.id = :pharmacyId and sum(pd.stock) = 0 and dr.required = 0")
     Page<PharmacyDrug> getUnavailablePharmacyDrugs(Integer pharmacyId, Pageable pageable);
 
     @Query(
