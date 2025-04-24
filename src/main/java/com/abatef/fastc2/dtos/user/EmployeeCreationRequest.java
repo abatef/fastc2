@@ -20,8 +20,6 @@ public class EmployeeCreationRequest {
     private String gender;
     private Integer roleId;
     private Float salary;
-    @NotNull
-    private Integer pharmacyId;
-    @NotNull
-    private Integer shiftId;
+    @NotNull private Integer pharmacyId;
+    @NotNull private Integer shiftId;
 }

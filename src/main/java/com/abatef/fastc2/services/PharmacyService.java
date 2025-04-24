@@ -1,7 +1,6 @@
 package com.abatef.fastc2.services;
 
-import com.abatef.fastc2.dtos.drug.PharmacyDrugCreationRequest;
-import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
+import com.abatef.fastc2.dtos.drug.*;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
@@ -33,8 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class PharmacyService {
@@ -155,6 +153,12 @@ public class PharmacyService {
         pharmacy.setExpiryThreshold(threshold);
         pharmacy = pharmacyRepository.save(pharmacy);
         return modelMapper.map(pharmacy, PharmacyInfo.class);
+    }
+
+    public List<PharmacyInfo> getAllPharmacies(Pageable pageable) {
+        return pharmacyRepository.findAll(pageable).stream()
+                .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
+                .toList();
     }
 
     @PreAuthorize("hasRole('OWNER')")
@@ -331,19 +335,76 @@ public class PharmacyService {
      * unavailable -> if we have 0 and require 0
      * */
 
-    public List<PharmacyDrugInfo> getShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsWithShortage(pharmacyId, pageable);
+    public List<PharmacyDrugInfo> getShortageDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsTotalWithShortage(pharmacyId, pageable);
         return streamAndReturn(drugs);
     }
 
-    public List<PharmacyDrugInfo> getUnavailableShortageByPharmacyId(Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getUnavailableShortagePharmacyDrugs(pharmacyId, pageable);
+    public List<PharmacyDrugInfo> getUnavailableShortageByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getUnavailableShortagePharmacyDrugs(pharmacyId, pageable);
         return streamAndReturn(drugs);
     }
 
-    public List<PharmacyDrugInfo> getUnavailableDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getUnavailablePharmacyDrugs(pharmacyId, pageable);
+    public List<PharmacyDrugInfo> getUnavailableDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getUnavailablePharmacyDrugs(pharmacyId, pageable);
         return streamAndReturn(drugs);
+    }
+
+    public Integer getTotalStockOfPharmacyDrug(Integer pharmacyId, Integer drugId) {
+        List<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getAllByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
+        return drugs.stream().mapToInt(PharmacyDrug::getStock).reduce(0, Integer::sum);
+    }
+
+    public DrugOrderInfo getDrugOrderInfoByPharmacyAndDrugIds(Integer pharmacyId, Integer drugId) {
+        Optional<DrugOrder> drugOrder = drugOrderRepository.getDrugOrderByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
+        if (drugOrder.isPresent()) {
+            DrugOrderInfo info = new DrugOrderInfo();
+            info.setPharmacy(modelMapper.map(drugOrder.get().getPharmacy(), PharmacyInfo.class));
+            info.setDrug(modelMapper.map(drugOrder.get().getDrug(), DrugInfo.class));
+            info.setNOrders(drugOrder.get().getNOrders());
+            info.setRequiredAverage(drugOrder.get().getRequired() / drugOrder.get().getNOrders());
+            return info;
+        }
+        return null;
+    }
+
+    public List<PharmacyDrugShortage> getAllShortageDrugsByPharmacyId(Integer pharmacyId) {
+        List<PharmacyDrug> drugs = pharmacyDrugRepository.getAllByPharmacy_Id(pharmacyId);
+        Map<DrugOrderId, DrugOrder> drugOrderMap = new HashMap<>();
+        Map<DrugOrderId, Integer> totalStock = new HashMap<>();
+        List<PharmacyDrugShortage> shortageDrugs = new ArrayList<>();
+        for (PharmacyDrug pd : drugs) {
+            DrugOrderId id = new DrugOrderId(pd.getDrug().getId(), pd.getPharmacy().getId());
+            totalStock.computeIfAbsent(
+                    id,
+                    i ->
+                            getTotalStockOfPharmacyDrug(
+                                    pd.getPharmacy().getId(), pd.getDrug().getId()));
+            DrugOrder order =
+                    drugOrderMap.computeIfAbsent(
+                            id, i -> drugOrderRepository.getDrugOrderById(id).orElse(null));
+
+            int required = (order != null) ? order.getRequired() : 0;
+            if (required > 0) {
+                int stock = totalStock.get(id);
+                int shortage = Math.max(0, required - stock);
+                if (shortage > 0) {
+                    PharmacyDrugShortage drugShortage = new PharmacyDrugShortage();
+                    drugShortage.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyInfo.class));
+                    drugShortage.setDrug(modelMapper.map(pd.getDrug(), DrugInfo.class));
+                    drugShortage.setShortage(shortage);
+                    shortageDrugs.add(drugShortage);
+                }
+            }
+        }
+        return shortageDrugs;
     }
 
     public List<PharmacyDrugInfo> filter(

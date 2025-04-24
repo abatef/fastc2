@@ -61,7 +61,6 @@ public class PharmacyDrug {
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
 
-
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;
@@ -72,5 +71,4 @@ public class PharmacyDrug {
 
     @OneToMany(mappedBy = "pharmacyDrug")
     private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
-
 }

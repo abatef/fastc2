@@ -8,7 +8,6 @@ import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.UserRepository;
 import com.abatef.fastc2.services.DrugService;
-import com.abatef.fastc2.services.SearchService;
 
 import jakarta.validation.Valid;
 
@@ -27,17 +26,12 @@ public class DrugController {
     private final DrugService drugService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
-    private final SearchService searchService;
 
     public DrugController(
-            DrugService drugService,
-            ModelMapper modelMapper,
-            UserRepository userRepository,
-            SearchService searchService) {
+            DrugService drugService, ModelMapper modelMapper, UserRepository userRepository) {
         this.drugService = drugService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
-        this.searchService = searchService;
     }
 
     @PostMapping
@@ -75,42 +69,6 @@ public class DrugController {
         return ResponseEntity.noContent().build();
     }
 
-    //    @PatchMapping("/{id}/full-price")
-    //    public ResponseEntity<DrugInfo> updateFullPrice(
-    //            @PathVariable Integer id,
-    //            @RequestParam("price") Float price,
-    //            @AuthenticationPrincipal User user) {
-    //        DrugInfo drugInfo = drugService.updateDrugPrice(id, price, user);
-    //        return ResponseEntity.ok(drugInfo);
-    //    }
-    //
-    //    @PatchMapping("/{id}/name")
-    //    public ResponseEntity<DrugInfo> updateName(
-    //            @PathVariable Integer id,
-    //            @RequestParam("name") String name,
-    //            @AuthenticationPrincipal User user) {
-    //        DrugInfo drugInfo = drugService.updateDrugName(id, name, user);
-    //        return ResponseEntity.ok(drugInfo);
-    //    }
-    //
-    //    @PatchMapping("/{id}/form")
-    //    public ResponseEntity<DrugInfo> updateForm(
-    //            @PathVariable Integer id,
-    //            @RequestParam("form") String form,
-    //            @AuthenticationPrincipal User user) {
-    //        DrugInfo drugInfo = drugService.updateDrugForm(id, form, user);
-    //        return ResponseEntity.ok(drugInfo);
-    //    }
-    //
-    //    @PatchMapping("/{id}/units")
-    //    public ResponseEntity<DrugInfo> updateUnits(
-    //            @PathVariable Integer id,
-    //            @RequestParam("units") Short units,
-    //            @AuthenticationPrincipal User user) {
-    //        DrugInfo drugInfo = drugService.updateDrugUnits(id, units, user);
-    //        return ResponseEntity.ok(drugInfo);
-    //    }
-
     @GetMapping("/search")
     public ResponseEntity<List<DrugInfo>> searchDrugs(
             @RequestParam("name") String name,
@@ -119,7 +77,7 @@ public class DrugController {
 
         PageRequest pageable = PageRequest.of(page, size);
         List<DrugInfo> drugInfos =
-                searchService.fuzzySearchByName(name, pageable).stream()
+                drugService.searchByName(name, pageable).stream()
                         .map(drug -> modelMapper.map(drug, DrugInfo.class))
                         .collect(Collectors.toList());
         if (drugInfos.isEmpty()) {
@@ -130,7 +88,8 @@ public class DrugController {
 
     @GetMapping("/all")
     public ResponseEntity<List<DrugInfo>> getAllDrugs(
-            @RequestParam(value = "page", defaultValue = "0") int page, @RequestParam(value = "size", defaultValue = "75") int size) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "75") int size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<DrugInfo> drugInfos = drugService.getAllDrugs(pageable);
         if (drugInfos.isEmpty()) {

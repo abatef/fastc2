@@ -57,17 +57,21 @@ public class SecurityConfig {
                         })
                 .addFilterBefore(
                         jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(fbFilter, JwtAuthenticationFilter.class)
+                //                .addFilterAfter(fbFilter, JwtAuthenticationFilter.class)
                 .authenticationManager(authenticationManager())
                 .authorizeHttpRequests(
                         request -> {
                             request.requestMatchers("/api/v1/auth/me", "/api/v1/auth/password")
                                     .authenticated();
-                            request.requestMatchers("api/v1/pharmacies/search")
+                            request.requestMatchers(
+                                            "api/v1/pharmacies/search", "/api/v1/pharmacies/all")
                                     .permitAll()
                                     .requestMatchers("/api/v1/pharmacies/**")
                                     .authenticated();
-                            request.requestMatchers("/api/v1/drugs/search", "/api/v1/drugs/fill")
+                            request.requestMatchers(
+                                            "/api/v1/drugs/search",
+                                            "/api/v1/drugs/fill",
+                                            "/api/v1/drugs/all")
                                     .permitAll()
                                     .requestMatchers("/api/v1/drugs/**")
                                     .authenticated();

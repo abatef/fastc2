@@ -2,8 +2,8 @@ package com.abatef.fastc2.models.pharmacy;
 
 import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.User;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;

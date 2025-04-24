@@ -9,7 +9,6 @@ import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.DrugRepository;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -37,4 +37,9 @@ public class DrugOrder {
     @ColumnDefault("0")
     @Column(name = "n_orders")
     private Integer nOrders;
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

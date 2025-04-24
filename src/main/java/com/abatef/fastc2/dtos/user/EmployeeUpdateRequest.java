@@ -12,10 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EmployeeUpdateRequest {
-    @NotNull
-    private Integer id;
+    @NotNull private Integer id;
+
     @Min(18)
     private Short age;
+
     private String gender;
     private Float salary;
     private Shift shift;

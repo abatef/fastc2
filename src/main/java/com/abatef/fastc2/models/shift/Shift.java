@@ -3,6 +3,7 @@ package com.abatef.fastc2.models.shift;
 import com.abatef.fastc2.models.Employee;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 

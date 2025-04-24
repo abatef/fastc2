@@ -15,10 +15,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReceiptInfo {
+    List<ReceiptItemInfo> items = new ArrayList<>();
     private Integer id;
     private UserInfo cashier;
     private Shift shift;
-    List<ReceiptItemInfo> items = new ArrayList<>();
     private Instant createdAt;
     private Instant updatedAt;
 }

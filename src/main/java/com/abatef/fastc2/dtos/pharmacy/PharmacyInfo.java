@@ -16,10 +16,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PharmacyInfo {
-    @NotNull
-    private Integer id;
+    @NotNull private Integer id;
+
     @Size(min = 2, max = 100)
     private String name;
+
     private UserInfo owner;
     private String address;
     private Location location;

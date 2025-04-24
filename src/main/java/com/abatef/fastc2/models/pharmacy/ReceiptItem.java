@@ -15,8 +15,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Entity
 @Table(name = "sales_receipt")
 public class ReceiptItem {
-    @EmbeddedId
-    private ReceiptItemId id;
+    @EmbeddedId private ReceiptItemId id;
 
     @MapsId
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -47,5 +46,4 @@ public class ReceiptItem {
     @ColumnDefault("0")
     @Column(name = "pack", nullable = false)
     private Short pack;
-
 }

@@ -1,5 +1,6 @@
 package com.abatef.fastc2.repositories;
 
+import com.abatef.fastc2.dtos.drug.PharmacyDrugShortage;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 
 import org.springframework.data.domain.Page;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Integer> {
@@ -40,14 +42,6 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
 
     @Query(
             value =
-                    "select pd from PharmacyDrug pd"
-                            + " join DrugOrder dr on dr.drug.id = pd.drug.id"
-                            + " and dr.pharmacy.id = pd.pharmacy.id"
-                            + " where pd.pharmacy.id = :pharmacyId and sum(pd.stock) < (dr.required / dr.nOrders)")
-    Page<PharmacyDrug> getPharmacyDrugsWithShortage(Integer pharmacyId, Pageable pageable);
-
-    @Query(
-            value =
                     "select pd.* from pharmacy_drug pd"
                             + " join drug_order dr on dr.drug_id = pd.drug_id"
                             + " and dr.pharmacy_id = pd.pharmacy_id"
@@ -69,19 +63,60 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
 
     @Query(
             value =
-                    "select pd from PharmacyDrug pd"
-                            + " join DrugOrder dr on dr.drug.id = pd.drug.id"
-                            + " and dr.pharmacy.id = pd.pharmacy.id"
-                            + " where pd.pharmacy.id = :pharmacyId and sum(pd.stock) = 0 and (dr.required / dr.nOrders) != 0")
+                    "select pd.* from pharmacy_drug pd"
+                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " where pd.pharmacy_id = :pharmacyId"
+                            + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
+                            + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
+                            + " and (dr.required / dr.n_orders) != 0",
+            countQuery =
+                    "select count(*) from pharmacy_drug pd"
+                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " where pd.pharmacy_id = :pharmacyId"
+                            + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
+                            + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
+                            + " and (dr.required / dr.n_orders) != 0",
+            nativeQuery = true)
     Page<PharmacyDrug> getUnavailableShortagePharmacyDrugs(Integer pharmacyId, Pageable pageable);
 
     @Query(
             value =
-                    "select pd from PharmacyDrug pd"
-                            + " join DrugOrder dr on dr.drug.id = pd.drug.id"
-                            + " and dr.pharmacy.id = pd.pharmacy.id"
-                            + " where pd.pharmacy.id = :pharmacyId and sum(pd.stock) = 0 and dr.required = 0")
+                    "select pd.* from pharmacy_drug pd"
+                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " where pd.pharmacy_id = :pharmacyId"
+                            + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
+                            + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
+                            + " and dr.required = 0",
+            countQuery =
+                    "select count(*) from pharmacy_drug pd"
+                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " where pd.pharmacy_id = :pharmacyId"
+                            + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
+                            + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
+                            + " and dr.required = 0",
+            nativeQuery = true)
     Page<PharmacyDrug> getUnavailablePharmacyDrugs(Integer pharmacyId, Pageable pageable);
+
+//    @Query(
+//            value =
+//                    "SELECT new com.abatef.fastc2.dtos.drug.PharmacyDrugShortage("
+//                            + "pd.drug, pd.pharmacy,"
+//                            + "COALESCE(dr.required - COALESCE(SUM(pd.stock), 0), 0) ) "
+//                            + "FROM PharmacyDrug pd "
+//                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
+//                            + "AND pd.pharmacy.id = dr.pharmacy.id "
+//                            + "WHERE pd.pharmacy.id = :pharmacyId "
+//                            + "GROUP BY pd.drug.id, pd.pharmacy.id, dr.required  "
+//                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
+//            countQuery =
+//                    "SELECT COUNT(DISTINCT pd) "
+//                            + "FROM PharmacyDrug pd "
+//                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
+//                            + "AND pd.pharmacy.id = dr.pharmacy.id "
+//                            + "WHERE pd.pharmacy.id = :pharmacyId "
+//                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
+//            nativeQuery = false)
+//    Page<PharmacyDrugShortage> getShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable);
 
     @Query(
             value =
@@ -106,4 +141,8 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             @Param("query") String query,
             @Param("tsquery") String tsquery,
             Pageable pageable);
+
+    List<PharmacyDrug> getAllByPharmacy_IdAndDrug_Id(Integer pharmacyId, Integer drugId);
+
+    List<PharmacyDrug> getAllByPharmacy_Id(Integer pharmacyId);
 }

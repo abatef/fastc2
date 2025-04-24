@@ -1,6 +1,5 @@
 package com.abatef.fastc2.exceptions;
 
-import com.abatef.fastc2.models.shift.Shift;
 import lombok.Getter;
 
 @Getter

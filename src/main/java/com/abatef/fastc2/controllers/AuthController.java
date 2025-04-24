@@ -3,7 +3,6 @@ package com.abatef.fastc2.controllers;
 import com.abatef.fastc2.dtos.auth.JwtAuthenticationRequest;
 import com.abatef.fastc2.dtos.auth.JwtAuthenticationResponse;
 import com.abatef.fastc2.dtos.auth.RefreshTokenRequest;
-import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
 import com.abatef.fastc2.dtos.user.UserCreationResponse;
 import com.abatef.fastc2.dtos.user.UserInfo;
@@ -61,12 +60,11 @@ public class AuthController {
     public ResponseEntity<UserCreationResponse> signup(
             @Valid @RequestBody UserCreationRequest userCreationRequest) {
         User user = userService.registerUser(userCreationRequest);
-        PharmacyInfo pharmacyInfo = pharmacyService.createPharmacy(userCreationRequest.getPharmacy(), user);
         UserInfo userInfo = modelMapper.map(user, UserInfo.class);
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
         JwtAuthenticationResponse jwtResponse = login(request).getBody();
-        return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse, pharmacyInfo));
+        return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse));
     }
 
     @PostMapping("/login")

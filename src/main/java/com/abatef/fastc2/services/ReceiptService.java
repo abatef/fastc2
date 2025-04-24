@@ -108,7 +108,6 @@ public class ReceiptService {
                 .toList();
     }
 
-
     // TODO: Complete This
     @Transactional
     public ReceiptInfo updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {

@@ -18,6 +18,7 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, Integer> {
     Optional<Pharmacy> getPharmacyById(Integer id);
 
     List<Pharmacy> getPharmaciesByOwner_Id(Integer ownerId);
+
     @Query(
             value =
                     "select * from pharmacies p"

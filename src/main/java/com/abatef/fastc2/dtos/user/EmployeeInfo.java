@@ -1,8 +1,8 @@
 package com.abatef.fastc2.dtos.user;
 
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
-
 import com.abatef.fastc2.models.shift.Shift;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

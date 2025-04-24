@@ -1,7 +1,9 @@
 package com.abatef.fastc2.controllers;
 
+import com.abatef.fastc2.dtos.drug.DrugOrderInfo;
 import com.abatef.fastc2.dtos.drug.PharmacyDrugCreationRequest;
 import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
+import com.abatef.fastc2.dtos.drug.PharmacyDrugShortage;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
@@ -45,6 +47,18 @@ public class PharmacyController {
     public ResponseEntity<PharmacyInfo> getPharmacyInfo(@PathVariable("pharmacy_id") Integer id) {
         PharmacyInfo info = pharmacyService.getPharmacyInfoById(id);
         return ResponseEntity.ok(info);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<PharmacyInfo>> getAllPharmacies(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "75") int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        List<PharmacyInfo> infos = pharmacyService.getAllPharmacies(pageRequest);
+        if (infos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(infos);
     }
 
     @GetMapping("/search")
@@ -178,6 +192,26 @@ public class PharmacyController {
         List<PharmacyDrugInfo> drugs =
                 pharmacyService.getDrugsWithStockLessThanNByPharmacyId(id, N, pageable);
         return noContentOrReturn(drugs);
+    }
+
+    @GetMapping("/{pharmacy_id}/shortage/info")
+    public ResponseEntity<List<PharmacyDrugShortage>> getShortageDrugs(
+            @PathVariable("pharmacy_id") Integer id) {
+        List<PharmacyDrugShortage> shortages = pharmacyService.getAllShortageDrugsByPharmacyId(id);
+        if (shortages.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(shortages);
+    }
+
+    @GetMapping("/{pharmacy_id}/drug/orders")
+    public ResponseEntity<DrugOrderInfo> getDrugOrderInfo(
+            @PathVariable("pharmacy_id") Integer id, @RequestParam("drug_id") Integer drugId) {
+        DrugOrderInfo info = pharmacyService.getDrugOrderInfoByPharmacyAndDrugIds(id, drugId);
+        if (info == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(info);
     }
 
     @GetMapping("/{pharmacy_id}/drugs/search")
