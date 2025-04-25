@@ -40,6 +40,7 @@ public class MappingConfig {
                     Pharmacy pharmacy = ctx.getSource();
                     PharmacyInfo info = new PharmacyInfo();
                     info.setId(pharmacy.getId());
+                    info.setName(pharmacy.getName());
                     info.setAddress(pharmacy.getAddress());
                     info.setLocation(Location.of(pharmacy.getLocation()));
                     info.setOwner(modelMapper.map(pharmacy.getOwner(), UserInfo.class));
