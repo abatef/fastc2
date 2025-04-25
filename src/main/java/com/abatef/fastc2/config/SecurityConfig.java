@@ -64,7 +64,7 @@ public class SecurityConfig {
                             request.requestMatchers("/api/v1/auth/me", "/api/v1/auth/password")
                                     .authenticated();
                             request.requestMatchers(
-                                            "api/v1/pharmacies/search", "/api/v1/pharmacies/all")
+                                            "/api/v1/pharmacies/search", "/api/v1/pharmacies/all")
                                     .permitAll()
                                     .requestMatchers("/api/v1/pharmacies/**")
                                     .authenticated();

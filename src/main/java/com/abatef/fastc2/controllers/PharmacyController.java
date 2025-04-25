@@ -217,11 +217,19 @@ public class PharmacyController {
     @GetMapping("/{pharmacy_id}/drugs/search")
     public ResponseEntity<List<PharmacyDrugInfo>> searchDrugs(
             @PathVariable("pharmacy_id") Integer id,
-            @RequestParam("q") String query,
+            @RequestParam(value = "search", required = false) String query,
+            @RequestParam(value = "filter", required = false) FilterOption filter,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        List<PharmacyDrugInfo> drugs = pharmacyService.searchDrugInPharmacy(query, id, pageable);
+        List<PharmacyDrugInfo> drugs = null;
+        if (query != null && !query.isEmpty()) {
+            drugs = pharmacyService.searchDrugInPharmacy(query, id, pageable);
+        } else if (filter != null) {
+            drugs = pharmacyService.filter(id, filter, pageable);
+        } else {
+            drugs = pharmacyService.getDrugsByPharmacyId(id, pageable);
+        }
         return noContentOrReturn(drugs);
     }
 
