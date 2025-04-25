@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -36,8 +38,8 @@ public class UserController {
     }
 
     @GetMapping("/pharmacy")
-    public ResponseEntity<PharmacyInfo> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
-        PharmacyInfo info = userService.getPharmacyInfoByUser(user);
+    public ResponseEntity<List<PharmacyInfo>> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
+        List<PharmacyInfo> info = userService.getPharmacyInfoByUser(user);
         if (info == null) {
             return ResponseEntity.notFound().build();
         }

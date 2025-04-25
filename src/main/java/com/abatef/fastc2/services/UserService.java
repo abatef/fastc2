@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -139,13 +140,14 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public PharmacyInfo getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
+    public List<PharmacyInfo> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
         List<Pharmacy> pharmacies = pharmacyRepository.getPharmaciesByOwner_Id(user.getId());
         if (pharmacies.isEmpty()) {
             return null;
         }
-        Pharmacy ph = pharmacies.getFirst();
-        return modelMapper.map(ph, PharmacyInfo.class);
+        return pharmacies.stream()
+                .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
+                .toList();
     }
 
     @Transactional
