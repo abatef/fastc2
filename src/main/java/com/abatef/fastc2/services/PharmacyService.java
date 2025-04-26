@@ -198,9 +198,8 @@ public class PharmacyService {
         pharmacyDrug.setStock(request.getStock());
         pharmacyDrug.setAddedBy(user);
         pharmacyDrug = pharmacyDrugRepository.save(pharmacyDrug);
-        Optional<DrugOrder> drugOrderOptional =
-                drugOrderRepository.getDrugOrderById(
-                        new DrugOrderId(drug.getId(), pharmacy.getId()));
+        DrugOrderId id = new DrugOrderId(drug.getId(), pharmacy.getId());
+        Optional<DrugOrder> drugOrderOptional = drugOrderRepository.getDrugOrderById(id);
         DrugOrder order;
         if (drugOrderOptional.isPresent()) {
             order = drugOrderOptional.get();
@@ -210,6 +209,7 @@ public class PharmacyService {
             order.setRequired(oldRequired + request.getStock());
         } else {
             order = new DrugOrder();
+            order.setId(id);
             order.setDrug(drug);
             order.setPharmacy(pharmacy);
             order.setRequired(request.getStock());
@@ -363,7 +363,8 @@ public class PharmacyService {
     }
 
     public DrugOrderInfo getDrugOrderInfoByPharmacyAndDrugIds(Integer pharmacyId, Integer drugId) {
-        Optional<DrugOrder> drugOrder = drugOrderRepository.getDrugOrderByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
+        Optional<DrugOrder> drugOrder =
+                drugOrderRepository.getDrugOrderByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
         if (drugOrder.isPresent()) {
             DrugOrderInfo info = new DrugOrderInfo();
             info.setPharmacy(modelMapper.map(drugOrder.get().getPharmacy(), PharmacyInfo.class));
