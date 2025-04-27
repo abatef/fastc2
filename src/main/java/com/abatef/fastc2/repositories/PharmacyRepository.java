@@ -33,7 +33,7 @@ public interface PharmacyRepository extends JpaRepository<Pharmacy, Integer> {
                             + " order by ts_rank(p.search_vector, to_tsquery('english', :tsquery)) desc,"
                             + " similarity(p.name, :query) desc",
             nativeQuery = true)
-    Page<Drug> searchPharmacyByNamePaginated(
+    Page<Pharmacy> searchPharmacyByNamePaginated(
             @Param("query") String query, @Param("tsquery") String tsquery, Pageable pageable);
 
     Boolean existsPharmacyById(Integer id);
