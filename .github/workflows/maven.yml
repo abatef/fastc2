@@ -28,10 +28,10 @@ jobs:
         cache: maven
     - name: Build with Maven
       env:
-        DB_URL: ${{env.DB_URL}}
-        DB_USERNAME: ${{env.DB_USERNAME}}
-        DB_PASSWORD: ${{secrets.DB_PASSWORD}}
-        JWT_SECRET: ${{secrets.JWT_SECRET}}
+        DB_URL: ${{ secrets.DB_URL }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: mvn -B package --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
