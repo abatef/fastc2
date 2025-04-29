@@ -63,6 +63,7 @@ public class ReceiptController {
             @RequestParam(value = "drug_id", required = false) Integer drugId,
             @RequestParam(value = "pharmacy_id", required = false) Integer pharmacyId,
             @RequestParam(value = "shift_id", required = false) Integer shiftId,
+            @RequestParam(value = "status", required = false) ReceiptStatus status,
             @RequestParam(value = "from_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(value = "to_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -74,7 +75,7 @@ public class ReceiptController {
         Instant to = (toDate != null) ? toDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant() : null;
 
         List<ReceiptDto> receipts = receiptService.applyAllFilters(
-                cashierId, drugId, pharmacyId, shiftId, from, to, PageRequest.of(page, size));
+                cashierId, drugId, pharmacyId, shiftId, status, from, to, PageRequest.of(page, size));
 
         return noContentOrReturn(receipts);
     }
