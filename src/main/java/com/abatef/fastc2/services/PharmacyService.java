@@ -472,11 +472,11 @@ public class PharmacyService {
             Pageable pageable) {
         logger.info("applying all filters");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
-        Page<PharmacyDrug> drugs = pharmacyDrugRepository.findAllById(pharmacyId, pageable);
+        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
         logger.info("found {} drugs", drugs.getTotalElements());
         List<PharmacyDrug> drugsList = drugs.getContent();
         List<PharmacyDrug> filteredDrugs;
-        if (query != null) {
+        if (query != null && !query.isEmpty()) {
             logger.info("search term: {}", query);
             filteredDrugs = searchDrugInPharmacy(query, pharmacyId, pageable);
         } else {
