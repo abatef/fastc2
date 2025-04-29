@@ -27,6 +27,11 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Restore firebase-config.json
+      run: |
+        mkdir -p src/main/resources
+        echo "${{ secrets.FIREBASE_CONFIG_B64 }}" | base64 --decode > src/main/resources/firebase-config.json
+
     - name: Build with Maven
       env:
         DB_URL: ${{ secrets.DB_URL }}
