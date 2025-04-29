@@ -34,4 +34,9 @@ public class Location {
         final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         return geometryFactory.createPoint(new Coordinate(latitude, longitude));
     }
+
+    @Override
+    public String toString() {
+        return String.format("(lat: %s, lon: %s)", latitude, longitude);
+    }
 }

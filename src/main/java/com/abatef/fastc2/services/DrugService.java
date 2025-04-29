@@ -9,6 +9,8 @@ import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.repositories.DrugRepository;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class DrugService {
     private final DrugRepository drugRepository;
     private final ModelMapper modelMapper;
     private final UserService userService;
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public DrugService(
             DrugRepository drugRepository, ModelMapper modelMapper, UserService userService) {
@@ -37,14 +40,21 @@ public class DrugService {
         drug.setUnits(request.getUnits());
         drug.setFullPrice(request.getPrice());
         drug.setCreatedBy(user);
-        return drugRepository.save(drug);
+        drug = drugRepository.save(drug);
+        logger.info("new drug created by user: {}", user.getUsername());
+        logger.info("drug id: {}", drug.getId());
+        logger.info("drug name: {}", drug.getName());
+        return drug;
     }
 
     public Drug getDrugByIdOrThrow(Integer id) {
+        logger.info("finding drug by id: {}", id);
         Optional<Drug> drugOptional = drugRepository.findById(id);
         if (drugOptional.isPresent()) {
+            logger.info("found drug with id: {}", id);
             return drugOptional.get();
         }
+        logger.error("drug not found, throwing exception");
         throw new DrugNotFoundException(id);
     }
 
@@ -52,65 +62,40 @@ public class DrugService {
         return modelMapper.map(getDrugByIdOrThrow(id), DrugDto.class);
     }
 
-    public Optional<Drug> getDrugOptional(Integer id) {
-        return drugRepository.getDrugById(id);
-    }
-
-    public Boolean existsById(Integer id) {
-        return drugRepository.existsById(id);
-    }
-
     @Transactional
     public DrugDto updateDrugInfo(DrugUpdateRequest info, User user) {
+        logger.info("updating drug info: {}", info.getId());
         Drug drug = getDrugByIdOrThrow(info.getId());
+        boolean isUpdated = false;
         if (info.getName() != null) {
+            logger.info("updating name, old: {}, new: {}", drug.getName(), info.getName());
             drug.setName(info.getName());
+            isUpdated = true;
         }
         if (info.getForm() != null) {
+            logger.info("updating from, old: {}, new: {}", drug.getForm(), info.getForm());
             drug.setForm(info.getForm());
+            isUpdated = true;
         }
 
         if (info.getFullPrice() != null) {
+            logger.info("updating full price, old: {}, new: {}", drug.getFullPrice(), info.getFullPrice());
             drug.setFullPrice(info.getFullPrice());
+            isUpdated = true;
         }
 
         if (info.getUnits() != null) {
+            logger.info("updating units, old: {}, new: {}", drug.getUnits(), info.getUnits());
             drug.setUnits(info.getUnits());
+            isUpdated = true;
         }
 
-        drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugDto.class);
-    }
-
-    @Transactional
-    public DrugDto updateDrugPrice(Integer id, Float price, User user) {
-        Drug drug = getDrugByIdOrThrow(id);
-        drug.setFullPrice(price);
-        drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugDto.class);
-    }
-
-    @Transactional
-    public DrugDto updateDrugForm(Integer id, String form, User user) {
-        Drug drug = getDrugByIdOrThrow(id);
-        drug.setForm(form);
-        drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugDto.class);
-    }
-
-    @Transactional
-    public DrugDto updateDrugName(Integer id, String name, User user) {
-        Drug drug = getDrugByIdOrThrow(id);
-        drug.setName(name);
-        drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugDto.class);
-    }
-
-    @Transactional
-    public DrugDto updateDrugUnits(Integer id, Short units, User user) {
-        Drug drug = getDrugByIdOrThrow(id);
-        drug.setUnits(units);
-        drug = drugRepository.save(drug);
+        if (isUpdated) {
+            logger.info("saving new updates");
+            drug = drugRepository.save(drug);
+        } else {
+            logger.info("no updates to save");
+        }
         return modelMapper.map(drug, DrugDto.class);
     }
 
@@ -119,6 +104,7 @@ public class DrugService {
     }
 
     public List<DrugDto> getAllDrugs(Pageable pageable) {
+        logger.info("getting all drugs");
         return drugRepository
                 .findAll(pageable)
                 .stream()
@@ -127,6 +113,7 @@ public class DrugService {
     }
 
     public List<DrugDto> searchByName(String drugName, Pageable pageable) {
+        logger.info("searching for drug: {}", drugName);
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
         return drugRepository
                 .searchDrugByNamePaginated(formattedName, pageable)

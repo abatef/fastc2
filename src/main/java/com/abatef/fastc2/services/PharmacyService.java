@@ -8,9 +8,8 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.enums.FilterOption;
 import com.abatef.fastc2.enums.SortOption;
-import com.abatef.fastc2.enums.ValueType;
-import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
+import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.*;
 import com.abatef.fastc2.models.pharmacy.DrugOrder;
 import com.abatef.fastc2.models.pharmacy.DrugOrderId;
@@ -24,6 +23,8 @@ import com.abatef.fastc2.repositories.*;
 import jakarta.validation.constraints.NotNull;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,6 +50,8 @@ public class PharmacyService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeService employeeService;
     private final DrugOrderRepository drugOrderRepository;
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
@@ -76,13 +79,17 @@ public class PharmacyService {
     @Transactional
     public PharmacyDto createPharmacy(
             @RequestBody PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
+        logger.info("Creating pharmacy");
         Pharmacy pharmacy = new Pharmacy();
         pharmacy.setName(request.getName());
         pharmacy.setAddress(request.getAddress());
         pharmacy.setIsBranch(request.getIsBranch());
         pharmacy.setOwner(user);
+        logger.info("pharmacy owner: {}", user.getUsername());
         if (request.getIsBranch()) {
+            logger.info("is branch");
             Pharmacy mainBranch = getPharmacyByIdOrThrow(request.getMainBranchId());
+            logger.info("main branch: {}", mainBranch.getId());
             pharmacy.setMainBranch(mainBranch);
         }
         pharmacy.setExpiryThreshold(request.getExpiryThreshold());
@@ -91,7 +98,9 @@ public class PharmacyService {
         } else {
             pharmacy.setLocation(Location.of(30.1, 32.1).toPoint());
         }
+        logger.info("saving pharmacy");
         pharmacy = pharmacyRepository.save(pharmacy);
+        logger.info("saved pharmacy");
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
@@ -132,9 +141,14 @@ public class PharmacyService {
     }
 
     public Pharmacy getPharmacyByIdOrThrow(Integer id) {
-        return pharmacyRepository
-                .findById(id)
-                .orElseThrow(() -> new NonExistingValueException(ValueType.ID, id.toString()));
+        logger.info("finding pharmacy by id: {}", id);
+        Optional<Pharmacy> pharmacy = pharmacyRepository.findById(id);
+        if (pharmacy.isPresent()) {
+            logger.info("found pharmacy with name: {}", pharmacy.get().getName());
+            return pharmacy.get();
+        }
+        logger.error("pharmacy not found, throwing exception");
+        throw new PharmacyNotFoundException(id);
     }
 
     public Optional<Pharmacy> getPharmacyById(Integer id) {
@@ -146,6 +160,7 @@ public class PharmacyService {
     }
 
     public PharmacyDto getPharmacyInfoById(Integer id) {
+        logger.info("trying to get pharmacy info by id: {}", id);
         return modelMapper.map(getPharmacyByIdOrThrow(id), PharmacyDto.class);
     }
 
@@ -158,6 +173,7 @@ public class PharmacyService {
     }
 
     public List<PharmacyDto> getAllPharmacies(Pageable pageable) {
+        logger.info("trying to get all pharmacies");
         return pharmacyRepository.findAll(pageable).stream()
                 .map(ph -> modelMapper.map(ph, PharmacyDto.class))
                 .toList();
@@ -167,24 +183,50 @@ public class PharmacyService {
     @Transactional
     public PharmacyDto updatePharmacyInfo(
             @NotNull PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
+        logger.info("updating pharmacy info");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyInfo.getId());
+        boolean isUpdated = false;
         if (pharmacyInfo.getName() != null && !pharmacyInfo.getName().isEmpty()) {
+            logger.info(
+                    "updating pharmacy name, old: {} new: {}",
+                    pharmacy.getName(),
+                    pharmacyInfo.getName());
             pharmacy.setName(pharmacyInfo.getName());
+            isUpdated = true;
         }
 
         if (pharmacyInfo.getAddress() != null && !pharmacyInfo.getAddress().isEmpty()) {
+            logger.info(
+                    "updating pharmacy address, old: {} new: {}",
+                    pharmacy.getAddress(),
+                    pharmacyInfo.getAddress());
             pharmacy.setAddress(pharmacyInfo.getAddress());
+            isUpdated = true;
         }
 
         if (pharmacyInfo.getLocation() != null) {
+            logger.info(
+                    "updating pharmacy location, old: {} new: {}",
+                    Location.of(pharmacy.getLocation()),
+                    pharmacyInfo.getLocation());
             pharmacy.setLocation(pharmacyInfo.getLocation().toPoint());
+            isUpdated = true;
         }
 
         if (pharmacyInfo.getExpiryThreshold() != null) {
+            logger.info(
+                    "updating pharmacy expiry threshold, old: {} new: {}",
+                    pharmacy.getExpiryThreshold(),
+                    pharmacyInfo.getExpiryThreshold());
             pharmacy.setExpiryThreshold(pharmacyInfo.getExpiryThreshold());
+            isUpdated = true;
         }
-
-        pharmacy = pharmacyRepository.save(pharmacy);
+        if (isUpdated) {
+            logger.info("saved new updates");
+            pharmacy = pharmacyRepository.save(pharmacy);
+        } else {
+            logger.info("no updates to save");
+        }
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
@@ -428,11 +470,14 @@ public class PharmacyService {
             Float upperPriceBound, // For PRICE_BETWEEN
             String type, // For BY_TYPE
             Pageable pageable) {
+        logger.info("applying all filters");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
         Page<PharmacyDrug> drugs = pharmacyDrugRepository.findAllById(pharmacyId, pageable);
+        logger.info("found {} drugs", drugs.getTotalElements());
         List<PharmacyDrug> drugsList = drugs.getContent();
         List<PharmacyDrug> filteredDrugs;
         if (query != null) {
+            logger.info("search term: {}", query);
             filteredDrugs = searchDrugInPharmacy(query, pharmacyId, pageable);
         } else {
             filteredDrugs = new ArrayList<>(drugsList);
@@ -440,7 +485,13 @@ public class PharmacyService {
 
         LocalDate today = LocalDate.now();
 
+        if (filterOptions == null) {
+            logger.info("filter options is null");
+            filterOptions = new ArrayList<>();
+        }
+
         for (FilterOption option : filterOptions) {
+            logger.info("filter option: {}", option.name());
             switch (option) {
                 // Original filters
                 case AVAILABLE:
@@ -656,6 +707,7 @@ public class PharmacyService {
         }
 
         if (drugId != null) {
+            logger.info("filtering by drug: {}", drugId);
             filteredDrugs =
                     filteredDrugs.stream()
                             .filter(drug -> drug.getDrug().getId().equals(drugId))
@@ -663,6 +715,7 @@ public class PharmacyService {
         }
 
         if (sortOption != null) {
+            logger.info("sort option: {}", sortOption);
             switch (sortOption) {
                 case EXPIRY_DATE_ASC:
                     // Sort by expiry date (nearest to expire first)
@@ -696,7 +749,7 @@ public class PharmacyService {
                     break;
             }
         }
-
+        logger.info("done filtering.");
         // Convert filtered drugs to DTOs
         return filteredDrugs.stream()
                 .map(drug -> modelMapper.map(drug, PharmacyDrugDto.class))
