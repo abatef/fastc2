@@ -28,8 +28,8 @@ jobs:
         cache: maven
     - name: Build with Maven
       env:
-        DB_URL: ${{vars.DB_URL}}
-        DB_USERNAME: ${{vars.DB_USERNAME}}
+        DB_URL: ${{env.DB_URL}}
+        DB_USERNAME: ${{env.DB_USERNAME}}
         DB_PASSWORD: ${{secrets.DB_PASSWORD}}
         JWT_SECRET: ${{secrets.JWT_SECRET}}
       run: mvn -B package --file pom.xml
