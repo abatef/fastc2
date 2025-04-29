@@ -1,7 +1,7 @@
 package com.abatef.fastc2.services;
 
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
-import com.abatef.fastc2.dtos.user.EmployeeInfo;
+import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
 import com.abatef.fastc2.exceptions.EmployeeNotFoundException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
@@ -42,7 +42,7 @@ public class EmployeeService {
 
     @PreAuthorize("hasRole('OWNER')")
     @Transactional
-    public EmployeeInfo createNewEmployee(EmployeeCreationRequest request, User principal) {
+    public EmployeeDto createNewEmployee(EmployeeCreationRequest request, User principal) {
         request.getUser().setManagedUser(true);
         User userInfo = userService.registerUser(request.getUser());
         Employee employee = new Employee();
@@ -56,7 +56,7 @@ public class EmployeeService {
                         .orElseThrow(() -> new PharmacyNotFoundException(request.getPharmacyId()));
         employee.setPharmacy(pharmacy);
         employee = employeeRepository.save(employee);
-        return modelMapper.map(employee, EmployeeInfo.class);
+        return modelMapper.map(employee, EmployeeDto.class);
     }
 
     public Employee getEmployeeByIdOrThrow(Integer employeeId) {
@@ -67,13 +67,13 @@ public class EmployeeService {
         throw new EmployeeNotFoundException(employeeId);
     }
 
-    public EmployeeInfo getEmployeeInfoById(Integer employeeId) {
-        return modelMapper.map(getEmployeeByIdOrThrow(employeeId), EmployeeInfo.class);
+    public EmployeeDto getEmployeeInfoById(Integer employeeId) {
+        return modelMapper.map(getEmployeeByIdOrThrow(employeeId), EmployeeDto.class);
     }
 
     @PreAuthorize("hasRole('OWNER')")
     @Transactional
-    public EmployeeInfo updateEmployee(EmployeeUpdateRequest employeeInfo, User principal) {
+    public EmployeeDto updateEmployee(EmployeeUpdateRequest employeeInfo, User principal) {
         Employee employee = getEmployeeByIdOrThrow(employeeInfo.getId());
         if (employeeInfo.getSalary() != null) {
             employee.setSalary(employeeInfo.getSalary());
@@ -96,7 +96,7 @@ public class EmployeeService {
             employee.getUser().setRole(employeeInfo.getRole());
         }
         employee = employeeRepository.save(employee);
-        return modelMapper.map(employee, EmployeeInfo.class);
+        return modelMapper.map(employee, EmployeeDto.class);
     }
 
     @PreAuthorize("hasRole('OWNER')")

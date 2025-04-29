@@ -11,7 +11,7 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserInfo {
+public class UserDto {
     private Integer id;
     private String name;
     private String username;

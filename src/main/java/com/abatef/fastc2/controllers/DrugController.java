@@ -1,7 +1,7 @@
 package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.drug.DrugCreationRequest;
-import com.abatef.fastc2.dtos.drug.DrugInfo;
+import com.abatef.fastc2.dtos.drug.DrugDto;
 import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.models.Drug;
@@ -51,15 +51,15 @@ public class DrugController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Drug> getDrugInfo(@PathVariable Integer id) {
-        Drug drug = drugService.getDrugByIdOrThrow(id);
+    public ResponseEntity<DrugDto> getDrugInfo(@PathVariable Integer id) {
+        DrugDto drug = drugService.getDrugInfoById(id);
         return ResponseEntity.ok(drug);
     }
 
     @PatchMapping
-    public ResponseEntity<DrugInfo> updateDrugInfo(
+    public ResponseEntity<DrugDto> updateDrugInfo(
             @Valid @RequestBody DrugUpdateRequest info, @AuthenticationPrincipal User user) {
-        DrugInfo drug = drugService.updateDrugInfo(info, user);
+        DrugDto drug = drugService.updateDrugInfo(info, user);
         return ResponseEntity.ok(drug);
     }
 
@@ -70,31 +70,31 @@ public class DrugController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<DrugInfo>> searchDrugs(
+    public ResponseEntity<List<DrugDto>> searchDrugs(
             @RequestParam("name") String name,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size) {
 
         PageRequest pageable = PageRequest.of(page, size);
-        List<DrugInfo> drugInfos =
+        List<DrugDto> drugDtos =
                 drugService.searchByName(name, pageable).stream()
-                        .map(drug -> modelMapper.map(drug, DrugInfo.class))
+                        .map(drug -> modelMapper.map(drug, DrugDto.class))
                         .collect(Collectors.toList());
-        if (drugInfos.isEmpty()) {
+        if (drugDtos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(drugInfos);
+        return ResponseEntity.ok(drugDtos);
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<DrugInfo>> getAllDrugs(
+    public ResponseEntity<List<DrugDto>> getAllDrugs(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        List<DrugInfo> drugInfos = drugService.getAllDrugs(pageable);
-        if (drugInfos.isEmpty()) {
+        List<DrugDto> drugDtos = drugService.getAllDrugs(pageable);
+        if (drugDtos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(drugInfos);
+        return ResponseEntity.ok(drugDtos);
     }
 }

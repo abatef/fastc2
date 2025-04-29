@@ -4,14 +4,13 @@ import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -61,14 +60,19 @@ public class PharmacyDrug {
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
 
     @OneToMany(mappedBy = "pharmacyDrug")
     private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

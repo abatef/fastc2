@@ -1,17 +1,13 @@
 package com.abatef.fastc2.dtos.drug;
 
-import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
+import com.abatef.fastc2.dtos.user.UserDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import org.hibernate.annotations.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -19,19 +15,19 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PharmacyDrugInfo {
+public class PharmacyDrugDto {
     @Schema(description = "Full General Drug Info", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private DrugInfo drug;
+    private DrugDto drug;
 
     @Schema(
             description = "Full General Pharmacy Info",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private PharmacyInfo pharmacy;
+    private PharmacyDto pharmacy;
 
     @Schema(
             description = "Full Info of the user who added the drug to the pharmacy",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private UserInfo addedBy;
+    private UserDto addedBy;
 
     @Schema(
             description = "current stock amount of the drug in the pharmacy",

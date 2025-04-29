@@ -1,7 +1,7 @@
 package com.abatef.fastc2.controllers;
 
-import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
+import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.UserService;
 
@@ -24,10 +24,10 @@ public class UserController {
     }
 
     @PatchMapping
-    public ResponseEntity<UserInfo> updateUserInfo(
-            @RequestBody UserInfo userInfo, @AuthenticationPrincipal User user) {
+    public ResponseEntity<UserDto> updateUserInfo(
+            @RequestBody UserDto userDto, @AuthenticationPrincipal User user) {
 
-        UserInfo updatedUser = userService.updateUserInfo(user, userInfo);
+        UserDto updatedUser = userService.updateUserInfo(user, userDto);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -38,8 +38,8 @@ public class UserController {
     }
 
     @GetMapping("/pharmacy")
-    public ResponseEntity<List<PharmacyInfo>> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
-        List<PharmacyInfo> info = userService.getPharmacyInfoByUser(user);
+    public ResponseEntity<List<PharmacyDto>> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
+        List<PharmacyDto> info = userService.getPharmacyInfoByUser(user);
         if (info == null) {
             return ResponseEntity.notFound().build();
         }

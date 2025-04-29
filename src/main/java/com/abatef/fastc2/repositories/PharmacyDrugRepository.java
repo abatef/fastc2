@@ -1,6 +1,5 @@
 package com.abatef.fastc2.repositories;
 
-import com.abatef.fastc2.dtos.drug.PharmacyDrugShortage;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 
 import org.springframework.data.domain.Page;
@@ -97,26 +96,27 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             nativeQuery = true)
     Page<PharmacyDrug> getUnavailablePharmacyDrugs(Integer pharmacyId, Pageable pageable);
 
-//    @Query(
-//            value =
-//                    "SELECT new com.abatef.fastc2.dtos.drug.PharmacyDrugShortage("
-//                            + "pd.drug, pd.pharmacy,"
-//                            + "COALESCE(dr.required - COALESCE(SUM(pd.stock), 0), 0) ) "
-//                            + "FROM PharmacyDrug pd "
-//                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
-//                            + "AND pd.pharmacy.id = dr.pharmacy.id "
-//                            + "WHERE pd.pharmacy.id = :pharmacyId "
-//                            + "GROUP BY pd.drug.id, pd.pharmacy.id, dr.required  "
-//                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
-//            countQuery =
-//                    "SELECT COUNT(DISTINCT pd) "
-//                            + "FROM PharmacyDrug pd "
-//                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
-//                            + "AND pd.pharmacy.id = dr.pharmacy.id "
-//                            + "WHERE pd.pharmacy.id = :pharmacyId "
-//                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
-//            nativeQuery = false)
-//    Page<PharmacyDrugShortage> getShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable);
+    //    @Query(
+    //            value =
+    //                    "SELECT new com.abatef.fastc2.dtos.drug.PharmacyDrugShortage("
+    //                            + "pd.drug, pd.pharmacy,"
+    //                            + "COALESCE(dr.required - COALESCE(SUM(pd.stock), 0), 0) ) "
+    //                            + "FROM PharmacyDrug pd "
+    //                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
+    //                            + "AND pd.pharmacy.id = dr.pharmacy.id "
+    //                            + "WHERE pd.pharmacy.id = :pharmacyId "
+    //                            + "GROUP BY pd.drug.id, pd.pharmacy.id, dr.required  "
+    //                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
+    //            countQuery =
+    //                    "SELECT COUNT(DISTINCT pd) "
+    //                            + "FROM PharmacyDrug pd "
+    //                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
+    //                            + "AND pd.pharmacy.id = dr.pharmacy.id "
+    //                            + "WHERE pd.pharmacy.id = :pharmacyId "
+    //                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
+    //            nativeQuery = false)
+    //    Page<PharmacyDrugShortage> getShortageDrugsByPharmacyId(Integer pharmacyId, Pageable
+    // pageable);
 
     @Query(
             value =
@@ -145,4 +145,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
     List<PharmacyDrug> getAllByPharmacy_IdAndDrug_Id(Integer pharmacyId, Integer drugId);
 
     List<PharmacyDrug> getAllByPharmacy_Id(Integer pharmacyId);
+
+    List<PharmacyDrug> getAllByPharmacy_IdAndDrug_IdAndStockGreaterThan(
+            Integer pharmacyId, Integer drugId, Integer stockIsGreaterThan);
 }

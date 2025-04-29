@@ -1,11 +1,11 @@
 package com.abatef.fastc2.config;
 
-import com.abatef.fastc2.dtos.drug.DrugInfo;
-import com.abatef.fastc2.dtos.drug.PharmacyDrugInfo;
+import com.abatef.fastc2.dtos.drug.DrugDto;
+import com.abatef.fastc2.dtos.drug.PharmacyDrugDto;
 import com.abatef.fastc2.dtos.pharmacy.Location;
-import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
-import com.abatef.fastc2.dtos.receipt.ReceiptItemInfo;
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
+import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
+import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.pharmacy.ReceiptItem;
@@ -35,15 +35,15 @@ public class MappingConfig {
                     return location.toPoint();
                 };
 
-        Converter<Pharmacy, PharmacyInfo> pharmacyInfoConverter =
+        Converter<Pharmacy, PharmacyDto> pharmacyInfoConverter =
                 (ctx) -> {
                     Pharmacy pharmacy = ctx.getSource();
-                    PharmacyInfo info = new PharmacyInfo();
+                    PharmacyDto info = new PharmacyDto();
                     info.setId(pharmacy.getId());
                     info.setName(pharmacy.getName());
                     info.setAddress(pharmacy.getAddress());
                     info.setLocation(Location.of(pharmacy.getLocation()));
-                    info.setOwner(modelMapper.map(pharmacy.getOwner(), UserInfo.class));
+                    info.setOwner(modelMapper.map(pharmacy.getOwner(), UserDto.class));
                     info.setIsBranch(pharmacy.getIsBranch());
                     info.setMainBranch(
                             pharmacy.getIsBranch() ? pharmacy.getMainBranch().getId() : null);
@@ -55,31 +55,31 @@ public class MappingConfig {
                 };
 
         modelMapper
-                .createTypeMap(Pharmacy.class, PharmacyInfo.class)
+                .createTypeMap(Pharmacy.class, PharmacyDto.class)
                 .setConverter(pharmacyInfoConverter);
         modelMapper.createTypeMap(Point.class, Location.class).setConverter(pointLocationConverter);
         modelMapper.createTypeMap(Location.class, Point.class).setConverter(locationPointConverter);
-        Converter<PharmacyDrug, PharmacyDrugInfo> pharmacyDrugPharmacyInfoConverter =
+        Converter<PharmacyDrug, PharmacyDrugDto> pharmacyDrugPharmacyInfoConverter =
                 (ctx) -> {
                     PharmacyDrug pd = ctx.getSource();
-                    PharmacyDrugInfo info = new PharmacyDrugInfo();
-                    info.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyInfo.class));
-                    info.setDrug(modelMapper.map(pd.getDrug(), DrugInfo.class));
+                    PharmacyDrugDto info = new PharmacyDrugDto();
+                    info.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyDto.class));
+                    info.setDrug(modelMapper.map(pd.getDrug(), DrugDto.class));
                     info.setPrice(pd.getPrice());
-                    info.setStock(pd.getStock());
+                    info.setStock(Math.ceilDiv(pd.getStock(), pd.getDrug().getUnits()));
                     info.setExpiryDate(pd.getExpiryDate());
                     info.setCreatedAt(pd.getCreatedAt());
                     info.setUpdatedAt(pd.getUpdatedAt());
-                    info.setAddedBy(modelMapper.map(pd.getAddedBy(), UserInfo.class));
+                    info.setAddedBy(modelMapper.map(pd.getAddedBy(), UserDto.class));
                     return info;
                 };
         modelMapper
-                .createTypeMap(PharmacyDrug.class, PharmacyDrugInfo.class)
+                .createTypeMap(PharmacyDrug.class, PharmacyDrugDto.class)
                 .setConverter(pharmacyDrugPharmacyInfoConverter);
-        Converter<ReceiptItem, ReceiptItemInfo> receiptItemReceiptItemInfoConverter =
+        Converter<ReceiptItem, ReceiptItemDto> receiptItemReceiptItemInfoConverter =
                 (ctx) -> {
                     ReceiptItem item = ctx.getSource();
-                    ReceiptItemInfo info = new ReceiptItemInfo();
+                    ReceiptItemDto info = new ReceiptItemDto();
                     info.setDrugName(item.getPharmacyDrug().getDrug().getName());
                     info.setPack(item.getPack());
                     info.setUnits(item.getUnits());
@@ -88,7 +88,7 @@ public class MappingConfig {
                     return info;
                 };
         modelMapper
-                .createTypeMap(ReceiptItem.class, ReceiptItemInfo.class)
+                .createTypeMap(ReceiptItem.class, ReceiptItemDto.class)
                 .setConverter(receiptItemReceiptItemInfoConverter);
         return modelMapper;
     }

@@ -1,7 +1,7 @@
 package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
-import com.abatef.fastc2.dtos.user.EmployeeInfo;
+import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.EmployeeService;
@@ -22,24 +22,24 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<EmployeeInfo> createEmployee(
+    public ResponseEntity<EmployeeDto> createEmployee(
             @Valid @RequestBody EmployeeCreationRequest employee,
             @AuthenticationPrincipal User user) {
-        EmployeeInfo info = employeeService.createNewEmployee(employee, user);
+        EmployeeDto info = employeeService.createNewEmployee(employee, user);
         return ResponseEntity.ok(info);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EmployeeInfo> getEmployee(@PathVariable Integer id) {
-        EmployeeInfo info = employeeService.getEmployeeInfoById(id);
+    public ResponseEntity<EmployeeDto> getEmployee(@PathVariable Integer id) {
+        EmployeeDto info = employeeService.getEmployeeInfoById(id);
         return ResponseEntity.ok(info);
     }
 
     @PatchMapping
-    public ResponseEntity<EmployeeInfo> updateEmployee(
+    public ResponseEntity<EmployeeDto> updateEmployee(
             @Valid @RequestBody EmployeeUpdateRequest employee,
             @AuthenticationPrincipal User user) {
-        EmployeeInfo info = employeeService.updateEmployee(employee, user);
+        EmployeeDto info = employeeService.updateEmployee(employee, user);
         return ResponseEntity.ok(info);
     }
 

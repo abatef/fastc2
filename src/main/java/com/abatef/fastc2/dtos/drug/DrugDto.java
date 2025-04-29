@@ -1,10 +1,8 @@
 package com.abatef.fastc2.dtos.drug;
 
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.user.UserDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +13,7 @@ import java.time.Instant;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DrugInfo {
+public class DrugDto {
     @Schema(description = "Drug Id", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Integer id;
 
@@ -30,7 +28,7 @@ public class DrugInfo {
     @Schema(
             description = "The User Who Created The Drug",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private UserInfo createdBy;
+    private UserDto createdBy;
 
     @Schema(
             description = "Number of Units of the drug (e.g Number of Sachets)",

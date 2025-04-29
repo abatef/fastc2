@@ -19,10 +19,6 @@ public class PharmacyDrugCreationRequest {
     @NotNull
     private Integer drugId;
 
-    @Schema(description = "Pharmacy Id", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull
-    private Integer pharmacyId;
-
     @Min(0)
     @Schema(
             description = "Stock Amount",

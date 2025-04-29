@@ -1,6 +1,6 @@
 package com.abatef.fastc2.dtos.receipt;
 
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.shift.Shift;
 
 import lombok.AllArgsConstructor;
@@ -14,11 +14,12 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReceiptInfo {
-    List<ReceiptItemInfo> items = new ArrayList<>();
+public class ReceiptDto {
     private Integer id;
-    private UserInfo cashier;
+    private UserDto cashier;
     private Shift shift;
     private Instant createdAt;
     private Instant updatedAt;
+    List<ReceiptItemDto> items = new ArrayList<>();
+    private Float total;
 }

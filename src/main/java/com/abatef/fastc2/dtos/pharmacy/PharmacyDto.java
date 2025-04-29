@@ -1,6 +1,6 @@
 package com.abatef.fastc2.dtos.pharmacy;
 
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.user.UserDto;
 
 import com.abatef.fastc2.models.shift.Shift;
 import jakarta.validation.constraints.NotNull;
@@ -15,13 +15,13 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PharmacyInfo {
+public class PharmacyDto {
     @NotNull private Integer id;
 
     @Size(min = 2, max = 100)
     private String name;
 
-    private UserInfo owner;
+    private UserDto owner;
     private String address;
     private Location location;
     private Boolean isBranch;

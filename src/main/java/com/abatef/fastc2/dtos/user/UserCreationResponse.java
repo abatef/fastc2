@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserCreationResponse {
-    private UserInfo user;
+    private UserDto user;
     private JwtAuthenticationResponse jwt;
 }

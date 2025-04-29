@@ -1,7 +1,7 @@
 package com.abatef.fastc2.services;
 
 import com.abatef.fastc2.dtos.drug.DrugCreationRequest;
-import com.abatef.fastc2.dtos.drug.DrugInfo;
+import com.abatef.fastc2.dtos.drug.DrugDto;
 import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.exceptions.DrugNotFoundException;
 import com.abatef.fastc2.models.Drug;
@@ -41,11 +41,15 @@ public class DrugService {
     }
 
     public Drug getDrugByIdOrThrow(Integer id) {
-        Optional<Drug> drugOptional = drugRepository.getDrugById(id);
+        Optional<Drug> drugOptional = drugRepository.findById(id);
         if (drugOptional.isPresent()) {
             return drugOptional.get();
         }
         throw new DrugNotFoundException(id);
+    }
+
+    public DrugDto getDrugInfoById(Integer id) {
+        return modelMapper.map(getDrugByIdOrThrow(id), DrugDto.class);
     }
 
     public Optional<Drug> getDrugOptional(Integer id) {
@@ -57,7 +61,7 @@ public class DrugService {
     }
 
     @Transactional
-    public DrugInfo updateDrugInfo(DrugUpdateRequest info, User user) {
+    public DrugDto updateDrugInfo(DrugUpdateRequest info, User user) {
         Drug drug = getDrugByIdOrThrow(info.getId());
         if (info.getName() != null) {
             drug.setName(info.getName());
@@ -75,59 +79,59 @@ public class DrugService {
         }
 
         drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugInfo.class);
+        return modelMapper.map(drug, DrugDto.class);
     }
 
     @Transactional
-    public DrugInfo updateDrugPrice(Integer id, Float price, User user) {
+    public DrugDto updateDrugPrice(Integer id, Float price, User user) {
         Drug drug = getDrugByIdOrThrow(id);
         drug.setFullPrice(price);
         drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugInfo.class);
+        return modelMapper.map(drug, DrugDto.class);
     }
 
     @Transactional
-    public DrugInfo updateDrugForm(Integer id, String form, User user) {
+    public DrugDto updateDrugForm(Integer id, String form, User user) {
         Drug drug = getDrugByIdOrThrow(id);
         drug.setForm(form);
         drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugInfo.class);
+        return modelMapper.map(drug, DrugDto.class);
     }
 
     @Transactional
-    public DrugInfo updateDrugName(Integer id, String name, User user) {
+    public DrugDto updateDrugName(Integer id, String name, User user) {
         Drug drug = getDrugByIdOrThrow(id);
         drug.setName(name);
         drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugInfo.class);
+        return modelMapper.map(drug, DrugDto.class);
     }
 
     @Transactional
-    public DrugInfo updateDrugUnits(Integer id, Short units, User user) {
+    public DrugDto updateDrugUnits(Integer id, Short units, User user) {
         Drug drug = getDrugByIdOrThrow(id);
         drug.setUnits(units);
         drug = drugRepository.save(drug);
-        return modelMapper.map(drug, DrugInfo.class);
+        return modelMapper.map(drug, DrugDto.class);
     }
 
     public void deleteDrugById(Integer id) {
         drugRepository.deleteById(id);
     }
 
-    public List<DrugInfo> getAllDrugs(Pageable pageable) {
+    public List<DrugDto> getAllDrugs(Pageable pageable) {
         return drugRepository
                 .findAll(pageable)
                 .stream()
-                .map(drug -> modelMapper.map(drug, DrugInfo.class))
+                .map(drug -> modelMapper.map(drug, DrugDto.class))
                 .toList();
     }
 
-    public List<DrugInfo> searchByName(String drugName, Pageable pageable) {
+    public List<DrugDto> searchByName(String drugName, Pageable pageable) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
         return drugRepository
                 .searchDrugByNamePaginated(formattedName, pageable)
                 .stream()
-                .map(drug -> modelMapper.map(drug, DrugInfo.class))
+                .map(drug -> modelMapper.map(drug, DrugDto.class))
                 .toList();
     }
     /* Main Page

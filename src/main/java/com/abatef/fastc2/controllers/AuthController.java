@@ -5,7 +5,7 @@ import com.abatef.fastc2.dtos.auth.JwtAuthenticationResponse;
 import com.abatef.fastc2.dtos.auth.RefreshTokenRequest;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
 import com.abatef.fastc2.dtos.user.UserCreationResponse;
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.security.auth.RefreshToken;
 import com.abatef.fastc2.security.auth.RefreshTokenService;
@@ -60,11 +60,11 @@ public class AuthController {
     public ResponseEntity<UserCreationResponse> signup(
             @Valid @RequestBody UserCreationRequest userCreationRequest) {
         User user = userService.registerUser(userCreationRequest);
-        UserInfo userInfo = modelMapper.map(user, UserInfo.class);
+        UserDto userDto = modelMapper.map(user, UserDto.class);
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
         JwtAuthenticationResponse jwtResponse = login(request).getBody();
-        return ResponseEntity.ok(new UserCreationResponse(userInfo, jwtResponse));
+        return ResponseEntity.ok(new UserCreationResponse(userDto, jwtResponse));
     }
 
     @PostMapping("/login")
@@ -104,7 +104,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserInfo> getUser(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(modelMapper.map(user, UserInfo.class));
+    public ResponseEntity<UserDto> getUser(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(modelMapper.map(user, UserDto.class));
     }
 }

@@ -1,9 +1,10 @@
 package com.abatef.fastc2.services;
 
 import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
-import com.abatef.fastc2.dtos.receipt.ReceiptInfo;
-import com.abatef.fastc2.dtos.receipt.ReceiptItemInfo;
+import com.abatef.fastc2.dtos.receipt.ReceiptDto;
+import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
 import com.abatef.fastc2.enums.ReceiptStatus;
+import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.ReceiptNotFoundException;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
@@ -20,8 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ReceiptService {
@@ -56,35 +56,68 @@ public class ReceiptService {
     }
 
     @Transactional
-    public ReceiptInfo createANewReceipt(List<ReceiptCreationRequest> requests, User cashier) {
+    public ReceiptDto createANewReceipt(List<ReceiptCreationRequest> requests, User cashier) {
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
-        receiptRepository.save(receipt);
+        Set<ReceiptItem> items = new HashSet<>();
         for (ReceiptCreationRequest request : requests) {
             PharmacyDrug drug =
-                    pharmacyService.getPharmacyDrugByIdOrThrow(request.getPharmacyDrugId());
+                    pharmacyService.getNextDrugToSell(request.getPharmacyId(), request.getDrugId());
+            if (drug == null) {
+                throw new PharmacyDrugNotFoundException();
+            }
             ReceiptItem item = new ReceiptItem();
             item.setReceipt(receipt);
             item.setPharmacyDrug(drug);
+            int requiredQuantity = 0;
+            if (request.getUnits() != null && request.getUnits() > 0) {
+                requiredQuantity += request.getUnits();
+            }
+            if (request.getPacks() != null && request.getPacks() > 0) {
+                requiredQuantity += request.getPacks() * drug.getDrug().getUnits();
+            }
+            Map<PharmacyDrug, Integer> drugQuantities = new HashMap<>();
+            while (requiredQuantity > 0 && drug != null) {
+                int drugStock = Math.min(requiredQuantity, drug.getStock());
+                if (drugStock > 0) {
+                    drugQuantities.put(drug, drugStock);
+                    requiredQuantity -= drugStock;
+                }
+                if (requiredQuantity > 0) {
+                    drug = pharmacyService.getNextDrugToSell(request.getPharmacyId(), request.getDrugId());
+                }
+            }
+
+            if (requiredQuantity > 0) {
+                throw new RuntimeException("not enough stock of this drug");
+            }
+
+            float amountDue = 0;
+            for (Map.Entry<PharmacyDrug, Integer> entry : drugQuantities.entrySet()) {
+                PharmacyDrug pd = entry.getKey();
+                float pricePerUnit = pd.getPrice() / pd.getDrug().getUnits();
+                amountDue += pricePerUnit * entry.getValue();
+                pd.setStock(pd.getStock() - entry.getValue());
+                pharmacyDrugRepository.save(pd);
+            }
+
             item.setPack(request.getPacks());
-            drug.setStock(drug.getStock() - item.getPack());
-            pharmacyDrugRepository.save(drug);
             item.setUnits(request.getUnits());
-            item.setAmountDue(
-                    (drug.getPrice() / request.getUnits())
-                            + (drug.getPrice() * request.getUnits()));
-            item = receiptItemRepository.save(item);
-            receipt.getReceiptItems().add(item);
+            item.setAmountDue(amountDue);
+            items.add(item);
+            receipt.setReceiptItems(items);
+            receipt = receiptRepository.save(receipt);
         }
-        ReceiptInfo info = modelMapper.map(receipt, ReceiptInfo.class);
+        ReceiptDto info = modelMapper.map(receipt, ReceiptDto.class);
         for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
-            ReceiptItemInfo itemInfo = new ReceiptItemInfo();
+            ReceiptItemDto itemInfo = new ReceiptItemDto();
             itemInfo.setDrugName(receiptItem.getPharmacyDrug().getDrug().getName());
             itemInfo.setDiscount(receiptItem.getDiscount());
             itemInfo.setPack(receiptItem.getPack());
             itemInfo.setUnits(receiptItem.getUnits());
             itemInfo.setAmountDue(receiptItem.getAmountDue());
+            info.setTotal(info.getTotal() + receiptItem.getAmountDue());
             info.getItems().add(itemInfo);
         }
         return info;
@@ -98,19 +131,19 @@ public class ReceiptService {
         throw new ReceiptNotFoundException(id);
     }
 
-    public ReceiptInfo getReceiptInfoById(Integer id) {
-        return modelMapper.map(getReceiptByIdOrThrow(id), ReceiptInfo.class);
+    public ReceiptDto getReceiptInfoById(Integer id) {
+        return modelMapper.map(getReceiptByIdOrThrow(id), ReceiptDto.class);
     }
 
-    private List<ReceiptInfo> streamAndMap(List<Receipt> receipts) {
+    private List<ReceiptDto> streamAndMap(List<Receipt> receipts) {
         return receipts.stream()
-                .map(receipt -> modelMapper.map(receipt, ReceiptInfo.class))
+                .map(receipt -> modelMapper.map(receipt, ReceiptDto.class))
                 .toList();
     }
 
     // TODO: Complete This
     @Transactional
-    public ReceiptInfo updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {
+    public ReceiptDto updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {
         Receipt receipt = getReceiptByIdOrThrow(id);
         receipt.setStatus(status);
         receiptRepository.save(receipt);
@@ -121,30 +154,30 @@ public class ReceiptService {
                 pharmacyDrugRepository.save(pharmacyDrug);
             }
         }
-        return modelMapper.map(receipt, ReceiptInfo.class);
+        return modelMapper.map(receipt, ReceiptDto.class);
     }
 
-    public List<ReceiptInfo> getReceiptsByCashierId(Integer id, Pageable pageable) {
+    public List<ReceiptDto> getReceiptsByCashierId(Integer id, Pageable pageable) {
         Page<Receipt> receipts = receiptRepository.findAllByCashier_Id(id, pageable);
         return streamAndMap(receipts.getContent());
     }
 
-    public List<ReceiptInfo> getReceiptsByPharmacyId(Integer id, Pageable pageable) {
+    public List<ReceiptDto> getReceiptsByPharmacyId(Integer id, Pageable pageable) {
         Page<Receipt> receipts = receiptRepository.findReceiptsByPharmacyId(id, pageable);
         return streamAndMap(receipts.getContent());
     }
 
-    public List<ReceiptInfo> getReceiptsByDrugId(Integer id, Pageable pageable) {
+    public List<ReceiptDto> getReceiptsByDrugId(Integer id, Pageable pageable) {
         Page<Receipt> receipts = receiptRepository.findReceiptsByDrugId(id, pageable);
         return streamAndMap(receipts.getContent());
     }
 
-    public List<ReceiptInfo> getReceiptsByShiftId(Integer id, Pageable pageable) {
+    public List<ReceiptDto> getReceiptsByShiftId(Integer id, Pageable pageable) {
         Page<Receipt> receipts = receiptRepository.findReceiptsByShiftId(id, pageable);
         return streamAndMap(receipts.getContent());
     }
 
-    public List<ReceiptInfo> applyAllFilters(
+    public List<ReceiptDto> applyAllFilters(
             Integer cashierId,
             Integer drugId,
             Integer pharmacyId,

@@ -1,6 +1,6 @@
 package com.abatef.fastc2.dtos.pharmacy;
 
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.user.UserDto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -17,7 +17,7 @@ public class PharmacyUpdateRequest {
     private Integer id;
     @Min(1)
     private String name;
-    private UserInfo owner;
+    private UserDto owner;
     @Min(1)
     private String address;
     private Location location;

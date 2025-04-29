@@ -1,8 +1,8 @@
 package com.abatef.fastc2.services;
 
-import com.abatef.fastc2.dtos.pharmacy.PharmacyInfo;
+import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.user.UserCreationRequest;
-import com.abatef.fastc2.dtos.user.UserInfo;
+import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.DuplicateValueException;
@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -97,18 +96,18 @@ public class UserService {
         return user;
     }
 
-    public UserInfo updateUserInfo(@AuthenticationPrincipal User user, UserInfo userInfo) {
-        if (userInfo.getName() == null || userInfo.getName().isEmpty()) {
-            userInfo.setName(user.getName());
+    public UserDto updateUserInfo(@AuthenticationPrincipal User user, UserDto userDto) {
+        if (userDto.getName() == null || userDto.getName().isEmpty()) {
+            userDto.setName(user.getName());
         }
-        if (userInfo.getPhone() == null || userInfo.getPhone().isEmpty()) {
-            userInfo.setPhone(user.getPhone());
+        if (userDto.getPhone() == null || userDto.getPhone().isEmpty()) {
+            userDto.setPhone(user.getPhone());
         }
-        if (userInfo.getEmail() == null || userInfo.getEmail().isEmpty()) {
-            userInfo.setEmail(user.getEmail());
+        if (userDto.getEmail() == null || userDto.getEmail().isEmpty()) {
+            userDto.setEmail(user.getEmail());
         }
         user = userRepository.save(user);
-        return modelMapper.map(userInfo, UserInfo.class);
+        return modelMapper.map(userDto, UserDto.class);
     }
 
     public User getUserByUsername(String username) throws NonExistingValueException {
@@ -135,18 +134,18 @@ public class UserService {
         throw new NonExistingValueException(ValueType.ID, id.toString());
     }
 
-    public UserInfo me(@AuthenticationPrincipal User user) {
-        return modelMapper.map(user, UserInfo.class);
+    public UserDto me(@AuthenticationPrincipal User user) {
+        return modelMapper.map(user, UserDto.class);
     }
 
     @Transactional(readOnly = true)
-    public List<PharmacyInfo> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
+    public List<PharmacyDto> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
         List<Pharmacy> pharmacies = pharmacyRepository.getPharmaciesByOwner_Id(user.getId());
         if (pharmacies.isEmpty()) {
             return null;
         }
         return pharmacies.stream()
-                .map(ph -> modelMapper.map(ph, PharmacyInfo.class))
+                .map(ph -> modelMapper.map(ph, PharmacyDto.class))
                 .toList();
     }
 
