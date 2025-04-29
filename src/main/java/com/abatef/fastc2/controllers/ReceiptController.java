@@ -69,7 +69,7 @@ public class ReceiptController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
-        ZoneId zone = ZoneId.systemDefault(); // or ZoneOffset.UTC
+        ZoneId zone = ZoneId.systemDefault();
 
         Instant from = (fromDate != null) ? fromDate.atStartOfDay(zone).toInstant() : null;
         Instant to = (toDate != null) ? toDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant() : null;

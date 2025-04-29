@@ -14,6 +14,8 @@ create table users
     updated_at   timestamp default current_timestamp
 );
 
+create index on users(id);
+
 create table shifts
 (
     id         serial primary key,
@@ -21,6 +23,8 @@ create table shifts
     start_time time not null,
     end_time   time not null
 );
+
+create index shift_idx on shifts(id);
 
 create table pharmacies
 (
@@ -39,6 +43,8 @@ create table pharmacies
     constraint fk_owner_id foreign key (owner_id) references users (id) on delete cascade,
     constraint fk_main_branch foreign key (main_branch) references pharmacies (id) on delete cascade
 );
+
+create index pharmacies_idx on pharmacies(id);
 
 create table pharmacy_shifts
 (
@@ -96,6 +102,8 @@ CREATE TABLE employees
     constraint fk_pharmacy_id foreign key (pharmacy) references pharmacies (id) on delete cascade
 );
 
+create index employee_idx on employees(id, pharmacy);
+
 alter table employees
     add constraint fk_shift_id foreign key (shift_id) references shifts (id) on delete set null;
 
@@ -131,6 +139,7 @@ create table drugs
     constraint fk_created_by foreign key (created_by) references users (id) on delete cascade
 );
 
+create index drug_idx on drugs(id, name, form);
 
 -- POSTGRESQL Full-Text Search -- DRUGS
 
@@ -188,6 +197,8 @@ create table pharmacy_drug
     constraint fk_added_by foreign key (added_by) references users (id) on delete no action
 );
 
+create index pharmacy_drug_idx on pharmacy_drug(id, drug_id, pharmacy_id, added_by, expiry_date);
+
 create table drug_order
 (
     drug_id int not null,
@@ -198,6 +209,8 @@ create table drug_order
     constraint fk_phar_id foreign key (pharmacy_id) references pharmacies(id) on delete cascade,
     primary key (drug_id, pharmacy_id)
 );
+
+create index drug_order_idx on drug_order(drug_id, pharmacy_id);
 
 create table receipt
 (
@@ -210,6 +223,7 @@ create table receipt
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
 
+create index receipt_idx on receipt(id, cashier, shift_id, status);
 
 create table sales_receipt
 (
@@ -225,10 +239,8 @@ create table sales_receipt
     primary key (receipt_id, pharmacy_drug_id)
 );
 
-alter table receipt
-    add column shift_id int not null;
-alter table receipt
-    add constraint fk_shift_id foreign key (shift_id) references shifts (id) on delete set null;
+create index sales_receipt_id on sales_receipt(receipt_id, pharmacy_drug_id);
+
 
 -- TODO: add separate revenue, profit
 
