@@ -8,8 +8,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Repository
@@ -52,22 +54,24 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
                             + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
                             + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
-                            + " and (:fromDate is null or :fromDate <= r.createdAt)"
-                            + " and (:toDate is null or :toDate >= r.createdAt)",
+                            + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
+                            + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))",
             countQuery =
-                    "select count(*) from Receipt r"
+                    "select count(r) from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"
                             + " where (:cashierId is null or r.cashier.id = :cashierId)"
                             + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
                             + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
-                            + " and (:fromDate is null or :fromDate <= r.createdAt)")
+                            + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
+                            + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))")
     Page<Receipt> applyAllFilters(
-            Integer cashierId,
-            Integer drugId,
-            Integer pharmacyId,
-            Integer shiftId,
-            LocalDate fromDate,
-            LocalDate toDate,
+            @Param("cashierId") Integer cashierId,
+            @Param("drugId") Integer drugId,
+            @Param("pharmacyId") Integer pharmacyId,
+            @Param("shiftId") Integer shiftId,
+            @Param("fromDate") Instant fromDate,
+            @Param("toDate") Instant toDate,
             Pageable pageable);
+
 }

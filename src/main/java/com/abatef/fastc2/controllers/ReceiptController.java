@@ -9,11 +9,14 @@ import com.abatef.fastc2.services.ReceiptService;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestController
@@ -60,14 +63,20 @@ public class ReceiptController {
             @RequestParam(value = "drug_id", required = false) Integer drugId,
             @RequestParam(value = "pharmacy_id", required = false) Integer pharmacyId,
             @RequestParam(value = "shift_id", required = false) Integer shiftId,
-            @RequestParam(value = "from_date", required = false) LocalDate fromDate,
-            @RequestParam(value = "to_date", required = false) LocalDate toDate,
+            @RequestParam(value = "from_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(value = "to_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        PageRequest pageable = PageRequest.of(page, size);
-        List<ReceiptDto> receipts =
-                receiptService.applyAllFilters(
-                        cashierId, drugId, pharmacyId, shiftId, fromDate, toDate, pageable);
+
+        ZoneId zone = ZoneId.systemDefault(); // or ZoneOffset.UTC
+
+        Instant from = (fromDate != null) ? fromDate.atStartOfDay(zone).toInstant() : null;
+        Instant to = (toDate != null) ? toDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant() : null;
+
+        List<ReceiptDto> receipts = receiptService.applyAllFilters(
+                cashierId, drugId, pharmacyId, shiftId, from, to, PageRequest.of(page, size));
+
         return noContentOrReturn(receipts);
     }
+
 }

@@ -7,6 +7,7 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.enums.FilterOption;
+import com.abatef.fastc2.enums.SortOption;
 import com.abatef.fastc2.enums.ValueType;
 import com.abatef.fastc2.exceptions.NonExistingValueException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PharmacyService {
@@ -248,9 +250,7 @@ public class PharmacyService {
         List<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getAllByPharmacy_IdAndDrug_IdAndStockGreaterThan(
                         pharmacyId, drugId, 0);
-        return drugs.stream()
-                .min(Comparator.comparing(PharmacyDrug::getExpiryDate))
-                .orElse(null);
+        return drugs.stream().min(Comparator.comparing(PharmacyDrug::getExpiryDate)).orElse(null);
     }
 
     public List<PharmacyDrugDto> getDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
@@ -324,7 +324,7 @@ public class PharmacyService {
         return streamAndReturn(drugs);
     }
 
-    public List<PharmacyDrugDto> searchDrugInPharmacy(
+    public List<PharmacyDrug> searchDrugInPharmacy(
             String drugName, Integer pharmacyId, Pageable pageable) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
         Page<PharmacyDrug> pharmacyDrugs =
@@ -333,7 +333,7 @@ public class PharmacyService {
         if (pharmacyDrugs.isEmpty()) {
             return List.of();
         }
-        return streamAndReturn(pharmacyDrugs);
+        return pharmacyDrugs.getContent();
     }
 
     /*
@@ -418,14 +418,289 @@ public class PharmacyService {
         return shortageDrugs;
     }
 
-    public List<PharmacyDrugDto> filter(
-            Integer pharmacyId, FilterOption filterOption, Pageable pageable) {
-        return switch (filterOption) {
-            case AVAILABLE -> getDrugsWithStockOverNByPharmacyId(pharmacyId, 1, pageable);
-            case SHORTAGE -> getShortageDrugsByPharmacyId(pharmacyId, pageable);
-            case UNAVAILABLE_SHORTAGE -> getUnavailableShortageByPharmacyId(pharmacyId, pageable);
-            case UNAVAILABLE -> getUnavailableDrugsByPharmacyId(pharmacyId, pageable);
-        };
+    public List<PharmacyDrugDto> applyAllFilters(
+            Integer pharmacyId,
+            Integer drugId,
+            String query,
+            List<FilterOption> filterOptions,
+            SortOption sortOption,
+            Integer N,
+            Float upperPriceBound, // For PRICE_BETWEEN
+            String type, // For BY_TYPE
+            Pageable pageable) {
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        Page<PharmacyDrug> drugs = pharmacyDrugRepository.findAllById(pharmacyId, pageable);
+        List<PharmacyDrug> drugsList = drugs.getContent();
+        List<PharmacyDrug> filteredDrugs;
+        if (query != null) {
+            filteredDrugs = searchDrugInPharmacy(query, pharmacyId, pageable);
+        } else {
+            filteredDrugs = new ArrayList<>(drugsList);
+        }
+
+        LocalDate today = LocalDate.now();
+
+        for (FilterOption option : filterOptions) {
+            switch (option) {
+                // Original filters
+                case AVAILABLE:
+                    // Filter drugs that have stock > 0
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getStock() > 0)
+                                    .collect(Collectors.toList());
+                    break;
+
+                case SHORTAGE:
+                    // Filter drugs that have stock > 0 but less than what's required
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug -> {
+                                                DrugOrderId id =
+                                                        new DrugOrderId(
+                                                                drug.getDrug().getId(), pharmacyId);
+                                                Optional<DrugOrder> orderOptional =
+                                                        drugOrderRepository.getDrugOrderById(id);
+                                                if (orderOptional.isPresent()) {
+                                                    DrugOrder order = orderOptional.get();
+                                                    // We have the drug but in less quantity than
+                                                    // required
+                                                    return drug.getStock() > 0
+                                                            && drug.getStock()
+                                                                    < order.getRequired();
+                                                }
+                                                return false;
+                                            })
+                                    .collect(Collectors.toList());
+                    break;
+
+                case UNAVAILABLE_SHORTAGE:
+                    // Filter drugs that have stock = 0 and there's a requirement for them
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug -> {
+                                                DrugOrderId id =
+                                                        new DrugOrderId(
+                                                                drug.getDrug().getId(), pharmacyId);
+                                                Optional<DrugOrder> orderOptional =
+                                                        drugOrderRepository.getDrugOrderById(id);
+                                                if (orderOptional.isPresent()) {
+                                                    DrugOrder order = orderOptional.get();
+                                                    // We don't have the drug but it's required
+                                                    return drug.getStock() == 0
+                                                            && order.getRequired() > 0;
+                                                }
+                                                return false;
+                                            })
+                                    .collect(Collectors.toList());
+                    break;
+
+                case UNAVAILABLE:
+                    // Filter drugs that have stock = 0 and there's no requirement for them
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug -> {
+                                                DrugOrderId id =
+                                                        new DrugOrderId(
+                                                                drug.getDrug().getId(), pharmacyId);
+                                                Optional<DrugOrder> orderOptional =
+                                                        drugOrderRepository.getDrugOrderById(id);
+                                                if (orderOptional.isPresent()) {
+                                                    DrugOrder order = orderOptional.get();
+                                                    // We don't have the drug and it's not required
+                                                    return drug.getStock() == 0
+                                                            && order.getRequired() == 0;
+                                                } else {
+                                                    // No order record means it's not required
+                                                    return drug.getStock() == 0;
+                                                }
+                                            })
+                                    .collect(Collectors.toList());
+                    break;
+
+                case EXPIRES_AFTER_N:
+                    // Filter drugs that expire after N days from today
+                    LocalDate dateAfterN = today.plusDays(N);
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getExpiryDate().isAfter(dateAfterN))
+                                    .collect(Collectors.toList());
+                    break;
+
+                case STOCK_OVER_N:
+                    // Filter drugs with stock greater than N
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getStock() > N)
+                                    .collect(Collectors.toList());
+                    break;
+
+                case STOCK_UNDER_N:
+                    // Filter drugs with stock less than N but not zero
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getStock() < N && drug.getStock() > 0)
+                                    .collect(Collectors.toList());
+                    break;
+
+                case OUT_OF_STOCK:
+                    // Filter drugs with stock = 0
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getStock() == 0)
+                                    .collect(Collectors.toList());
+                    break;
+
+                case EXPIRED:
+                    // Filter drugs that have already expired
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug ->
+                                                    drug.getExpiryDate().isBefore(today)
+                                                            || drug.getExpiryDate().isEqual(today))
+                                    .collect(Collectors.toList());
+                    break;
+
+                // New expiry date filters
+                case APPROACHING_EXPIRY:
+                    // Filter drugs that will expire within N days
+                    LocalDate approachingDate = today.plusDays(pharmacy.getExpiryThreshold());
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug ->
+                                                    drug.getExpiryDate().isAfter(today)
+                                                            && (drug.getExpiryDate()
+                                                                            .isBefore(
+                                                                                    approachingDate)
+                                                                    || drug.getExpiryDate()
+                                                                            .isEqual(
+                                                                                    approachingDate)))
+                                    .collect(Collectors.toList());
+                    break;
+
+                case NOT_EXPIRED:
+                    // Filter drugs that have not expired yet
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getExpiryDate().isAfter(today))
+                                    .collect(Collectors.toList());
+                    break;
+
+                case BY_FORM:
+                    // Filter drugs by type (tablet, syrup, etc.)
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug ->
+                                                    drug.getDrug().getForm() != null
+                                                            && drug.getDrug()
+                                                                    .getForm()
+                                                                    .equalsIgnoreCase(type))
+                                    .collect(Collectors.toList());
+                    break;
+
+                // Price filters
+                case PRICE_BELOW_N:
+                    // Filter drugs with price below N
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getPrice() < N)
+                                    .collect(Collectors.toList());
+                    break;
+
+                case PRICE_ABOVE_N:
+                    // Filter drugs with price above N
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(drug -> drug.getPrice() > N)
+                                    .collect(Collectors.toList());
+                    break;
+
+                case PRICE_BETWEEN:
+                    // Filter drugs with price between N and upperPriceBound
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug ->
+                                                    drug.getPrice() >= N
+                                                            && (upperPriceBound == null
+                                                                    || drug.getPrice()
+                                                                            <= upperPriceBound))
+                                    .collect(Collectors.toList());
+                    break;
+
+                case DISCOUNTED:
+                    // Filter drugs that have discounts in receipt items
+                    filteredDrugs =
+                            filteredDrugs.stream()
+                                    .filter(
+                                            drug -> {
+                                                // Check if any receipt item for this drug has a
+                                                // discount
+                                                return drug.getReceiptItems().stream()
+                                                        .anyMatch(
+                                                                item ->
+                                                                        item.getDiscount() != null
+                                                                                && item
+                                                                                                .getDiscount()
+                                                                                        > 0);
+                                            })
+                                    .collect(Collectors.toList());
+                    break;
+            }
+        }
+
+        if (drugId != null) {
+            filteredDrugs =
+                    filteredDrugs.stream()
+                            .filter(drug -> drug.getDrug().getId().equals(drugId))
+                            .collect(Collectors.toList());
+        }
+
+        if (sortOption != null) {
+            switch (sortOption) {
+                case EXPIRY_DATE_ASC:
+                    // Sort by expiry date (nearest to expire first)
+                    filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getExpiryDate));
+                    break;
+
+                case EXPIRY_DATE_DESC:
+                    // Sort by expiry date (furthest from expiring first)
+                    filteredDrugs.sort(
+                            Comparator.comparing(PharmacyDrug::getExpiryDate).reversed());
+                    break;
+
+                case PRICE_ASC:
+                    // Sort by price (lowest first)
+                    filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getPrice));
+                    break;
+
+                case PRICE_DESC:
+                    // Sort by price (highest first)
+                    filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getPrice).reversed());
+                    break;
+
+                case STOCK_ASC:
+                    // Sort by stock (lowest first)
+                    filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getStock));
+                    break;
+
+                case STOCK_DESC:
+                    // Sort by stock (highest first)
+                    filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getStock).reversed());
+                    break;
+            }
+        }
+
+        // Convert filtered drugs to DTOs
+        return filteredDrugs.stream()
+                .map(drug -> modelMapper.map(drug, PharmacyDrugDto.class))
+                .collect(Collectors.toList());
     }
 
     public Boolean pharmacyHasDrug(Integer pharmacyId, Integer drugId) {

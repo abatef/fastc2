@@ -3,6 +3,7 @@ package com.abatef.fastc2.exceptions.handler;
 import com.abatef.fastc2.enums.ErrorType;
 import com.abatef.fastc2.exceptions.DrugNotFoundException;
 import com.abatef.fastc2.exceptions.ErrorResponse;
+import com.abatef.fastc2.exceptions.InsufficientStockException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +22,8 @@ public class PharmacyDrugExceptionHandler {
     public ResponseEntity<PharmacyDrugError> handle(PharmacyDrugNotFoundException e) {
         PharmacyDrugError error = new PharmacyDrugError();
         error.setId(e.getId());
+        error.setPharmacyId(e.getPharmacyId());
+        error.setDrugId(e.getDrugId());
         error.setMessage(e.getMessage());
         error.setWhy(PharmacyDrugNotFoundException.Why.NONEXISTENT_DRUG_PHARMACY);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
@@ -36,11 +39,23 @@ public class PharmacyDrugExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
+    @ExceptionHandler(exception = InsufficientStockException.class)
+    public ResponseEntity<PharmacyDrugError> insufficientStock(InsufficientStockException e) {
+        PharmacyDrugError error = new PharmacyDrugError();
+        error.setPharmacyId(e.getPharmacyId());
+        error.setDrugId(e.getDrugId());
+        error.setMessage(e.getMessage());
+        error.setWhy(PharmacyDrugNotFoundException.Why.INSUFFICIENT_STOCK);
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class PharmacyDrugError {
         Integer id;
+        Integer drugId;
+        Integer pharmacyId;
         String message;
         PharmacyDrugNotFoundException.Why why;
     }

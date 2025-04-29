@@ -4,6 +4,7 @@ import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
 import com.abatef.fastc2.dtos.receipt.ReceiptDto;
 import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
 import com.abatef.fastc2.enums.ReceiptStatus;
+import com.abatef.fastc2.exceptions.InsufficientStockException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.ReceiptNotFoundException;
 import com.abatef.fastc2.models.User;
@@ -20,7 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -65,7 +66,10 @@ public class ReceiptService {
             PharmacyDrug drug =
                     pharmacyService.getNextDrugToSell(request.getPharmacyId(), request.getDrugId());
             if (drug == null) {
-                throw new PharmacyDrugNotFoundException();
+                throw new PharmacyDrugNotFoundException(
+                        request.getPharmacyId(),
+                        request.getDrugId(),
+                        PharmacyDrugNotFoundException.Why.NONEXISTENT_DRUG_PHARMACY);
             }
             ReceiptItem item = new ReceiptItem();
             item.setReceipt(receipt);
@@ -77,20 +81,24 @@ public class ReceiptService {
             if (request.getPacks() != null && request.getPacks() > 0) {
                 requiredQuantity += request.getPacks() * drug.getDrug().getUnits();
             }
+            int remainingQuantity = requiredQuantity;
             Map<PharmacyDrug, Integer> drugQuantities = new HashMap<>();
-            while (requiredQuantity > 0 && drug != null) {
-                int drugStock = Math.min(requiredQuantity, drug.getStock());
+            while (remainingQuantity > 0 && drug != null) {
+                int drugStock = Math.min(remainingQuantity, drug.getStock());
                 if (drugStock > 0) {
                     drugQuantities.put(drug, drugStock);
-                    requiredQuantity -= drugStock;
+                    remainingQuantity -= drugStock;
                 }
-                if (requiredQuantity > 0) {
-                    drug = pharmacyService.getNextDrugToSell(request.getPharmacyId(), request.getDrugId());
+                if (remainingQuantity > 0) {
+                    drug =
+                            pharmacyService.getNextDrugToSell(
+                                    request.getPharmacyId(), request.getDrugId());
                 }
             }
 
-            if (requiredQuantity > 0) {
-                throw new RuntimeException("not enough stock of this drug");
+            if (remainingQuantity > 0) {
+                throw new InsufficientStockException(
+                        request.getDrugId(), request.getPharmacyId(), requiredQuantity);
             }
 
             float amountDue = 0;
@@ -182,12 +190,86 @@ public class ReceiptService {
             Integer drugId,
             Integer pharmacyId,
             Integer shiftId,
-            LocalDate fromDate,
-            LocalDate toDate,
+            ReceiptStatus status,
+            Instant fromDate,
+            Instant toDate,
             Pageable pageable) {
-        Page<Receipt> receipts =
-                receiptRepository.applyAllFilters(
-                        cashierId, drugId, pharmacyId, shiftId, fromDate, toDate, pageable);
-        return streamAndMap(receipts.getContent());
+        Page<Receipt> receipts = receiptRepository.findAll(pageable);
+        List<Receipt> receiptList = receipts.getContent();
+        if (cashierId != null) {
+            receiptList =
+                    receiptList.stream()
+                            .filter(r -> Objects.equals(r.getCashier().getId(), cashierId))
+                            .toList();
+        }
+
+        if (pharmacyId != null) {
+            receiptList =
+                    receiptList.stream()
+                            .filter(
+                                    receipt ->
+                                            !receipt.getReceiptItems().stream()
+                                                    .filter(
+                                                            r ->
+                                                                    r.getPharmacyDrug()
+                                                                            .getPharmacy()
+                                                                            .getId()
+                                                                            .equals(pharmacyId))
+                                                    .toList()
+                                                    .isEmpty())
+                            .toList();
+        }
+
+        if (drugId != null) {
+            receiptList =
+                    receiptList.stream()
+                            .filter(
+                                    receipt ->
+                                            !receipt.getReceiptItems().stream()
+                                                    .filter(
+                                                            r ->
+                                                                    r.getPharmacyDrug()
+                                                                            .getDrug()
+                                                                            .getId()
+                                                                            .equals(drugId))
+                                                    .toList()
+                                                    .isEmpty())
+                            .toList();
+        }
+
+        if (shiftId != null) {
+            receiptList =
+                    receiptList.stream()
+                            .filter(
+                                    receipt ->
+                                            receipt.getCashier()
+                                                    .getEmployee()
+                                                    .getShift()
+                                                    .getId()
+                                                    .equals(shiftId))
+                            .toList();
+        }
+
+        if (status != null) {
+            receiptList = receiptList.stream()
+                    .filter(receipt -> receipt.getStatus() == status)
+                    .toList();
+        }
+
+        if (fromDate != null) {
+            receiptList =
+                    receiptList.stream()
+                            .filter(receipt -> receipt.getCreatedAt().isAfter(fromDate))
+                            .toList();
+        }
+
+        if (toDate != null) {
+            receiptList =
+                    receiptList.stream()
+                            .filter(receipt -> receipt.getCreatedAt().isBefore(toDate))
+                            .toList();
+        }
+
+        return streamAndMap(receiptList);
     }
 }
