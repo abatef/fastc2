@@ -16,7 +16,6 @@ import org.hibernate.annotations.*;
 public class ReceiptCreationRequest {
     @NotNull
     private Integer drugId;
-
     @NotNull
     private Integer pharmacyId;
     @Min(0)

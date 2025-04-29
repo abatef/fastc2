@@ -1,5 +1,8 @@
 package com.abatef.fastc2.exceptions.handler;
 
+import com.abatef.fastc2.enums.ErrorType;
+import com.abatef.fastc2.exceptions.ErrorResponse;
+import com.abatef.fastc2.security.auth.exceptions.ExpiredJwtException;
 import jakarta.validation.ConstraintViolationException;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -75,8 +78,18 @@ public class GlobalExceptionHandler {
         UsernameNotFoundException.class,
         AuthenticationException.class
     })
+
     public ResponseEntity<Object> handleAuthenticationException(RuntimeException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Authentication Failed", ex.getMessage());
+    }
+
+    @ExceptionHandler(exception = ExpiredJwtException.class)
+    public ResponseEntity<ErrorResponse> handleExpiredJwtException(ExpiredJwtException ex) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage("Expired JWT Token");
+        errorResponse.setDetails(ex.getMessage());
+        errorResponse.setErrorType(ErrorType.EXPIRED_JWT);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
