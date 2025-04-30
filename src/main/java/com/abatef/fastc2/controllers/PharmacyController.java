@@ -115,7 +115,7 @@ public class PharmacyController {
     public ResponseEntity<List<PharmacyShortageDto>> getShortageDrugs(
             @PathVariable("id") Integer id,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size) {
+            @RequestParam(value = "size", defaultValue = "75") int size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<PharmacyShortageDto> shortages = pharmacyService.getAllShortageDrugsByPharmacyId(id, pageable);
         if (shortages.isEmpty()) {
