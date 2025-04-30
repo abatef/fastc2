@@ -113,8 +113,11 @@ public class PharmacyController {
 
     @GetMapping("/{id}/shortage/info")
     public ResponseEntity<List<PharmacyShortageDto>> getShortageDrugs(
-            @PathVariable("id") Integer id) {
-        List<PharmacyShortageDto> shortages = pharmacyService.getAllShortageDrugsByPharmacyId(id);
+            @PathVariable("id") Integer id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        List<PharmacyShortageDto> shortages = pharmacyService.getAllShortageDrugsByPharmacyId(id, pageable);
         if (shortages.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

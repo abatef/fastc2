@@ -428,13 +428,16 @@ public class PharmacyService {
         return null;
     }
 
-    public List<PharmacyShortageDto> getAllShortageDrugsByPharmacyId(Integer pharmacyId) {
-        List<PharmacyDrug> drugs = pharmacyDrugRepository.getAllByPharmacy_Id(pharmacyId);
+    public List<PharmacyShortageDto> getAllShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
+        List<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable).getContent();
         Map<DrugOrderId, DrugOrder> drugOrderMap = new HashMap<>();
         Map<DrugOrderId, Integer> totalStock = new HashMap<>();
         List<PharmacyShortageDto> shortageDrugs = new ArrayList<>();
         for (PharmacyDrug pd : drugs) {
             DrugOrderId id = new DrugOrderId(pd.getDrug().getId(), pd.getPharmacy().getId());
+            if (totalStock.containsKey(id)) {
+                continue;
+            }
             totalStock.computeIfAbsent(
                     id,
                     i ->
