@@ -48,14 +48,6 @@ public class ReceiptController {
         return ResponseEntity.ok(receipts);
     }
 
-    @PatchMapping("/{receipt_id}/status")
-    public ResponseEntity<ReceiptDto> updateReceiptStatus(
-            @PathVariable("receipt_id") Integer id,
-            @RequestParam ReceiptStatus status,
-            @AuthenticationPrincipal User user) {
-        ReceiptDto info = receiptService.updateReceiptStatus(id, status, user);
-        return ResponseEntity.ok(info);
-    }
 
     @GetMapping("/filter")
     public ResponseEntity<List<ReceiptDto>> getReceiptsByFilters(

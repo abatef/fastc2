@@ -1,5 +1,6 @@
 package com.abatef.fastc2.models.pharmacy;
 
+import com.abatef.fastc2.enums.ItemStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -46,4 +47,8 @@ public class ReceiptItem {
     @ColumnDefault("0")
     @Column(name = "pack", nullable = false)
     private Short pack;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ItemStatus status;
 }

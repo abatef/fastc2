@@ -1,5 +1,6 @@
 package com.abatef.fastc2.dtos.receipt;
 
+import com.abatef.fastc2.enums.ItemStatus;
 import com.abatef.fastc2.models.shift.Shift;
 
 import lombok.AllArgsConstructor;
@@ -16,4 +17,5 @@ public class ReceiptItemDto {
     private Float discount;
     private Float amountDue;
     private Shift shift;
+    private ItemStatus status;
 }

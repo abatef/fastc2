@@ -1,6 +1,7 @@
 package com.abatef.fastc2.dtos.receipt;
 
 import com.abatef.fastc2.dtos.user.UserDto;
+import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.shift.Shift;
 
 import lombok.AllArgsConstructor;
@@ -22,4 +23,5 @@ public class ReceiptDto {
     private Instant updatedAt;
     List<ReceiptItemDto> items = new ArrayList<>();
     private Float total;
+    private ReceiptStatus status;
 }

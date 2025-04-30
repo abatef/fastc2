@@ -3,14 +3,17 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
 import com.abatef.fastc2.dtos.receipt.ReceiptDto;
 import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
+import com.abatef.fastc2.enums.ItemStatus;
+import com.abatef.fastc2.enums.OperationType;
 import com.abatef.fastc2.enums.ReceiptStatus;
-import com.abatef.fastc2.exceptions.InsufficientStockException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.ReceiptNotFoundException;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.models.pharmacy.Operation;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.pharmacy.Receipt;
 import com.abatef.fastc2.models.pharmacy.ReceiptItem;
+import com.abatef.fastc2.repositories.OperationRepository;
 import com.abatef.fastc2.repositories.PharmacyDrugRepository;
 import com.abatef.fastc2.repositories.ReceiptItemRepository;
 import com.abatef.fastc2.repositories.ReceiptRepository;
@@ -37,6 +40,7 @@ public class ReceiptService {
     private final ModelMapper modelMapper;
     private final ShiftService shiftService;
     private final ReceiptItemRepository receiptItemRepository;
+    private final OperationRepository operationRepository;
     private final PharmacyDrugRepository pharmacyDrugRepository;
 
     public ReceiptService(
@@ -45,7 +49,7 @@ public class ReceiptService {
             UserService userService,
             ModelMapper modelMapper,
             ShiftService shiftService,
-            ReceiptItemRepository receiptItemRepository,
+            ReceiptItemRepository receiptItemRepository, OperationRepository operationRepository,
             PharmacyDrugRepository pharmacyDrugRepository) {
         this.receiptRepository = receiptRepository;
         this.pharmacyService = pharmacyService;
@@ -53,6 +57,7 @@ public class ReceiptService {
         this.modelMapper = modelMapper;
         this.shiftService = shiftService;
         this.receiptItemRepository = receiptItemRepository;
+        this.operationRepository = operationRepository;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
     }
 
@@ -61,6 +66,10 @@ public class ReceiptService {
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
+        receipt = receiptRepository.save(receipt);
+        Operation operation = new Operation();
+        operation.setCashier(cashier);
+        operation.setReceipt(receipt);
         Set<ReceiptItem> items = new HashSet<>();
         for (ReceiptCreationRequest request : requests) {
             PharmacyDrug drug =
@@ -74,6 +83,7 @@ public class ReceiptService {
             ReceiptItem item = new ReceiptItem();
             item.setReceipt(receipt);
             item.setPharmacyDrug(drug);
+            item.setStatus(ItemStatus.SATISFIED);
             int requiredQuantity = 0;
             if (request.getUnits() != null && request.getUnits() > 0) {
                 requiredQuantity += request.getUnits();
@@ -97,26 +107,48 @@ public class ReceiptService {
             }
 
             if (remainingQuantity > 0) {
-                throw new InsufficientStockException(
-                        request.getDrugId(), request.getPharmacyId(), requiredQuantity);
+                operation.setType(OperationType.RECEIPT_REJECTED);
+                operationRepository.save(operation);
+                item.setStatus(ItemStatus.UNSATISFIED);
             }
 
-            float amountDue = 0;
-            for (Map.Entry<PharmacyDrug, Integer> entry : drugQuantities.entrySet()) {
-                PharmacyDrug pd = entry.getKey();
-                float pricePerUnit = pd.getPrice() / pd.getDrug().getUnits();
-                amountDue += pricePerUnit * entry.getValue();
-                pd.setStock(pd.getStock() - entry.getValue());
-                pharmacyDrugRepository.save(pd);
+            int satisfiedItems = 0;
+
+            if (item.getStatus() == ItemStatus.SATISFIED) {
+                float amountDue = 0;
+                for (Map.Entry<PharmacyDrug, Integer> entry : drugQuantities.entrySet()) {
+                    PharmacyDrug pd = entry.getKey();
+                    float pricePerUnit = pd.getPrice() / pd.getDrug().getUnits();
+                    amountDue += pricePerUnit * entry.getValue();
+                    pd.setStock(pd.getStock() - entry.getValue());
+                    pharmacyDrugRepository.save(pd);
+                }
+                item.setAmountDue(amountDue);
+                operation.setType(OperationType.RECEIPT_ISSUED);
+                operationRepository.save(operation);
+                ++satisfiedItems;
+            }
+
+            if (satisfiedItems == 0) {
+                receipt.setStatus(ReceiptStatus.REJECTED);
+            } else if (satisfiedItems < requests.size()) {
+               receipt.setStatus(ReceiptStatus.PARTIALLY_FULFILLED);
+            } else {
+                receipt.setStatus(ReceiptStatus.REJECTED);
             }
 
             item.setPack(request.getPacks());
             item.setUnits(request.getUnits());
-            item.setAmountDue(amountDue);
             items.add(item);
             receipt.setReceiptItems(items);
             receipt = receiptRepository.save(receipt);
+
         }
+
+        return mapReceiptDto(receipt);
+    }
+
+    private ReceiptDto mapReceiptDto(Receipt receipt) {
         ReceiptDto info = modelMapper.map(receipt, ReceiptDto.class);
         for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
             ReceiptItemDto itemInfo = new ReceiptItemDto();
@@ -149,20 +181,35 @@ public class ReceiptService {
                 .toList();
     }
 
-    // TODO: Complete This
     @Transactional
-    public ReceiptDto updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {
-        Receipt receipt = getReceiptByIdOrThrow(id);
-        receipt.setStatus(status);
-        receiptRepository.save(receipt);
-        if (status == ReceiptStatus.RETURNED) {
-            for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
-                PharmacyDrug pharmacyDrug = receiptItem.getPharmacyDrug();
-                pharmacyDrug.setStock(pharmacyDrug.getStock() + receiptItem.getPack());
-                pharmacyDrugRepository.save(pharmacyDrug);
-            }
+    public ReceiptDto returnReceipt(Integer id, User cashier) {
+        Operation operation = new Operation();
+        operation.setCashier(cashier);
+        operation.setType(OperationType.RECEIPT_RETURNED);
+        Optional<Receipt> receiptOptional = receiptRepository.findById(id);
+        Receipt receipt = receiptOptional.orElseThrow(() -> new ReceiptNotFoundException(id));
+        if (receipt.getStatus() == ReceiptStatus.RETURNED) {
+            throw new IllegalStateException("receipt is already returned");
         }
-        return modelMapper.map(receipt, ReceiptDto.class);
+
+        if (receipt.getStatus() != ReceiptStatus.ISSUED && receipt.getStatus() != ReceiptStatus.PARTIALLY_FULFILLED) {
+            throw new IllegalStateException("can not return receipt with status: " + receipt.getStatus().name());
+        }
+
+        operation.setReceipt(receipt);
+        operationRepository.save(operation);
+        receipt.setStatus(ReceiptStatus.RETURNED);
+        receiptRepository.save(receipt);
+        for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
+            if (receiptItem.getStatus() != ItemStatus.SATISFIED) {
+                continue;
+            }
+            PharmacyDrug pd = receiptItem.getPharmacyDrug();
+            int stock = (receiptItem.getPack() * pd.getDrug().getUnits()) + receiptItem.getUnits();
+            pd.setStock(pd.getStock() + stock);
+            pharmacyDrugRepository.save(pd);
+        }
+        return mapReceiptDto(receipt);
     }
 
     public List<ReceiptDto> getReceiptsByCashierId(Integer id, Pageable pageable) {

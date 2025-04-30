@@ -773,7 +773,11 @@ public class PharmacyService {
     public PharmacyDto addShiftToPharmacy(Integer pharmacyId, Shift shift, User user) {
         shift = shiftService.create(shift);
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        PharmacyShiftId id = new PharmacyShiftId();
+        id.setPharmacyId(pharmacyId);
+        id.setShiftId(shift.getId());
         PharmacyShift pharmacyShift = new PharmacyShift();
+        pharmacyShift.setId(id);
         pharmacyShift.setPharmacy(pharmacy);
         pharmacyShift.setShift(shift);
         pharmacyShiftRepository.save(pharmacyShift);

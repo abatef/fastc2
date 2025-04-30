@@ -14,17 +14,9 @@ create table users
     updated_at   timestamp default current_timestamp
 );
 
-create index on users(id);
+create index on users (id);
 
-create table shifts
-(
-    id         serial primary key,
-    name       text,
-    start_time time not null,
-    end_time   time not null
-);
 
-create index shift_idx on shifts(id);
 
 create table pharmacies
 (
@@ -44,7 +36,7 @@ create table pharmacies
     constraint fk_main_branch foreign key (main_branch) references pharmacies (id) on delete cascade
 );
 
-create index pharmacies_idx on pharmacies(id);
+create index pharmacies_idx on pharmacies (id);
 
 create table pharmacy_shifts
 (
@@ -102,7 +94,17 @@ CREATE TABLE employees
     constraint fk_pharmacy_id foreign key (pharmacy) references pharmacies (id) on delete cascade
 );
 
-create index employee_idx on employees(id, pharmacy);
+create index employee_idx on employees (id, pharmacy);
+
+create table shifts
+(
+    id         serial primary key,
+    name       text,
+    start_time time not null,
+    end_time   time not null
+);
+
+create index shift_idx on shifts (id);
 
 alter table employees
     add constraint fk_shift_id foreign key (shift_id) references shifts (id) on delete set null;
@@ -125,6 +127,8 @@ create table refresh_token
     used        bool      default false
 );
 
+create index refresh_token_idx on refresh_token (token);
+
 create table drugs
 (
     id            serial primary key,
@@ -139,7 +143,7 @@ create table drugs
     constraint fk_created_by foreign key (created_by) references users (id) on delete cascade
 );
 
-create index drug_idx on drugs(id, name, form);
+create index drug_idx on drugs (id, name, form);
 
 -- POSTGRESQL Full-Text Search -- DRUGS
 
@@ -197,20 +201,20 @@ create table pharmacy_drug
     constraint fk_added_by foreign key (added_by) references users (id) on delete no action
 );
 
-create index pharmacy_drug_idx on pharmacy_drug(id, drug_id, pharmacy_id, added_by, expiry_date);
+create index pharmacy_drug_idx on pharmacy_drug (id, drug_id, pharmacy_id, added_by, expiry_date);
 
 create table drug_order
 (
-    drug_id int not null,
+    drug_id     int not null,
     pharmacy_id int not null,
-    required int default 0,
-    n_orders int default 0,
-    constraint fk_drug_id foreign key (drug_id) references drugs(id) on delete cascade,
-    constraint fk_phar_id foreign key (pharmacy_id) references pharmacies(id) on delete cascade,
+    required    int default 0,
+    n_orders    int default 0,
+    constraint fk_drug_id foreign key (drug_id) references drugs (id) on delete cascade,
+    constraint fk_phar_id foreign key (pharmacy_id) references pharmacies (id) on delete cascade,
     primary key (drug_id, pharmacy_id)
 );
 
-create index drug_order_idx on drug_order(drug_id, pharmacy_id);
+create index drug_order_idx on drug_order (drug_id, pharmacy_id);
 
 create table receipt
 (
@@ -223,7 +227,21 @@ create table receipt
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
 
-create index receipt_idx on receipt(id, cashier, shift_id, status);
+create table operation
+(
+    id               serial primary key,
+    cashier          int not null,
+    type             text,
+    completed_at     timestamp default current_timestamp,
+    receipt_id       int,
+    constraint fk_cashier foreign key (cashier) references users (id) on delete set null,
+    constraint fk_receipt_id foreign key (receipt_id) references receipt (id) on delete set null
+);
+
+
+create index operation_cashier_idx on operation (id, cashier, type);
+
+create index receipt_idx on receipt (id, cashier, status);
 
 create table sales_receipt
 (
@@ -239,7 +257,10 @@ create table sales_receipt
     primary key (receipt_id, pharmacy_drug_id)
 );
 
-create index sales_receipt_id on sales_receipt(receipt_id, pharmacy_drug_id);
+alter table sales_receipt
+    add column status text;
+
+create index sales_receipt_id on sales_receipt (receipt_id, pharmacy_drug_id);
 
 
 -- TODO: add separate revenue, profit
