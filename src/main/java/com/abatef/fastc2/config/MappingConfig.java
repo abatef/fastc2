@@ -63,6 +63,7 @@ public class MappingConfig {
                 (ctx) -> {
                     PharmacyDrug pd = ctx.getSource();
                     PharmacyDrugDto info = new PharmacyDrugDto();
+                    info.setId(pd.getId());
                     info.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyDto.class));
                     info.setDrug(modelMapper.map(pd.getDrug(), DrugDto.class));
                     info.setPrice(pd.getPrice());

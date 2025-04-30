@@ -16,6 +16,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PharmacyDrugDto {
+    private Integer id;
+
     @Schema(description = "Full General Drug Info", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private DrugDto drug;
 
