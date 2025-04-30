@@ -409,9 +409,12 @@ public class PharmacyService {
     }
 
     public Integer getTotalStockOfPharmacyDrug(Integer pharmacyId, Integer drugId) {
+        logger.info("getting total drugs stock for pharmacy: {}, drug: {}", pharmacyId, drugId);
         List<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getAllByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
-        return drugs.stream().mapToInt(PharmacyDrug::getStock).reduce(0, Integer::sum);
+        Integer totalStock = drugs.stream().mapToInt(PharmacyDrug::getStock).reduce(0, Integer::sum);
+        logger.info("total stock: {}", totalStock);
+        return totalStock;
     }
 
     public DrugOrderDto getDrugOrderInfoByPharmacyAndDrugIds(Integer pharmacyId, Integer drugId) {
@@ -429,37 +432,57 @@ public class PharmacyService {
     }
 
     public List<PharmacyShortageDto> getAllShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
-        List<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable).getContent();
         Map<DrugOrderId, DrugOrder> drugOrderMap = new HashMap<>();
         Map<DrugOrderId, Integer> totalStock = new HashMap<>();
         List<PharmacyShortageDto> shortageDrugs = new ArrayList<>();
-        for (PharmacyDrug pd : drugs) {
-            DrugOrderId id = new DrugOrderId(pd.getDrug().getId(), pd.getPharmacy().getId());
-            if (totalStock.containsKey(id)) {
-                continue;
+        logger.info("fetching first page....");
+        List<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable).getContent();
+        logger.info("done fetching first page....");
+        while (shortageDrugs.size() < pageable.getPageSize()) {
+            if (drugs.isEmpty()) {
+                logger.info("empty drugs, stopping....");
+                break;
             }
-            totalStock.computeIfAbsent(
-                    id,
-                    i ->
-                            getTotalStockOfPharmacyDrug(
-                                    pd.getPharmacy().getId(), pd.getDrug().getId()));
-            DrugOrder order =
-                    drugOrderMap.computeIfAbsent(
-                            id, i -> drugOrderRepository.getDrugOrderById(id).orElse(null));
+            for (PharmacyDrug pd : drugs) {
+                DrugOrderId id = new DrugOrderId(pd.getDrug().getId(), pd.getPharmacy().getId());
+                if (totalStock.containsKey(id)) {
+                    logger.info("duplicate drug order id, skipping....");
+                    continue;
+                }
+                totalStock.computeIfAbsent(
+                        id,
+                        i ->
+                                getTotalStockOfPharmacyDrug(
+                                        pd.getPharmacy().getId(), pd.getDrug().getId()));
+                DrugOrder order =
+                        drugOrderMap.computeIfAbsent(
+                                id, i -> drugOrderRepository.getDrugOrderById(id).orElse(null));
 
-            int required = (order != null) ? order.getRequired() : 0;
-            if (required > 0) {
-                int stock = totalStock.get(id);
-                int shortage = Math.max(0, required - stock);
-                if (shortage > 0) {
-                    PharmacyShortageDto drugShortage = new PharmacyShortageDto();
-                    drugShortage.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyDto.class));
-                    drugShortage.setDrug(modelMapper.map(pd.getDrug(), DrugDto.class));
-                    drugShortage.setShortage(shortage);
-                    shortageDrugs.add(drugShortage);
+                int required = (order != null) ? order.getRequired() : 0;
+                logger.info("requiring {} of stock", required);
+                if (required > 0) {
+                    int stock = totalStock.get(id);
+                    logger.info("total stock found: {}", stock);
+                    int shortage = Math.max(0, required - stock);
+                    logger.info("shortage found: {}", shortage);
+                    if (shortage > 0) {
+                        PharmacyShortageDto drugShortage = new PharmacyShortageDto();
+                        drugShortage.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyDto.class));
+                        drugShortage.setDrug(modelMapper.map(pd.getDrug(), DrugDto.class));
+                        drugShortage.setShortage(shortage);
+                        shortageDrugs.add(drugShortage);
+                        if (shortageDrugs.size() == pageable.getPageSize()) {
+                            return shortageDrugs;
+                        }
+                    }
                 }
             }
+            logger.info("fetching another page...");
+            pageable = pageable.next();
+            drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable).getContent();
+            logger.info("done fetching page...");
         }
+        logger.info("total shortage: {}", shortageDrugs.size());
         return shortageDrugs;
     }
 

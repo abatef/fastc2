@@ -150,4 +150,6 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             Integer pharmacyId, Integer drugId, Integer stockIsGreaterThan);
 
     Page<PharmacyDrug> findAllById(Integer id, Pageable pageable);
+
+    List<PharmacyDrug> getPharmacyDrugsByPharmacy_Id(Integer pharmacyId);
 }
