@@ -36,33 +36,26 @@ public class ReceiptService {
 
     private final ReceiptRepository receiptRepository;
     private final PharmacyService pharmacyService;
-    private final UserService userService;
     private final ModelMapper modelMapper;
-    private final ShiftService shiftService;
-    private final ReceiptItemRepository receiptItemRepository;
     private final OperationRepository operationRepository;
     private final PharmacyDrugRepository pharmacyDrugRepository;
 
     public ReceiptService(
             ReceiptRepository receiptRepository,
             PharmacyService pharmacyService,
-            UserService userService,
             ModelMapper modelMapper,
-            ShiftService shiftService,
-            ReceiptItemRepository receiptItemRepository, OperationRepository operationRepository,
+            OperationRepository operationRepository,
             PharmacyDrugRepository pharmacyDrugRepository) {
         this.receiptRepository = receiptRepository;
         this.pharmacyService = pharmacyService;
-        this.userService = userService;
         this.modelMapper = modelMapper;
-        this.shiftService = shiftService;
-        this.receiptItemRepository = receiptItemRepository;
         this.operationRepository = operationRepository;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
     }
 
     @Transactional
-    public ReceiptDto createANewReceipt(List<ReceiptCreationRequest> requests, User cashier) {
+    public ReceiptDto createANewReceipt(
+            List<ReceiptCreationRequest> requests, Integer pharmacyId, User cashier) {
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
@@ -72,11 +65,10 @@ public class ReceiptService {
         operation.setReceipt(receipt);
         Set<ReceiptItem> items = new HashSet<>();
         for (ReceiptCreationRequest request : requests) {
-            PharmacyDrug drug =
-                    pharmacyService.getNextDrugToSell(request.getPharmacyId(), request.getDrugId());
+            PharmacyDrug drug = pharmacyService.getNextDrugToSell(pharmacyId, request.getDrugId());
             if (drug == null) {
                 throw new PharmacyDrugNotFoundException(
-                        request.getPharmacyId(),
+                        pharmacyId,
                         request.getDrugId(),
                         PharmacyDrugNotFoundException.Why.NONEXISTENT_DRUG_PHARMACY);
             }
@@ -100,9 +92,7 @@ public class ReceiptService {
                     remainingQuantity -= drugStock;
                 }
                 if (remainingQuantity > 0) {
-                    drug =
-                            pharmacyService.getNextDrugToSell(
-                                    request.getPharmacyId(), request.getDrugId());
+                    drug = pharmacyService.getNextDrugToSell(pharmacyId, request.getDrugId());
                 }
             }
 
@@ -132,7 +122,7 @@ public class ReceiptService {
             if (satisfiedItems == 0) {
                 receipt.setStatus(ReceiptStatus.REJECTED);
             } else if (satisfiedItems < requests.size()) {
-               receipt.setStatus(ReceiptStatus.PARTIALLY_FULFILLED);
+                receipt.setStatus(ReceiptStatus.PARTIALLY_FULFILLED);
             } else {
                 receipt.setStatus(ReceiptStatus.REJECTED);
             }
@@ -142,7 +132,6 @@ public class ReceiptService {
             items.add(item);
             receipt.setReceiptItems(items);
             receipt = receiptRepository.save(receipt);
-
         }
 
         return mapReceiptDto(receipt);
@@ -187,14 +176,7 @@ public class ReceiptService {
         operation.setCashier(cashier);
         operation.setType(OperationType.RECEIPT_RETURNED);
         Optional<Receipt> receiptOptional = receiptRepository.findById(id);
-        Receipt receipt = receiptOptional.orElseThrow(() -> new ReceiptNotFoundException(id));
-        if (receipt.getStatus() == ReceiptStatus.RETURNED) {
-            throw new IllegalStateException("receipt is already returned");
-        }
-
-        if (receipt.getStatus() != ReceiptStatus.ISSUED && receipt.getStatus() != ReceiptStatus.PARTIALLY_FULFILLED) {
-            throw new IllegalStateException("can not return receipt with status: " + receipt.getStatus().name());
-        }
+        Receipt receipt = getReceipt(id, receiptOptional);
 
         operation.setReceipt(receipt);
         operationRepository.save(operation);
@@ -212,25 +194,20 @@ public class ReceiptService {
         return mapReceiptDto(receipt);
     }
 
-    public List<ReceiptDto> getReceiptsByCashierId(Integer id, Pageable pageable) {
-        Page<Receipt> receipts = receiptRepository.findAllByCashier_Id(id, pageable);
-        return streamAndMap(receipts.getContent());
+    private static Receipt getReceipt(Integer id, Optional<Receipt> receiptOptional) {
+        Receipt receipt = receiptOptional.orElseThrow(() -> new ReceiptNotFoundException(id));
+        if (receipt.getStatus() == ReceiptStatus.RETURNED) {
+            throw new IllegalStateException("receipt is already returned");
+        }
+
+        if (receipt.getStatus() != ReceiptStatus.ISSUED
+                && receipt.getStatus() != ReceiptStatus.PARTIALLY_FULFILLED) {
+            throw new IllegalStateException(
+                    "can not return receipt with status: " + receipt.getStatus().name());
+        }
+        return receipt;
     }
 
-    public List<ReceiptDto> getReceiptsByPharmacyId(Integer id, Pageable pageable) {
-        Page<Receipt> receipts = receiptRepository.findReceiptsByPharmacyId(id, pageable);
-        return streamAndMap(receipts.getContent());
-    }
-
-    public List<ReceiptDto> getReceiptsByDrugId(Integer id, Pageable pageable) {
-        Page<Receipt> receipts = receiptRepository.findReceiptsByDrugId(id, pageable);
-        return streamAndMap(receipts.getContent());
-    }
-
-    public List<ReceiptDto> getReceiptsByShiftId(Integer id, Pageable pageable) {
-        Page<Receipt> receipts = receiptRepository.findReceiptsByShiftId(id, pageable);
-        return streamAndMap(receipts.getContent());
-    }
 
     public List<ReceiptDto> applyAllFilters(
             Integer cashierId,
@@ -298,9 +275,8 @@ public class ReceiptService {
         }
 
         if (status != null) {
-            receiptList = receiptList.stream()
-                    .filter(receipt -> receipt.getStatus() == status)
-                    .toList();
+            receiptList =
+                    receiptList.stream().filter(receipt -> receipt.getStatus() == status).toList();
         }
 
         if (fromDate != null) {

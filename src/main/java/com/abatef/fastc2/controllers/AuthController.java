@@ -38,7 +38,6 @@ public class AuthController {
     private final ModelMapper modelMapper;
 
     private final JwtUtil jwtUtil;
-    private final PharmacyService pharmacyService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -46,14 +45,13 @@ public class AuthController {
             RefreshTokenService refreshTokenService,
             UserService userService,
             ModelMapper modelMapper,
-            JwtUtil jwtUtil, PharmacyService pharmacyService) {
+            JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.refreshTokenService = refreshTokenService;
         this.userService = userService;
         this.modelMapper = modelMapper;
         this.jwtUtil = jwtUtil;
-        this.pharmacyService = pharmacyService;
     }
 
     @PostMapping("/signup")

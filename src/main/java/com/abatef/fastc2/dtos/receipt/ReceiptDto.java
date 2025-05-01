@@ -16,12 +16,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReceiptDto {
+    List<ReceiptItemDto> items = new ArrayList<>();
     private Integer id;
     private UserDto cashier;
     private Shift shift;
-    private Instant createdAt;
-    private Instant updatedAt;
-    List<ReceiptItemDto> items = new ArrayList<>();
     private Float total;
     private ReceiptStatus status;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

@@ -50,5 +50,4 @@ public class Operation {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "order_id")
     private DrugOrder order;
-
 }

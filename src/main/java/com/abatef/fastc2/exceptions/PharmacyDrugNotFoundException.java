@@ -23,7 +23,9 @@ public class PharmacyDrugNotFoundException extends RuntimeException {
     }
 
     public PharmacyDrugNotFoundException(Integer pharmacyId, Integer drugId, Why why) {
-        super(String.format("Pharmacy with id: %d doesn't have drug with id: %d.", pharmacyId, drugId));
+        super(
+                String.format(
+                        "Pharmacy with id: %d doesn't have drug with id: %d.", pharmacyId, drugId));
         this.pharmacyId = pharmacyId;
         this.drugId = drugId;
         this.why = why;

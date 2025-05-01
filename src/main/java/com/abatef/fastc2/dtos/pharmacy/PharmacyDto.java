@@ -1,10 +1,11 @@
 package com.abatef.fastc2.dtos.pharmacy;
 
 import com.abatef.fastc2.dtos.user.UserDto;
-
 import com.abatef.fastc2.models.shift.Shift;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

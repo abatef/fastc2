@@ -1,6 +1,5 @@
 package com.abatef.fastc2.repositories;
 
-import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 
 import org.springframework.data.domain.Page;

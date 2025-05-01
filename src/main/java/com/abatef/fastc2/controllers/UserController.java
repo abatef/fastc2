@@ -5,7 +5,6 @@ import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.UserService;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -16,11 +15,9 @@ import java.util.List;
 @RequestMapping("/api/v1/users")
 public class UserController {
     private final UserService userService;
-    private final ModelMapper modelMapper;
 
-    public UserController(UserService userService, ModelMapper modelMapper) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.modelMapper = modelMapper;
     }
 
     @PatchMapping
@@ -38,7 +35,8 @@ public class UserController {
     }
 
     @GetMapping("/pharmacy")
-    public ResponseEntity<List<PharmacyDto>> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<PharmacyDto>> getPharmacyInfoByUser(
+            @AuthenticationPrincipal User user) {
         List<PharmacyDto> info = userService.getPharmacyInfoByUser(user);
         if (info == null) {
             return ResponseEntity.notFound().build();

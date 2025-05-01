@@ -6,7 +6,6 @@ import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
-import com.abatef.fastc2.repositories.UserRepository;
 import com.abatef.fastc2.services.DrugService;
 
 import jakarta.validation.Valid;
@@ -25,13 +24,10 @@ import java.util.stream.Collectors;
 public class DrugController {
     private final DrugService drugService;
     private final ModelMapper modelMapper;
-    private final UserRepository userRepository;
 
-    public DrugController(
-            DrugService drugService, ModelMapper modelMapper, UserRepository userRepository) {
+    public DrugController(DrugService drugService, ModelMapper modelMapper) {
         this.drugService = drugService;
         this.modelMapper = modelMapper;
-        this.userRepository = userRepository;
     }
 
     @PostMapping

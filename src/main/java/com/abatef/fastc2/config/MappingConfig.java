@@ -85,7 +85,6 @@ public class MappingConfig {
                     info.setPack(item.getPack());
                     info.setUnits(item.getUnits());
                     info.setAmountDue(item.getAmountDue());
-                    info.setShift(item.getReceipt().getCashier().getEmployee().getShift());
                     return info;
                 };
         modelMapper

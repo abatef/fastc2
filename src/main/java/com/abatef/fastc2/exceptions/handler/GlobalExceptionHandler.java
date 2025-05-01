@@ -3,6 +3,7 @@ package com.abatef.fastc2.exceptions.handler;
 import com.abatef.fastc2.enums.ErrorType;
 import com.abatef.fastc2.exceptions.ErrorResponse;
 import com.abatef.fastc2.security.auth.exceptions.ExpiredJwtException;
+
 import jakarta.validation.ConstraintViolationException;
 
 import org.springframework.dao.DataIntegrityViolationException;

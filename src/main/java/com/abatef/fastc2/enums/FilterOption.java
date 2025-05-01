@@ -13,7 +13,7 @@ public enum FilterOption {
     EXPIRED,
 
     // New expiry options
-    APPROACHING_EXPIRY,  // Use N as days threshold
+    APPROACHING_EXPIRY, // Use N as days threshold
     NOT_EXPIRED,
 
     // Drug category/type options
@@ -22,6 +22,6 @@ public enum FilterOption {
     // Price options
     PRICE_BELOW_N,
     PRICE_ABOVE_N,
-    PRICE_BETWEEN,  // Use N as lower bound and additional param as upper bound
-    DISCOUNTED      // Drugs with discount in ReceiptItem
+    PRICE_BETWEEN, // Use N as lower bound and additional param as upper bound
+    DISCOUNTED // Drugs with discount in ReceiptItem
 }

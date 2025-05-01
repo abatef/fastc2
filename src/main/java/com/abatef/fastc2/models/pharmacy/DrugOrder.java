@@ -1,7 +1,6 @@
 package com.abatef.fastc2.models.pharmacy;
 
 import com.abatef.fastc2.enums.OrderStatus;
-import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 
 import jakarta.persistence.*;

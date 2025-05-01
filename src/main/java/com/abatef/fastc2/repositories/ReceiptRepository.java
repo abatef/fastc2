@@ -12,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
 @Repository
 public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {

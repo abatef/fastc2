@@ -2,6 +2,7 @@ package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.drug.DrugOrderDto;
 import com.abatef.fastc2.dtos.drug.OrderItemRequest;
+import com.abatef.fastc2.enums.OrderStatus;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.PharmacyService;
 
@@ -46,12 +47,23 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @PatchMapping("/status")
+    public ResponseEntity<DrugOrderDto> updateOrderStatus(
+            @RequestParam(value = "pharmacy_id") Integer pharmacyId,
+            @RequestParam(value = "order_id") Integer orderId,
+            @RequestParam(value = "status") OrderStatus status,
+            @AuthenticationPrincipal User user) {
+        DrugOrderDto order = pharmacyService.changeOrderStatus(pharmacyId, orderId, status, user);
+        return ResponseEntity.ok(order);
+    }
+
     @PatchMapping("/cancel")
     public ResponseEntity<DrugOrderDto> cancelOrder(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
             @RequestParam(value = "order_id") Integer orderId,
             @AuthenticationPrincipal User user) {
-        DrugOrderDto order = pharmacyService.cancelOrder(pharmacyId, orderId, user);
+        DrugOrderDto order =
+                pharmacyService.changeOrderStatus(pharmacyId, orderId, OrderStatus.CANCELLED, user);
         return ResponseEntity.ok(order);
     }
 
@@ -60,7 +72,8 @@ public class OrderController {
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
             @RequestParam(value = "order_id") Integer orderId,
             @AuthenticationPrincipal User user) {
-        DrugOrderDto order = pharmacyService.approveOrder(pharmacyId, orderId, user);
+        DrugOrderDto order =
+                pharmacyService.changeOrderStatus(pharmacyId, orderId, OrderStatus.COMPLETED, user);
         return ResponseEntity.ok(order);
     }
 }

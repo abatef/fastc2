@@ -144,9 +144,7 @@ public class UserService {
         if (pharmacies.isEmpty()) {
             return null;
         }
-        return pharmacies.stream()
-                .map(ph -> modelMapper.map(ph, PharmacyDto.class))
-                .toList();
+        return pharmacies.stream().map(ph -> modelMapper.map(ph, PharmacyDto.class)).toList();
     }
 
     @Transactional

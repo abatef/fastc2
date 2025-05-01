@@ -22,14 +22,12 @@ import java.util.Optional;
 public class DrugService {
     private final DrugRepository drugRepository;
     private final ModelMapper modelMapper;
-    private final UserService userService;
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public DrugService(
-            DrugRepository drugRepository, ModelMapper modelMapper, UserService userService) {
+    public DrugService(DrugRepository drugRepository, ModelMapper modelMapper) {
         this.drugRepository = drugRepository;
         this.modelMapper = modelMapper;
-        this.userService = userService;
     }
 
     @Transactional
@@ -79,7 +77,10 @@ public class DrugService {
         }
 
         if (info.getFullPrice() != null) {
-            logger.info("updating full price, old: {}, new: {}", drug.getFullPrice(), info.getFullPrice());
+            logger.info(
+                    "updating full price, old: {}, new: {}",
+                    drug.getFullPrice(),
+                    info.getFullPrice());
             drug.setFullPrice(info.getFullPrice());
             isUpdated = true;
         }
@@ -105,9 +106,7 @@ public class DrugService {
 
     public List<DrugDto> getAllDrugs(Pageable pageable) {
         logger.info("getting all drugs");
-        return drugRepository
-                .findAll(pageable)
-                .stream()
+        return drugRepository.findAll(pageable).stream()
                 .map(drug -> modelMapper.map(drug, DrugDto.class))
                 .toList();
     }
@@ -115,9 +114,7 @@ public class DrugService {
     public List<DrugDto> searchByName(String drugName, Pageable pageable) {
         logger.info("searching for drug: {}", drugName);
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
-        return drugRepository
-                .searchDrugByNamePaginated(formattedName, pageable)
-                .stream()
+        return drugRepository.searchDrugByNamePaginated(formattedName, pageable).stream()
                 .map(drug -> modelMapper.map(drug, DrugDto.class))
                 .toList();
     }

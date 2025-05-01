@@ -21,7 +21,6 @@ import com.abatef.fastc2.repositories.*;
 
 import jakarta.validation.constraints.NotNull;
 
-import org.hibernate.query.Order;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
 @Service
 public class PharmacyService {
     private final PharmacyRepository pharmacyRepository;
-    private final UserService userService;
     private final DrugService drugService;
     private final ModelMapper modelMapper;
     private final ShiftService shiftService;
@@ -48,7 +46,6 @@ public class PharmacyService {
     private final PharmacyDrugRepository pharmacyDrugRepository;
     private final PharmacyShiftRepository pharmacyShiftRepository;
     private final EmployeeRepository employeeRepository;
-    private final EmployeeService employeeService;
     private final OrderStatsRepository orderStatsRepository;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -57,25 +54,22 @@ public class PharmacyService {
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
-            UserService userService,
             DrugService drugService,
             ModelMapper modelMapper,
             ShiftService shiftService,
             PharmacyDrugRepository pharmacyDrugRepository,
             PharmacyShiftRepository pharmacyShiftRepository,
             EmployeeRepository employeeRepository,
-            EmployeeService employeeService,
             OrderStatsRepository orderStatsRepository,
-            DrugOrderRepository drugOrderRepository, OperationRepository operationRepository) {
+            DrugOrderRepository drugOrderRepository,
+            OperationRepository operationRepository) {
         this.pharmacyRepository = pharmacyRepository;
-        this.userService = userService;
         this.drugService = drugService;
         this.modelMapper = modelMapper;
         this.shiftService = shiftService;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
         this.pharmacyShiftRepository = pharmacyShiftRepository;
         this.employeeRepository = employeeRepository;
-        this.employeeService = employeeService;
         this.orderStatsRepository = orderStatsRepository;
         this.drugOrderRepository = drugOrderRepository;
         this.operationRepository = operationRepository;
@@ -109,42 +103,6 @@ public class PharmacyService {
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
-    @Transactional
-    public PharmacyDto updateName(Integer id, String name, @AuthenticationPrincipal User user) {
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
-        pharmacy.setName(name);
-        pharmacy = pharmacyRepository.save(pharmacy);
-        return modelMapper.map(pharmacy, PharmacyDto.class);
-    }
-
-    @Transactional
-    public PharmacyDto updateAddress(
-            Integer id, String address, @AuthenticationPrincipal User user) {
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
-        pharmacy.setAddress(address);
-        pharmacy = pharmacyRepository.save(pharmacy);
-        return modelMapper.map(pharmacy, PharmacyDto.class);
-    }
-
-    @Transactional
-    public PharmacyDto updateLocation(
-            Integer id, Location location, @AuthenticationPrincipal User user) {
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
-        pharmacy.setLocation(location.toPoint());
-        pharmacy = pharmacyRepository.save(pharmacy);
-        return modelMapper.map(pharmacy, PharmacyDto.class);
-    }
-
-    @Transactional
-    public PharmacyDto updateOwner(
-            Integer id, Integer ownerId, @AuthenticationPrincipal User user) {
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
-        User owner = userService.getUserById(ownerId);
-        pharmacy.setOwner(owner);
-        pharmacy = pharmacyRepository.save(pharmacy);
-        return modelMapper.map(pharmacy, PharmacyDto.class);
-    }
-
     public Pharmacy getPharmacyByIdOrThrow(Integer id) {
         logger.info("finding pharmacy by id: {}", id);
         Optional<Pharmacy> pharmacy = pharmacyRepository.findById(id);
@@ -156,25 +114,9 @@ public class PharmacyService {
         throw new PharmacyNotFoundException(id);
     }
 
-    public Optional<Pharmacy> getPharmacyById(Integer id) {
-        return pharmacyRepository.getPharmacyById(id);
-    }
-
-    public Boolean existsPharmacyById(Integer id) {
-        return pharmacyRepository.existsPharmacyById(id);
-    }
-
     public PharmacyDto getPharmacyInfoById(Integer id) {
         logger.info("trying to get pharmacy info by id: {}", id);
         return modelMapper.map(getPharmacyByIdOrThrow(id), PharmacyDto.class);
-    }
-
-    @Transactional
-    public PharmacyDto updateExpiryThreshold(Integer id, Short threshold, User user) {
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
-        pharmacy.setExpiryThreshold(threshold);
-        pharmacy = pharmacyRepository.save(pharmacy);
-        return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
     public List<PharmacyDto> getAllPharmacies(Pageable pageable) {
@@ -182,6 +124,11 @@ public class PharmacyService {
         return pharmacyRepository.findAll(pageable).stream()
                 .map(ph -> modelMapper.map(ph, PharmacyDto.class))
                 .toList();
+    }
+
+    @Transactional
+    public void deletePharmacyById(Integer id) {
+        pharmacyRepository.deleteById(id);
     }
 
     @PreAuthorize("hasRole('OWNER')")
@@ -282,7 +229,7 @@ public class PharmacyService {
     }
 
     @Transactional
-    public void removeDrugFromPharmacy(Integer id, User user) {
+    public void removeDrugFromPharmacy(Integer id) {
         pharmacyDrugRepository.deleteById(id);
     }
 
@@ -306,71 +253,6 @@ public class PharmacyService {
         return streamAndReturn(drugs);
     }
 
-    public List<PharmacyDrugDto> getExpiredDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateAfter(
-                        pharmacyId, LocalDate.now(), pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getNonExpiredDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateBefore(
-                        pharmacyId, LocalDate.now(), pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getNearExpiredDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Short expiryThreshold = getPharmacyByIdOrThrow(pharmacyId).getExpiryThreshold();
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateAfter(
-                        pharmacyId, LocalDate.now().plusDays(expiryThreshold), pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getNearExpiredDrugsAfterNDayByPharmacyId(
-            Integer pharmacyId, Integer N, Pageable pageable) {
-        Page<PharmacyDrug> pharmacyDrugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndExpiryDateAfter(
-                        pharmacyId, LocalDate.now().plusDays(N), pageable);
-        return streamAndReturn(pharmacyDrugs);
-    }
-
-    public List<PharmacyDrugDto> getOutOfStockDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsLessThanEqual(
-                        pharmacyId, 0, pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getInStockDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsGreaterThanEqual(
-                        pharmacyId, 1, pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getDrugsWithStockOverNByPharmacyId(
-            Integer pharmacyId, Integer N, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsGreaterThanEqual(
-                        pharmacyId, N, pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getDrugsWithStockLessThanNByPharmacyId(
-            Integer pharmacyId, Integer N, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_IdAndStockIsLessThanEqual(
-                        pharmacyId, N, pageable);
-        return streamAndReturn(drugs);
-    }
-
     public List<PharmacyDrug> searchDrugInPharmacy(
             String drugName, Integer pharmacyId, Pageable pageable) {
         String formattedName = drugName.trim().toLowerCase().replace(' ', '&');
@@ -381,36 +263,6 @@ public class PharmacyService {
             return List.of();
         }
         return pharmacyDrugs.getContent();
-    }
-
-    /*
-     * filter -> available, shortage, unavailable shortage, unavailable
-     *
-     * available -> at least one drug exists in the pharmacy
-     * shortage  -> if we have 10, and we require n
-     * unavailable shortage -> if we have 0 and require n
-     * unavailable -> if we have 0 and require 0
-     * */
-
-    public List<PharmacyDrugDto> getShortageDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getPharmacyDrugsTotalWithShortage(pharmacyId, pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getUnavailableShortageByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getUnavailableShortagePharmacyDrugs(pharmacyId, pageable);
-        return streamAndReturn(drugs);
-    }
-
-    public List<PharmacyDrugDto> getUnavailableDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
-        Page<PharmacyDrug> drugs =
-                pharmacyDrugRepository.getUnavailablePharmacyDrugs(pharmacyId, pageable);
-        return streamAndReturn(drugs);
     }
 
     public Integer getTotalStockOfPharmacyDrug(Integer pharmacyId, Integer drugId) {
@@ -507,8 +359,8 @@ public class PharmacyService {
             List<FilterOption> filterOptions,
             SortOption sortOption,
             Integer N,
-            Float upperPriceBound, // For PRICE_BETWEEN
-            String type, // For BY_TYPE
+            Float upperPriceBound,
+            String type,
             Pageable pageable) {
         logger.info("applying all filters");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
@@ -534,9 +386,7 @@ public class PharmacyService {
         for (FilterOption option : filterOptions) {
             logger.info("filter option: {}", option.name());
             switch (option) {
-                // Original filters
                 case AVAILABLE:
-                    // Filter drugs that have stock > 0
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getStock() > 0)
@@ -544,7 +394,6 @@ public class PharmacyService {
                     break;
 
                 case SHORTAGE:
-                    // Filter drugs that have stock > 0 but less than what's required
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
@@ -556,8 +405,6 @@ public class PharmacyService {
                                                         orderStatsRepository.getDrugOrderById(id);
                                                 if (orderOptional.isPresent()) {
                                                     OrderStats order = orderOptional.get();
-                                                    // We have the drug but in less quantity than
-                                                    // required
                                                     return drug.getStock() > 0
                                                             && drug.getStock()
                                                                     < order.getRequired();
@@ -568,7 +415,6 @@ public class PharmacyService {
                     break;
 
                 case UNAVAILABLE_SHORTAGE:
-                    // Filter drugs that have stock = 0 and there's a requirement for them
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
@@ -580,7 +426,6 @@ public class PharmacyService {
                                                         orderStatsRepository.getDrugOrderById(id);
                                                 if (orderOptional.isPresent()) {
                                                     OrderStats order = orderOptional.get();
-                                                    // We don't have the drug but it's required
                                                     return drug.getStock() == 0
                                                             && order.getRequired() > 0;
                                                 }
@@ -590,7 +435,6 @@ public class PharmacyService {
                     break;
 
                 case UNAVAILABLE:
-                    // Filter drugs that have stock = 0 and there's no requirement for them
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
@@ -602,11 +446,9 @@ public class PharmacyService {
                                                         orderStatsRepository.getDrugOrderById(id);
                                                 if (orderOptional.isPresent()) {
                                                     OrderStats order = orderOptional.get();
-                                                    // We don't have the drug and it's not required
                                                     return drug.getStock() == 0
                                                             && order.getRequired() == 0;
                                                 } else {
-                                                    // No order record means it's not required
                                                     return drug.getStock() == 0;
                                                 }
                                             })
@@ -614,7 +456,6 @@ public class PharmacyService {
                     break;
 
                 case EXPIRES_AFTER_N:
-                    // Filter drugs that expire after N days from today
                     LocalDate dateAfterN = today.plusDays(N);
                     filteredDrugs =
                             filteredDrugs.stream()
@@ -623,7 +464,6 @@ public class PharmacyService {
                     break;
 
                 case STOCK_OVER_N:
-                    // Filter drugs with stock greater than N
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getStock() > N)
@@ -631,7 +471,6 @@ public class PharmacyService {
                     break;
 
                 case STOCK_UNDER_N:
-                    // Filter drugs with stock less than N but not zero
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getStock() < N && drug.getStock() > 0)
@@ -639,7 +478,6 @@ public class PharmacyService {
                     break;
 
                 case OUT_OF_STOCK:
-                    // Filter drugs with stock = 0
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getStock() == 0)
@@ -647,7 +485,6 @@ public class PharmacyService {
                     break;
 
                 case EXPIRED:
-                    // Filter drugs that have already expired
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
@@ -657,9 +494,7 @@ public class PharmacyService {
                                     .collect(Collectors.toList());
                     break;
 
-                // New expiry date filters
                 case APPROACHING_EXPIRY:
-                    // Filter drugs that will expire within N days
                     LocalDate approachingDate = today.plusDays(pharmacy.getExpiryThreshold());
                     filteredDrugs =
                             filteredDrugs.stream()
@@ -676,7 +511,6 @@ public class PharmacyService {
                     break;
 
                 case NOT_EXPIRED:
-                    // Filter drugs that have not expired yet
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getExpiryDate().isAfter(today))
@@ -684,7 +518,6 @@ public class PharmacyService {
                     break;
 
                 case BY_FORM:
-                    // Filter drugs by type (tablet, syrup, etc.)
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
@@ -696,9 +529,7 @@ public class PharmacyService {
                                     .collect(Collectors.toList());
                     break;
 
-                // Price filters
                 case PRICE_BELOW_N:
-                    // Filter drugs with price below N
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getPrice() < N)
@@ -706,7 +537,6 @@ public class PharmacyService {
                     break;
 
                 case PRICE_ABOVE_N:
-                    // Filter drugs with price above N
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(drug -> drug.getPrice() > N)
@@ -714,7 +544,6 @@ public class PharmacyService {
                     break;
 
                 case PRICE_BETWEEN:
-                    // Filter drugs with price between N and upperPriceBound
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
@@ -727,22 +556,20 @@ public class PharmacyService {
                     break;
 
                 case DISCOUNTED:
-                    // Filter drugs that have discounts in receipt items
                     filteredDrugs =
                             filteredDrugs.stream()
                                     .filter(
-                                            drug -> {
-                                                // Check if any receipt item for this drug has a
-                                                // discount
-                                                return drug.getReceiptItems().stream()
-                                                        .anyMatch(
-                                                                item ->
-                                                                        item.getDiscount() != null
-                                                                                && item
-                                                                                                .getDiscount()
-                                                                                        > 0);
-                                            })
+                                            drug ->
+                                                    drug.getReceiptItems().stream()
+                                                            .anyMatch(
+                                                                    item ->
+                                                                            item.getDiscount()
+                                                                                            != null
+                                                                                    && item
+                                                                                                    .getDiscount()
+                                                                                            > 0))
                                     .collect(Collectors.toList());
+
                     break;
             }
         }
@@ -759,46 +586,35 @@ public class PharmacyService {
             logger.info("sort option: {}", sortOption);
             switch (sortOption) {
                 case EXPIRY_DATE_ASC:
-                    // Sort by expiry date (nearest to expire first)
                     filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getExpiryDate));
                     break;
 
                 case EXPIRY_DATE_DESC:
-                    // Sort by expiry date (furthest from expiring first)
                     filteredDrugs.sort(
                             Comparator.comparing(PharmacyDrug::getExpiryDate).reversed());
                     break;
 
                 case PRICE_ASC:
-                    // Sort by price (lowest first)
                     filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getPrice));
                     break;
 
                 case PRICE_DESC:
-                    // Sort by price (highest first)
                     filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getPrice).reversed());
                     break;
 
                 case STOCK_ASC:
-                    // Sort by stock (lowest first)
                     filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getStock));
                     break;
 
                 case STOCK_DESC:
-                    // Sort by stock (highest first)
                     filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getStock).reversed());
                     break;
             }
         }
         logger.info("done filtering.");
-        // Convert filtered drugs to DTOs
         return filteredDrugs.stream()
                 .map(drug -> modelMapper.map(drug, PharmacyDrugDto.class))
                 .collect(Collectors.toList());
-    }
-
-    public Boolean pharmacyHasDrug(Integer pharmacyId, Integer drugId) {
-        return pharmacyDrugRepository.existsPharmacyDrugByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
     }
 
     public List<PharmacyDto> searchByName(String pharmacyName, Pageable pageable) {
@@ -838,15 +654,6 @@ public class PharmacyService {
         return pharmacy.getShifts().stream().toList();
     }
 
-    @Transactional
-    public List<Employee> addEmployeeToPharmacy(Integer pharmacyId, Integer employeeId, User user) {
-        Employee employee = employeeService.getEmployeeByIdOrThrow(employeeId);
-        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
-        pharmacy.getEmployees().add(employee);
-        pharmacy = pharmacyRepository.save(pharmacy);
-        return pharmacy.getEmployees().stream().toList();
-    }
-
     public List<EmployeeDto> getEmployeesByPharmacyId(Integer pharmacyId, Pageable pageable) {
         Page<Employee> employees =
                 employeeRepository.getEmployeesByPharmacy_Id(pharmacyId, pageable);
@@ -861,7 +668,6 @@ public class PharmacyService {
             Employee employeeToRemove = employee.get();
             employeeToRemove.setPharmacy(null);
             employeeRepository.save(employeeToRemove);
-            return;
         }
     }
 
@@ -881,7 +687,7 @@ public class PharmacyService {
         order.setPharmacy(pharmacy);
         order.setStatus(OrderStatus.ISSUED);
         order = drugOrderRepository.save(order);
-        Float orderTotal = 0.0f;
+        float orderTotal = 0.0f;
         for (OrderItemRequest item : request) {
             OrderItemId id = new OrderItemId();
             id.setOrderId(order.getId());
@@ -896,30 +702,24 @@ public class PharmacyService {
         }
         order = drugOrderRepository.save(order);
         createOperation(user, OperationType.ORDER_ISSUED, order);
-        DrugOrderDto dto =  modelMapper.map(order, DrugOrderDto.class);
+        DrugOrderDto dto = modelMapper.map(order, DrugOrderDto.class);
         dto.setOrderTotal(orderTotal);
         return dto;
     }
 
     @Transactional
-    public DrugOrderDto cancelOrder(Integer pharmacyId, Integer orderId, User user) {
+    public DrugOrderDto changeOrderStatus(
+            Integer pharmacyId, Integer orderId, OrderStatus orderStatus, User user) {
         DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
-        order.setStatus(OrderStatus.CANCELLED);
+        order.setStatus(orderStatus);
         order = drugOrderRepository.save(order);
 
-        createOperation(null, OperationType.ORDER_CANCELLED, order);
-
-        return modelMapper.map(order, DrugOrderDto.class);
-    }
-
-    @Transactional
-    public DrugOrderDto approveOrder(Integer pharmacyId, Integer orderId, User user) {
-        DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
-        order.setStatus(OrderStatus.COMPLETED);
-        order = drugOrderRepository.save(order);
-
-        createOperation(null, OperationType.ORDER_COMPLETED, order);
-
+        if (orderStatus == OrderStatus.CANCELLED) {
+            createOperation(user, OperationType.ORDER_CANCELLED, order);
+        } else if (orderStatus == OrderStatus.COMPLETED
+                || orderStatus == OrderStatus.PARTIAL_COMPLETION) {
+            createOperation(user, OperationType.ORDER_COMPLETED, order);
+        }
         return modelMapper.map(order, DrugOrderDto.class);
     }
 

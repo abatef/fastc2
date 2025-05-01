@@ -48,6 +48,13 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
+    @DeleteMapping
+    public ResponseEntity<Void> deletePharmacy(
+            @RequestParam("id") Integer id, @AuthenticationPrincipal User user) {
+        pharmacyService.deletePharmacyById(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<PharmacyDto>> getAllPharmacies(
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -122,7 +129,7 @@ public class PharmacyController {
         return ResponseEntity.ok(shortages);
     }
 
-    @GetMapping("/{id}/drug/orders")
+    @GetMapping("/{id}/drug/order-stats")
     public ResponseEntity<DrugStatsDto> getDrugOrderInfo(
             @PathVariable("id") Integer id, @RequestParam("drug_id") Integer drugId) {
         DrugStatsDto info = pharmacyService.getDrugOrderInfoByPharmacyAndDrugIds(id, drugId);
@@ -176,10 +183,10 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}/drugs")
     public ResponseEntity<Void> deletePharmacyDrug(
-            @RequestParam("id") Integer id, @AuthenticationPrincipal User user) {
-        pharmacyService.removeDrugFromPharmacy(id, user);
+            @RequestParam("drug_id") Integer drugId, @PathVariable("id") Integer pharmacyId) {
+        pharmacyService.removeDrugFromPharmacy(drugId);
         return ResponseEntity.noContent().build();
     }
 

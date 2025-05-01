@@ -38,8 +38,7 @@ public class Receipt {
     @Enumerated(EnumType.STRING)
     private ReceiptStatus status;
 
-    @CreationTimestamp
-    private Instant createdAt;
+    @CreationTimestamp private Instant createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
@@ -48,5 +47,4 @@ public class Receipt {
     @JsonIgnore
     @OneToMany(mappedBy = "receipt")
     private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
-
 }

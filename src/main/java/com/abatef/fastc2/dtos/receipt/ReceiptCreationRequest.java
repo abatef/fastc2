@@ -14,14 +14,14 @@ import org.hibernate.annotations.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReceiptCreationRequest {
-    @NotNull
-    private Integer drugId;
-    @NotNull
-    private Integer pharmacyId;
+    @NotNull private Integer drugId;
+
     @Min(0)
     private Float discount;
+
     @Min(0)
     private Short units = 0;
+
     @Min(0)
     private Short packs = 0;
 }

@@ -6,7 +6,6 @@ public enum OperationType {
     RECEIPT_CANCELLED,
     RECEIPT_RETURNED,
 
-
     ORDER_ISSUED,
     ORDER_COMPLETED,
     ORDER_CANCELLED,
