@@ -241,47 +241,4 @@ public class PharmacyController {
         }
         return ResponseEntity.ok(employees);
     }
-
-    @PostMapping("/{id}/orders")
-    public ResponseEntity<DrugOrderDto> createNewOrder(
-            @PathVariable("id") Integer pharmacyId,
-            @RequestBody DrugOrderRequest request,
-            @AuthenticationPrincipal User user) {
-        DrugOrderDto order = pharmacyService.orderDrug(request, pharmacyId, user);
-        return ResponseEntity.ok(order);
-    }
-
-    @GetMapping("/{id}/orders/all")
-    public ResponseEntity<List<DrugOrderDto>> filterOrders(
-            @PathVariable("id") Integer pharmacyId,
-            @RequestParam(value = "drug_id", required = false) Integer drugId,
-            @RequestParam(value = "user_id", required = false) Integer userId,
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "20") Integer size) {
-        PageRequest pageable = PageRequest.of(page, size);
-        List<DrugOrderDto> orders =
-                pharmacyService.getAllOrders(pharmacyId, drugId, userId, pageable);
-        if (orders.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(orders);
-    }
-
-    @PatchMapping("/{id}/orders/{order_id}/cancel")
-    public ResponseEntity<DrugOrderDto> cancelOrder(
-            @PathVariable("id") Integer pharmacyId,
-            @PathVariable("order_id") Integer orderId,
-            @AuthenticationPrincipal User user) {
-        DrugOrderDto order = pharmacyService.cancelOrder(pharmacyId, orderId, user);
-        return ResponseEntity.ok(order);
-    }
-
-    @PatchMapping("/{id}/orders/{order_id}/approve")
-    public ResponseEntity<DrugOrderDto> approveOrder(
-            @PathVariable("id") Integer pharmacyId,
-            @PathVariable("order_id") Integer orderId,
-            @AuthenticationPrincipal User user) {
-        DrugOrderDto order = pharmacyService.approveOrder(pharmacyId, orderId, user);
-        return ResponseEntity.ok(order);
-    }
 }

@@ -21,6 +21,7 @@ import com.abatef.fastc2.repositories.*;
 
 import jakarta.validation.constraints.NotNull;
 
+import org.hibernate.query.Order;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -873,17 +874,31 @@ public class PharmacyService {
     }
 
     @Transactional
-    public DrugOrderDto orderDrug(DrugOrderRequest request, Integer pharmacyId, User user) {
-        Drug drug = drugService.getDrugByIdOrThrow(request.getDrugId());
+    public DrugOrderDto orderDrug(List<OrderItemRequest> request, Integer pharmacyId, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
         DrugOrder order = new DrugOrder();
         order.setOrderedBy(user);
         order.setPharmacy(pharmacy);
-        order.setDrug(drug);
-        order.setRequired(request.getRequired());
+        order.setStatus(OrderStatus.ISSUED);
+        order = drugOrderRepository.save(order);
+        Float orderTotal = 0.0f;
+        for (OrderItemRequest item : request) {
+            OrderItemId id = new OrderItemId();
+            id.setOrderId(order.getId());
+            id.setDrugId(item.getDrugId());
+            OrderItem orderItem = new OrderItem();
+            orderItem.setId(id);
+            orderItem.setRequired(item.getRequired());
+            Drug drug = drugService.getDrugByIdOrThrow(item.getDrugId());
+            orderItem.setDrug(drug);
+            orderTotal += drug.getFullPrice() * item.getRequired();
+            order.getOrderItems().add(orderItem);
+        }
         order = drugOrderRepository.save(order);
         createOperation(user, OperationType.ORDER_ISSUED, order);
-        return modelMapper.map(order, DrugOrderDto.class);
+        DrugOrderDto dto =  modelMapper.map(order, DrugOrderDto.class);
+        dto.setOrderTotal(orderTotal);
+        return dto;
     }
 
     @Transactional

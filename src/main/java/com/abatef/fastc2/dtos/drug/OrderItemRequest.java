@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DrugOrderRequest {
+public class OrderItemRequest {
     private Integer drugId;
     private Integer required;
 }

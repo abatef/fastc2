@@ -5,7 +5,6 @@ import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
@@ -17,20 +16,15 @@ import lombok.Setter;
 import org.hibernate.annotations.*;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(
-        name = "order_stats",
-        schema = "public",
-        indexes = {
-            @Index(
-                    name = "drug_order_idx",
-                    columnList = "id, drug_id, pharmacy_id, ordered_by, complete")
-        })
+@Table(name = "drug_order")
 public class DrugOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,11 +32,6 @@ public class DrugOrder {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "drug_id", nullable = false)
-    private Drug drug;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -56,9 +45,6 @@ public class DrugOrder {
     @JoinColumn(name = "ordered_by", nullable = false)
     private User orderedBy;
 
-    @ColumnDefault("0")
-    @Column(name = "required")
-    private Integer required;
 
     @ColumnDefault("false")
     @Column(name = "status")
@@ -72,4 +58,8 @@ public class DrugOrder {
     @UpdateTimestamp
     @Column(name = "received_at")
     private Instant receivedAt;
+
+    @OneToMany(mappedBy = "order")
+    private Set<OrderItem> orderItems = new LinkedHashSet<>();
+
 }
