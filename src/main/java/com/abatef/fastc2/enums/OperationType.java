@@ -8,5 +8,6 @@ public enum OperationType {
 
 
     ORDER_ISSUED,
-    ORDER_REJECTED,
+    ORDER_COMPLETED,
+    ORDER_CANCELLED,
 }

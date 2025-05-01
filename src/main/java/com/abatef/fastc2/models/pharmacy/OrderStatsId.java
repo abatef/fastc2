@@ -19,7 +19,7 @@ import java.util.Objects;
 @Embeddable
 @AllArgsConstructor
 @NoArgsConstructor
-public class DrugOrderId implements Serializable {
+public class OrderStatsId implements Serializable {
     private static final long serialVersionUID = 846980771570541242L;
 
     @NotNull
@@ -34,7 +34,7 @@ public class DrugOrderId implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        DrugOrderId entity = (DrugOrderId) o;
+        OrderStatsId entity = (OrderStatsId) o;
         return Objects.equals(this.pharmacyId, entity.pharmacyId)
                 && Objects.equals(this.drugId, entity.drugId);
     }

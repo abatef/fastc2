@@ -1,14 +1,14 @@
 package com.abatef.fastc2.services;
 
-import com.abatef.fastc2.repositories.DrugOrderRepository;
+import com.abatef.fastc2.repositories.OrderStatsRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class InventoryService {
-    private final DrugOrderRepository drugOrderRepository;
+    private final OrderStatsRepository orderStatsRepository;
 
-    public InventoryService(DrugOrderRepository drugOrderRepository) {
-        this.drugOrderRepository = drugOrderRepository;
+    public InventoryService(OrderStatsRepository orderStatsRepository) {
+        this.orderStatsRepository = orderStatsRepository;
     }
 
 

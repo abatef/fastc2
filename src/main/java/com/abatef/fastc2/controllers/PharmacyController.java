@@ -1,9 +1,6 @@
 package com.abatef.fastc2.controllers;
 
-import com.abatef.fastc2.dtos.drug.DrugOrderDto;
-import com.abatef.fastc2.dtos.drug.PharmacyDrugCreationRequest;
-import com.abatef.fastc2.dtos.drug.PharmacyDrugDto;
-import com.abatef.fastc2.dtos.drug.PharmacyShortageDto;
+import com.abatef.fastc2.dtos.drug.*;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
@@ -117,7 +114,8 @@ public class PharmacyController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        List<PharmacyShortageDto> shortages = pharmacyService.getAllShortageDrugsByPharmacyId(id, pageable);
+        List<PharmacyShortageDto> shortages =
+                pharmacyService.getAllShortageDrugsByPharmacyId(id, pageable);
         if (shortages.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -125,9 +123,9 @@ public class PharmacyController {
     }
 
     @GetMapping("/{id}/drug/orders")
-    public ResponseEntity<DrugOrderDto> getDrugOrderInfo(
+    public ResponseEntity<DrugStatsDto> getDrugOrderInfo(
             @PathVariable("id") Integer id, @RequestParam("drug_id") Integer drugId) {
-        DrugOrderDto info = pharmacyService.getDrugOrderInfoByPharmacyAndDrugIds(id, drugId);
+        DrugStatsDto info = pharmacyService.getDrugOrderInfoByPharmacyAndDrugIds(id, drugId);
         if (info == null) {
             return ResponseEntity.noContent().build();
         }
@@ -242,5 +240,48 @@ public class PharmacyController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(employees);
+    }
+
+    @PostMapping("/{id}/orders")
+    public ResponseEntity<DrugOrderDto> createNewOrder(
+            @PathVariable("id") Integer pharmacyId,
+            @RequestBody DrugOrderRequest request,
+            @AuthenticationPrincipal User user) {
+        DrugOrderDto order = pharmacyService.orderDrug(request, pharmacyId, user);
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/{id}/orders/all")
+    public ResponseEntity<List<DrugOrderDto>> filterOrders(
+            @PathVariable("id") Integer pharmacyId,
+            @RequestParam(value = "drug_id", required = false) Integer drugId,
+            @RequestParam(value = "user_id", required = false) Integer userId,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "20") Integer size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        List<DrugOrderDto> orders =
+                pharmacyService.getAllOrders(pharmacyId, drugId, userId, pageable);
+        if (orders.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(orders);
+    }
+
+    @PatchMapping("/{id}/orders/{order_id}/cancel")
+    public ResponseEntity<DrugOrderDto> cancelOrder(
+            @PathVariable("id") Integer pharmacyId,
+            @PathVariable("order_id") Integer orderId,
+            @AuthenticationPrincipal User user) {
+        DrugOrderDto order = pharmacyService.cancelOrder(pharmacyId, orderId, user);
+        return ResponseEntity.ok(order);
+    }
+
+    @PatchMapping("/{id}/orders/{order_id}/approve")
+    public ResponseEntity<DrugOrderDto> approveOrder(
+            @PathVariable("id") Integer pharmacyId,
+            @PathVariable("order_id") Integer orderId,
+            @AuthenticationPrincipal User user) {
+        DrugOrderDto order = pharmacyService.approveOrder(pharmacyId, orderId, user);
+        return ResponseEntity.ok(order);
     }
 }

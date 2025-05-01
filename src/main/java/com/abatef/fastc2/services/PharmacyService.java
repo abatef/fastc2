@@ -7,14 +7,13 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.enums.FilterOption;
+import com.abatef.fastc2.enums.OperationType;
+import com.abatef.fastc2.enums.OrderStatus;
 import com.abatef.fastc2.enums.SortOption;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.*;
-import com.abatef.fastc2.models.pharmacy.DrugOrder;
-import com.abatef.fastc2.models.pharmacy.DrugOrderId;
-import com.abatef.fastc2.models.pharmacy.Pharmacy;
-import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
+import com.abatef.fastc2.models.pharmacy.*;
 import com.abatef.fastc2.models.shift.PharmacyShift;
 import com.abatef.fastc2.models.shift.PharmacyShiftId;
 import com.abatef.fastc2.models.shift.Shift;
@@ -49,9 +48,11 @@ public class PharmacyService {
     private final PharmacyShiftRepository pharmacyShiftRepository;
     private final EmployeeRepository employeeRepository;
     private final EmployeeService employeeService;
-    private final DrugOrderRepository drugOrderRepository;
+    private final OrderStatsRepository orderStatsRepository;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final DrugOrderRepository drugOrderRepository;
+    private final OperationRepository operationRepository;
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
@@ -63,7 +64,8 @@ public class PharmacyService {
             PharmacyShiftRepository pharmacyShiftRepository,
             EmployeeRepository employeeRepository,
             EmployeeService employeeService,
-            DrugOrderRepository drugOrderRepository) {
+            OrderStatsRepository orderStatsRepository,
+            DrugOrderRepository drugOrderRepository, OperationRepository operationRepository) {
         this.pharmacyRepository = pharmacyRepository;
         this.userService = userService;
         this.drugService = drugService;
@@ -73,7 +75,9 @@ public class PharmacyService {
         this.pharmacyShiftRepository = pharmacyShiftRepository;
         this.employeeRepository = employeeRepository;
         this.employeeService = employeeService;
+        this.orderStatsRepository = orderStatsRepository;
         this.drugOrderRepository = drugOrderRepository;
+        this.operationRepository = operationRepository;
     }
 
     @Transactional
@@ -243,9 +247,9 @@ public class PharmacyService {
         pharmacyDrug.setStock(request.getStock() * drug.getUnits());
         pharmacyDrug.setAddedBy(user);
         pharmacyDrug = pharmacyDrugRepository.save(pharmacyDrug);
-        DrugOrderId id = new DrugOrderId(drug.getId(), pharmacy.getId());
-        Optional<DrugOrder> drugOrderOptional = drugOrderRepository.getDrugOrderById(id);
-        DrugOrder order;
+        OrderStatsId id = new OrderStatsId(drug.getId(), pharmacy.getId());
+        Optional<OrderStats> drugOrderOptional = orderStatsRepository.getDrugOrderById(id);
+        OrderStats order;
         if (drugOrderOptional.isPresent()) {
             order = drugOrderOptional.get();
             Integer oldRequired = order.getRequired();
@@ -253,14 +257,14 @@ public class PharmacyService {
             order.setNOrders(oldNOrders + 1);
             order.setRequired(oldRequired + request.getStock());
         } else {
-            order = new DrugOrder();
+            order = new OrderStats();
             order.setId(id);
             order.setDrug(drug);
             order.setPharmacy(pharmacy);
             order.setRequired(request.getStock());
             order.setNOrders(1);
         }
-        drugOrderRepository.save(order);
+        orderStatsRepository.save(order);
         return modelMapper.map(pharmacyDrug, PharmacyDrugDto.class);
     }
 
@@ -412,16 +416,17 @@ public class PharmacyService {
         logger.info("getting total drugs stock for pharmacy: {}, drug: {}", pharmacyId, drugId);
         List<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getAllByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
-        Integer totalStock = drugs.stream().mapToInt(PharmacyDrug::getStock).reduce(0, Integer::sum);
+        Integer totalStock =
+                drugs.stream().mapToInt(PharmacyDrug::getStock).reduce(0, Integer::sum);
         logger.info("total stock: {}", totalStock);
         return totalStock;
     }
 
-    public DrugOrderDto getDrugOrderInfoByPharmacyAndDrugIds(Integer pharmacyId, Integer drugId) {
-        Optional<DrugOrder> drugOrder =
-                drugOrderRepository.getDrugOrderByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
+    public DrugStatsDto getDrugOrderInfoByPharmacyAndDrugIds(Integer pharmacyId, Integer drugId) {
+        Optional<OrderStats> drugOrder =
+                orderStatsRepository.getDrugOrderByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
         if (drugOrder.isPresent()) {
-            DrugOrderDto info = new DrugOrderDto();
+            DrugStatsDto info = new DrugStatsDto();
             info.setPharmacy(modelMapper.map(drugOrder.get().getPharmacy(), PharmacyDto.class));
             info.setDrug(modelMapper.map(drugOrder.get().getDrug(), DrugDto.class));
             info.setNOrders(drugOrder.get().getNOrders());
@@ -431,12 +436,16 @@ public class PharmacyService {
         return null;
     }
 
-    public List<PharmacyShortageDto> getAllShortageDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
-        Map<DrugOrderId, DrugOrder> drugOrderMap = new HashMap<>();
-        Map<DrugOrderId, Integer> totalStock = new HashMap<>();
+    public List<PharmacyShortageDto> getAllShortageDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable) {
+        Map<OrderStatsId, OrderStats> drugOrderMap = new HashMap<>();
+        Map<OrderStatsId, Integer> totalStock = new HashMap<>();
         List<PharmacyShortageDto> shortageDrugs = new ArrayList<>();
         logger.info("fetching first page....");
-        List<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable).getContent();
+        List<PharmacyDrug> drugs =
+                pharmacyDrugRepository
+                        .getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable)
+                        .getContent();
         logger.info("done fetching first page....");
         while (shortageDrugs.size() < pageable.getPageSize()) {
             if (drugs.isEmpty()) {
@@ -444,7 +453,7 @@ public class PharmacyService {
                 break;
             }
             for (PharmacyDrug pd : drugs) {
-                DrugOrderId id = new DrugOrderId(pd.getDrug().getId(), pd.getPharmacy().getId());
+                OrderStatsId id = new OrderStatsId(pd.getDrug().getId(), pd.getPharmacy().getId());
                 if (totalStock.containsKey(id)) {
                     logger.info("duplicate drug order id, skipping....");
                     continue;
@@ -454,9 +463,9 @@ public class PharmacyService {
                         i ->
                                 getTotalStockOfPharmacyDrug(
                                         pd.getPharmacy().getId(), pd.getDrug().getId()));
-                DrugOrder order =
+                OrderStats order =
                         drugOrderMap.computeIfAbsent(
-                                id, i -> drugOrderRepository.getDrugOrderById(id).orElse(null));
+                                id, i -> orderStatsRepository.getDrugOrderById(id).orElse(null));
 
                 int required = (order != null) ? order.getRequired() : 0;
                 logger.info("requiring {} of stock", required);
@@ -467,7 +476,8 @@ public class PharmacyService {
                     logger.info("shortage found: {}", shortage);
                     if (shortage > 0) {
                         PharmacyShortageDto drugShortage = new PharmacyShortageDto();
-                        drugShortage.setPharmacy(modelMapper.map(pd.getPharmacy(), PharmacyDto.class));
+                        drugShortage.setPharmacy(
+                                modelMapper.map(pd.getPharmacy(), PharmacyDto.class));
                         drugShortage.setDrug(modelMapper.map(pd.getDrug(), DrugDto.class));
                         drugShortage.setShortage(shortage);
                         shortageDrugs.add(drugShortage);
@@ -479,7 +489,10 @@ public class PharmacyService {
             }
             logger.info("fetching another page...");
             pageable = pageable.next();
-            drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable).getContent();
+            drugs =
+                    pharmacyDrugRepository
+                            .getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable)
+                            .getContent();
             logger.info("done fetching page...");
         }
         logger.info("total shortage: {}", shortageDrugs.size());
@@ -498,7 +511,8 @@ public class PharmacyService {
             Pageable pageable) {
         logger.info("applying all filters");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
-        Page<PharmacyDrug> drugs = pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
+        Page<PharmacyDrug> drugs =
+                pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
         logger.info("found {} drugs", drugs.getTotalElements());
         List<PharmacyDrug> drugsList = drugs.getContent();
         List<PharmacyDrug> filteredDrugs;
@@ -534,13 +548,13 @@ public class PharmacyService {
                             filteredDrugs.stream()
                                     .filter(
                                             drug -> {
-                                                DrugOrderId id =
-                                                        new DrugOrderId(
+                                                OrderStatsId id =
+                                                        new OrderStatsId(
                                                                 drug.getDrug().getId(), pharmacyId);
-                                                Optional<DrugOrder> orderOptional =
-                                                        drugOrderRepository.getDrugOrderById(id);
+                                                Optional<OrderStats> orderOptional =
+                                                        orderStatsRepository.getDrugOrderById(id);
                                                 if (orderOptional.isPresent()) {
-                                                    DrugOrder order = orderOptional.get();
+                                                    OrderStats order = orderOptional.get();
                                                     // We have the drug but in less quantity than
                                                     // required
                                                     return drug.getStock() > 0
@@ -558,13 +572,13 @@ public class PharmacyService {
                             filteredDrugs.stream()
                                     .filter(
                                             drug -> {
-                                                DrugOrderId id =
-                                                        new DrugOrderId(
+                                                OrderStatsId id =
+                                                        new OrderStatsId(
                                                                 drug.getDrug().getId(), pharmacyId);
-                                                Optional<DrugOrder> orderOptional =
-                                                        drugOrderRepository.getDrugOrderById(id);
+                                                Optional<OrderStats> orderOptional =
+                                                        orderStatsRepository.getDrugOrderById(id);
                                                 if (orderOptional.isPresent()) {
-                                                    DrugOrder order = orderOptional.get();
+                                                    OrderStats order = orderOptional.get();
                                                     // We don't have the drug but it's required
                                                     return drug.getStock() == 0
                                                             && order.getRequired() > 0;
@@ -580,13 +594,13 @@ public class PharmacyService {
                             filteredDrugs.stream()
                                     .filter(
                                             drug -> {
-                                                DrugOrderId id =
-                                                        new DrugOrderId(
+                                                OrderStatsId id =
+                                                        new OrderStatsId(
                                                                 drug.getDrug().getId(), pharmacyId);
-                                                Optional<DrugOrder> orderOptional =
-                                                        drugOrderRepository.getDrugOrderById(id);
+                                                Optional<OrderStats> orderOptional =
+                                                        orderStatsRepository.getDrugOrderById(id);
                                                 if (orderOptional.isPresent()) {
-                                                    DrugOrder order = orderOptional.get();
+                                                    OrderStats order = orderOptional.get();
                                                     // We don't have the drug and it's not required
                                                     return drug.getStock() == 0
                                                             && order.getRequired() == 0;
@@ -848,5 +862,59 @@ public class PharmacyService {
             employeeRepository.save(employeeToRemove);
             return;
         }
+    }
+
+    private void createOperation(User user, OperationType type, DrugOrder order) {
+        Operation operation = new Operation();
+        operation.setType(type);
+        operation.setCashier(user);
+        operation.setOrder(order);
+        operationRepository.save(operation);
+    }
+
+    @Transactional
+    public DrugOrderDto orderDrug(DrugOrderRequest request, Integer pharmacyId, User user) {
+        Drug drug = drugService.getDrugByIdOrThrow(request.getDrugId());
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        DrugOrder order = new DrugOrder();
+        order.setOrderedBy(user);
+        order.setPharmacy(pharmacy);
+        order.setDrug(drug);
+        order.setRequired(request.getRequired());
+        order = drugOrderRepository.save(order);
+        createOperation(user, OperationType.ORDER_ISSUED, order);
+        return modelMapper.map(order, DrugOrderDto.class);
+    }
+
+    @Transactional
+    public DrugOrderDto cancelOrder(Integer pharmacyId, Integer orderId, User user) {
+        DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
+        order.setStatus(OrderStatus.CANCELLED);
+        order = drugOrderRepository.save(order);
+
+        createOperation(null, OperationType.ORDER_CANCELLED, order);
+
+        return modelMapper.map(order, DrugOrderDto.class);
+    }
+
+    @Transactional
+    public DrugOrderDto approveOrder(Integer pharmacyId, Integer orderId, User user) {
+        DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
+        order.setStatus(OrderStatus.COMPLETED);
+        order = drugOrderRepository.save(order);
+
+        createOperation(null, OperationType.ORDER_COMPLETED, order);
+
+        return modelMapper.map(order, DrugOrderDto.class);
+    }
+
+    public List<DrugOrderDto> getAllOrders(
+            Integer pharmacyId, Integer drugId, Integer userId, Pageable pageable) {
+        Page<DrugOrder> orders =
+                drugOrderRepository.findDrugOrdersFiltered(drugId, pharmacyId, userId, pageable);
+        if (orders.getTotalElements() == 0) {
+            return Collections.emptyList();
+        }
+        return orders.stream().map(order -> modelMapper.map(order, DrugOrderDto.class)).toList();
     }
 }

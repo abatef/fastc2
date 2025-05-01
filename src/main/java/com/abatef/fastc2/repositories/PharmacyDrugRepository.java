@@ -42,7 +42,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
     @Query(
             value =
                     "select pd.* from pharmacy_drug pd"
-                            + " join drug_order dr on dr.drug_id = pd.drug_id"
+                            + " join order_stats dr on dr.drug_id = pd.drug_id"
                             + " and dr.pharmacy_id = pd.pharmacy_id"
                             + " where pd.pharmacy_id = :pharmacyId and"
                             + " ((dr.required / dr.n_orders) > (select coalesce(sum(stock), 0) from pharmacy_drug pd2"
@@ -52,7 +52,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
                             + " where pd.drug_id = drug_id and pd.pharmacy_id = pharmacy_id))",
             countQuery =
                     "select count(*) from pharmacy_drug pd"
-                            + " join drug_order dr on dr.drug_id = pd.drug_id"
+                            + " join order_stats dr on dr.drug_id = pd.drug_id"
                             + " and dr.pharmacy_id = pd.pharmacy_id"
                             + " where pd.pharmacy_id = :pharmacyId and"
                             + " ((dr.required / dr.n_orders) > (select coalesce(sum(stock), 0)"
@@ -63,14 +63,14 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
     @Query(
             value =
                     "select pd.* from pharmacy_drug pd"
-                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " join order_stats dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
                             + " where pd.pharmacy_id = :pharmacyId"
                             + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
                             + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
                             + " and (dr.required / dr.n_orders) != 0",
             countQuery =
                     "select count(*) from pharmacy_drug pd"
-                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " join order_stats dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
                             + " where pd.pharmacy_id = :pharmacyId"
                             + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
                             + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
@@ -81,14 +81,14 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
     @Query(
             value =
                     "select pd.* from pharmacy_drug pd"
-                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " join order_stats dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
                             + " where pd.pharmacy_id = :pharmacyId"
                             + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
                             + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"
                             + " and dr.required = 0",
             countQuery =
                     "select count(*) from pharmacy_drug pd"
-                            + " join drug_order dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
+                            + " join order_stats dr on dr.drug_id = pd.drug_id and dr.pharmacy_id = pd.pharmacy_id"
                             + " where pd.pharmacy_id = :pharmacyId"
                             + " and (select coalesce(sum(pd2.stock), 0) from pharmacy_drug pd2"
                             + " where pd2.drug_id = pd.drug_id and pd2.pharmacy_id = pd.pharmacy_id) = 0"

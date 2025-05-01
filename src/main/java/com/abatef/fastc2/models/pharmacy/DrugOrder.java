@@ -1,45 +1,75 @@
 package com.abatef.fastc2.models.pharmacy;
 
+import com.abatef.fastc2.enums.OrderStatus;
 import com.abatef.fastc2.models.Drug;
+import com.abatef.fastc2.models.User;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
+
+import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "drug_order")
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(
+        name = "order_stats",
+        schema = "public",
+        indexes = {
+            @Index(
+                    name = "drug_order_idx",
+                    columnList = "id, drug_id, pharmacy_id, ordered_by, complete")
+        })
 public class DrugOrder {
-    @EmbeddedId private DrugOrderId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ColumnDefault("nextval('drug_order_id_seq')")
+    @Column(name = "id", nullable = false)
+    private Integer id;
 
-    @MapsId("drugId")
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "drug_id", nullable = false)
     private Drug drug;
 
-    @MapsId("pharmacyId")
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "pharmacy_id", nullable = false)
     private Pharmacy pharmacy;
 
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "ordered_by", nullable = false)
+    private User orderedBy;
+
     @ColumnDefault("0")
     @Column(name = "required")
     private Integer required;
 
-    @ColumnDefault("0")
-    @Column(name = "n_orders")
-    private Integer nOrders;
+    @ColumnDefault("false")
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+    @CreationTimestamp
+    @Column(name = "ordered_at")
+    private Instant orderedAt;
+
+    @UpdateTimestamp
+    @Column(name = "received_at")
+    private Instant receivedAt;
 }

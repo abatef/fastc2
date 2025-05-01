@@ -46,4 +46,9 @@ public class Operation {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "order_id")
+    private DrugOrder order;
+
 }

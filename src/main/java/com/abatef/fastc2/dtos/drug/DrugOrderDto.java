@@ -1,16 +1,18 @@
 package com.abatef.fastc2.dtos.drug;
 
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.abatef.fastc2.dtos.user.UserDto;
+import com.abatef.fastc2.enums.OrderStatus;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+import java.time.Instant;
+
 public class DrugOrderDto {
+    private Integer id;
     private DrugDto drug;
     private PharmacyDto pharmacy;
-    private Integer requiredAverage;
-    private Integer nOrders;
+    private UserDto orderedBy;
+    private Integer required;
+    private OrderStatus status;
+    private Instant createdAt;
+    private Instant updatedAt;
 }
