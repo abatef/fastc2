@@ -13,13 +13,13 @@ public interface DrugOrderRepository extends JpaRepository<DrugOrder, Integer> {
 
     @Query(
             value =
-                    "select d from DrugOrder d where"
-                            + " (:drugId is null or d.drug.id = :drugId) and"
+                    "select d from DrugOrder d join OrderItem oi on oi.order.id = d.id where"
+                            + " (:drugId is null or oi.drug.id = :drugId) and"
                             + " (:phId is null or d.pharmacy.id = :phId) and"
                             + " (:userId is null or d.orderedBy.id = :userId)",
             countQuery =
-                    "select count(d) from DrugOrder d where"
-                            + " (:drugId is null or d.drug.id = :drugId) and"
+                    "select count(d) from DrugOrder d join OrderItem oi on oi.order.id = d.id where"
+                            + " (:drugId is null or oi.drug.id = :drugId) and"
                             + " (:phId is null or d.pharmacy.id = :phId) and"
                             + " (:userId is null or d.orderedBy.id = :userId)")
     Page<DrugOrder> findDrugOrdersFiltered(
