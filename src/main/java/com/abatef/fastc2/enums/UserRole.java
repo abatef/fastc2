@@ -5,5 +5,5 @@ public enum UserRole {
     MANAGER,
     STOCK,
     DRUGS,
-    CASHIER
+    EMPLOYEE
 }

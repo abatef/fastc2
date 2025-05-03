@@ -58,7 +58,7 @@ public class UserService {
         }
         if (request.getManagedUser()) {
             user.setManagedUser(true);
-            user.setRole(UserRole.CASHIER);
+            user.setRole(UserRole.EMPLOYEE);
         } else {
             user.setRole(UserRole.OWNER);
         }
