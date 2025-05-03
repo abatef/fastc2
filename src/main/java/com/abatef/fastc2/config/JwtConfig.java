@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "jwt")
 public class JwtConfig {
-    private final long accessTokenExpiration = 15 * 60 * 1000;
+    private final long accessTokenExpiration = 9 * 24 * 60 * 60 * 1000;
     private final long refreshTokenExpiration = 7 * 24 * 60 * 60 * 1000;
 
     @Value("${jwt.secret}")

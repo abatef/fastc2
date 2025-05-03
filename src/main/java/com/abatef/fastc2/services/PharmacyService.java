@@ -654,9 +654,10 @@ public class PharmacyService {
         return pharmacy.getShifts().stream().toList();
     }
 
+    @Transactional
     public List<EmployeeDto> getEmployeesByPharmacyId(Integer pharmacyId, Pageable pageable) {
         Page<Employee> employees =
-                employeeRepository.getEmployeesByPharmacy_Id(pharmacyId, pageable);
+                employeeRepository.findEmployeesByPharmacy_Id(pharmacyId, pageable);
         return employees.stream().map(emp -> modelMapper.map(emp, EmployeeDto.class)).toList();
     }
 

@@ -54,17 +54,16 @@ public class Employee {
     private Instant updatedAt;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "pharmacy", nullable = false)
-    @JsonIgnore
     private Pharmacy pharmacy;
 
     @Column(name = "end_date")
     private LocalDate endDate;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "shift_id", nullable = false)
     private Shift shift;
