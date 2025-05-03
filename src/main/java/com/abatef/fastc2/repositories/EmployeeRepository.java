@@ -20,4 +20,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
     Page<Employee> getEmployeesByPharmacy_Id(Integer pharmacyId, Pageable pageable);
 
     Page<Employee> findEmployeesByPharmacy_Id(Integer pharmacyId, Pageable pageable);
+
+    Page<Employee> findEmployeesByEndDateIsNullAndPharmacy_Id(Integer pharmacyId, Pageable pageable);
+    Page<Employee> findEmployeesByEndDateIsNotNullAndPharmacy_Id(Integer pharmacyId, Pageable pageable);
 }

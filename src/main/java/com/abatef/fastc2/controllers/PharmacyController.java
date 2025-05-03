@@ -6,21 +6,25 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
+import com.abatef.fastc2.enums.EmployeeStatus;
 import com.abatef.fastc2.enums.FilterOption;
 import com.abatef.fastc2.enums.SortOption;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
 
 import jakarta.validation.Valid;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -28,10 +32,15 @@ import java.util.List;
 public class PharmacyController {
     private final PharmacyService pharmacyService;
     private final EmployeeService employeeService;
+    private final ModelMapper modelMapper;
 
-    public PharmacyController(PharmacyService pharmacyService, EmployeeService employeeService) {
+    public PharmacyController(
+            PharmacyService pharmacyService,
+            EmployeeService employeeService,
+            ModelMapper modelMapper) {
         this.pharmacyService = pharmacyService;
         this.employeeService = employeeService;
+        this.modelMapper = modelMapper;
     }
 
     @PostMapping
@@ -175,6 +184,17 @@ public class PharmacyController {
         return noContentOrReturn(drugs);
     }
 
+    @GetMapping("/{id}/drugs/bulk")
+    public ResponseEntity<List<PharmacyDrugDto>> bulkInfo(
+            @PathVariable("id") Integer phId, List<Integer> drugIds) {
+        List<PharmacyDrugDto> drugs = new ArrayList<>();
+        for (Integer id : drugIds) {
+            PharmacyDrug drug = pharmacyService.getPharmacyDrugByIdOrThrow(id);
+            drugs.add(modelMapper.map(drug, PharmacyDrugDto.class));
+        }
+        return noContentOrReturn(drugs);
+    }
+
     @PatchMapping
     public ResponseEntity<PharmacyDto> updatePharmacyInfo(
             @Valid @RequestBody PharmacyUpdateRequest pharmacyInfo,
@@ -239,10 +259,12 @@ public class PharmacyController {
     @GetMapping("/{id}/employees")
     public ResponseEntity<List<EmployeeDto>> getEmployeesByPharmacy(
             @PathVariable("id") Integer id,
+            @RequestParam(value = "status", required = false) EmployeeStatus status,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        List<EmployeeDto> employees = pharmacyService.getEmployeesByPharmacyId(id, pageable);
+        List<EmployeeDto> employees =
+                pharmacyService.getEmployeesByPharmacyId(id, status, pageable);
         if (employees.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

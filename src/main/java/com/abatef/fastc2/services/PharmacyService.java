@@ -6,10 +6,7 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
-import com.abatef.fastc2.enums.FilterOption;
-import com.abatef.fastc2.enums.OperationType;
-import com.abatef.fastc2.enums.OrderStatus;
-import com.abatef.fastc2.enums.SortOption;
+import com.abatef.fastc2.enums.*;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.*;
@@ -33,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -655,9 +653,15 @@ public class PharmacyService {
     }
 
     @Transactional
-    public List<EmployeeDto> getEmployeesByPharmacyId(Integer pharmacyId, Pageable pageable) {
-        Page<Employee> employees =
-                employeeRepository.findEmployeesByPharmacy_Id(pharmacyId, pageable);
+    public List<EmployeeDto> getEmployeesByPharmacyId(Integer pharmacyId, EmployeeStatus status, Pageable pageable) {
+        Page<Employee> employees;
+        if (status == EmployeeStatus.INACTIVE) {
+            employees = employeeRepository.findEmployeesByEndDateIsNotNullAndPharmacy_Id(pharmacyId, pageable);
+        } else if (status == EmployeeStatus.ACTIVE) {
+             employees = employeeRepository.findEmployeesByEndDateIsNullAndPharmacy_Id(pharmacyId, pageable);
+        } else {
+            employees = employeeRepository.findEmployeesByPharmacy_Id(pharmacyId, pageable);
+        }
         return employees.stream().map(emp -> modelMapper.map(emp, EmployeeDto.class)).toList();
     }
 
@@ -667,12 +671,13 @@ public class PharmacyService {
                 employeeRepository.getEmployeeByIdAndPharmacy_Id(employeeId, pharmacyId);
         if (employee.isPresent()) {
             Employee employeeToRemove = employee.get();
-            employeeToRemove.setPharmacy(null);
+            employeeToRemove.setEndDate(LocalDate.now());
             employeeRepository.save(employeeToRemove);
         }
     }
 
-    private void createOperation(User user, OperationType type, DrugOrder order) {
+    @Transactional
+    public void createOperation(User user, OperationType type, DrugOrder order) {
         Operation operation = new Operation();
         operation.setType(type);
         operation.setCashier(user);
