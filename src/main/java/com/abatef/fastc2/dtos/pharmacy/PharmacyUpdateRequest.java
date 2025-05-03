@@ -14,17 +14,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PharmacyUpdateRequest {
     @NotNull private Integer id;
-
-    @Min(1)
     private String name;
-
     private UserDto owner;
-
-    @Min(1)
     private String address;
-
     private Location location;
-
-    @Min(0)
     private Short expiryThreshold;
 }
