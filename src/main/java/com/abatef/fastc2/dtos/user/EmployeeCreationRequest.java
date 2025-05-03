@@ -16,7 +16,6 @@ public class EmployeeCreationRequest {
     @NotNull
     @Min(18)
     private Short age;
-
     private String gender;
     private Float salary;
     @NotNull private Integer pharmacyId;

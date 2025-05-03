@@ -50,6 +50,8 @@ public class EmployeeService {
         employee.setSalary(request.getSalary());
         employee.setAge(request.getAge());
         employee.setGender(request.getGender());
+        Shift shift = shiftService.getByIdOrThrow(request.getShiftId());
+        employee.setShift(shift);
         Pharmacy pharmacy =
                 pharmacyRepository
                         .getPharmacyById(request.getPharmacyId())
