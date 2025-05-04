@@ -1,7 +1,6 @@
 package com.abatef.fastc2.dtos.user;
 
 import com.abatef.fastc2.enums.UserRole;
-import com.abatef.fastc2.models.shift.Shift;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +20,6 @@ public class EmployeeUpdateRequest {
 
     private String gender;
     private Float salary;
-    private Shift shift;
+    private Integer shiftId;
     private UserRole role;
 }

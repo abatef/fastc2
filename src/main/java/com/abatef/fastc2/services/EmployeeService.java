@@ -89,8 +89,8 @@ public class EmployeeService {
             employee.setGender(employeeInfo.getGender());
         }
 
-        if (employeeInfo.getShift() != null) {
-            Shift shift = shiftService.getByIdOrThrow(employeeInfo.getShift().getId());
+        if (employeeInfo.getShiftId() != null) {
+            Shift shift = shiftService.getByIdOrThrow(employeeInfo.getShiftId());
             employee.setShift(shift);
         }
 
