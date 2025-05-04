@@ -39,11 +39,3 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: mvn -B package --file pom.xml
-
-    - name: Deploy to Railway
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      run: |
-        curl -sSL https://raw.githubusercontent.com/railwayapp/cli/master/install.sh | sh
-        export PATH=$HOME/.railway/bin:$PATH
-        railway up --service=fastc2
