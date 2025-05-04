@@ -18,6 +18,8 @@ import com.abatef.fastc2.services.PharmacyService;
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,7 @@ public class PharmacyController {
     private final PharmacyService pharmacyService;
     private final EmployeeService employeeService;
     private final ModelMapper modelMapper;
+    private final Logger LOG = LoggerFactory.getLogger(PharmacyController.class);
 
     public PharmacyController(
             PharmacyService pharmacyService,
@@ -91,8 +94,10 @@ public class PharmacyController {
 
     private ResponseEntity<List<PharmacyDrugDto>> noContentOrReturn(List<PharmacyDrugDto> drugs) {
         if (drugs.isEmpty()) {
+            LOG.info("no content, returning empty list");
             return ResponseEntity.noContent().build();
         }
+        LOG.info("returning {} drugs", drugs.size());
         return ResponseEntity.ok(drugs);
     }
 
@@ -188,8 +193,11 @@ public class PharmacyController {
     public ResponseEntity<List<PharmacyDrugDto>> bulkInfo(
             @PathVariable("id") Integer phId, @RequestParam("ids") List<Integer> drugIds) {
         List<PharmacyDrugDto> drugs = new ArrayList<>();
+        LOG.info("bulk request");
         for (Integer id : drugIds) {
+            LOG.info("processing drug id: {}", id);
             PharmacyDrug drug = pharmacyService.getPharmacyDrugByIdOrThrow(id);
+            LOG.info("mapping drug of id: {}", id);
             drugs.add(modelMapper.map(drug, PharmacyDrugDto.class));
         }
         return noContentOrReturn(drugs);

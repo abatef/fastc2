@@ -30,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,7 +45,7 @@ public class PharmacyService {
     private final EmployeeRepository employeeRepository;
     private final OrderStatsRepository orderStatsRepository;
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    public final Logger LOG = LoggerFactory.getLogger(this.getClass());
     private final DrugOrderRepository drugOrderRepository;
     private final OperationRepository operationRepository;
 
@@ -76,17 +75,17 @@ public class PharmacyService {
     @Transactional
     public PharmacyDto createPharmacy(
             @RequestBody PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
-        logger.info("Creating pharmacy");
+        LOG.info("Creating pharmacy");
         Pharmacy pharmacy = new Pharmacy();
         pharmacy.setName(request.getName());
         pharmacy.setAddress(request.getAddress());
         pharmacy.setIsBranch(request.getIsBranch());
         pharmacy.setOwner(user);
-        logger.info("pharmacy owner: {}", user.getUsername());
+        LOG.info("pharmacy owner: {}", user.getUsername());
         if (request.getIsBranch()) {
-            logger.info("is branch");
+            LOG.info("is branch");
             Pharmacy mainBranch = getPharmacyByIdOrThrow(request.getMainBranchId());
-            logger.info("main branch: {}", mainBranch.getId());
+            LOG.info("main branch: {}", mainBranch.getId());
             pharmacy.setMainBranch(mainBranch);
         }
         pharmacy.setExpiryThreshold(request.getExpiryThreshold());
@@ -95,30 +94,30 @@ public class PharmacyService {
         } else {
             pharmacy.setLocation(Location.of(30.1, 32.1).toPoint());
         }
-        logger.info("saving pharmacy");
+        LOG.info("saving pharmacy");
         pharmacy = pharmacyRepository.save(pharmacy);
-        logger.info("saved pharmacy");
+        LOG.info("saved pharmacy");
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
     public Pharmacy getPharmacyByIdOrThrow(Integer id) {
-        logger.info("finding pharmacy by id: {}", id);
+        LOG.info("finding pharmacy by id: {}", id);
         Optional<Pharmacy> pharmacy = pharmacyRepository.findById(id);
         if (pharmacy.isPresent()) {
-            logger.info("found pharmacy with name: {}", pharmacy.get().getName());
+            LOG.info("found pharmacy with name: {}", pharmacy.get().getName());
             return pharmacy.get();
         }
-        logger.error("pharmacy not found, throwing exception");
+        LOG.error("pharmacy not found, throwing exception");
         throw new PharmacyNotFoundException(id);
     }
 
     public PharmacyDto getPharmacyInfoById(Integer id) {
-        logger.info("trying to get pharmacy info by id: {}", id);
+        LOG.info("trying to get pharmacy info by id: {}", id);
         return modelMapper.map(getPharmacyByIdOrThrow(id), PharmacyDto.class);
     }
 
     public List<PharmacyDto> getAllPharmacies(Pageable pageable) {
-        logger.info("trying to get all pharmacies");
+        LOG.info("trying to get all pharmacies");
         return pharmacyRepository.findAll(pageable).stream()
                 .map(ph -> modelMapper.map(ph, PharmacyDto.class))
                 .toList();
@@ -133,11 +132,11 @@ public class PharmacyService {
     @Transactional
     public PharmacyDto updatePharmacyInfo(
             @NotNull PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
-        logger.info("updating pharmacy info");
+        LOG.info("updating pharmacy info");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyInfo.getId());
         boolean isUpdated = false;
         if (pharmacyInfo.getName() != null && !pharmacyInfo.getName().isEmpty()) {
-            logger.info(
+            LOG.info(
                     "updating pharmacy name, old: {} new: {}",
                     pharmacy.getName(),
                     pharmacyInfo.getName());
@@ -146,7 +145,7 @@ public class PharmacyService {
         }
 
         if (pharmacyInfo.getAddress() != null && !pharmacyInfo.getAddress().isEmpty()) {
-            logger.info(
+            LOG.info(
                     "updating pharmacy address, old: {} new: {}",
                     pharmacy.getAddress(),
                     pharmacyInfo.getAddress());
@@ -155,7 +154,7 @@ public class PharmacyService {
         }
 
         if (pharmacyInfo.getLocation() != null) {
-            logger.info(
+            LOG.info(
                     "updating pharmacy location, old: {} new: {}",
                     Location.of(pharmacy.getLocation()),
                     pharmacyInfo.getLocation());
@@ -164,7 +163,7 @@ public class PharmacyService {
         }
 
         if (pharmacyInfo.getExpiryThreshold() != null) {
-            logger.info(
+            LOG.info(
                     "updating pharmacy expiry threshold, old: {} new: {}",
                     pharmacy.getExpiryThreshold(),
                     pharmacyInfo.getExpiryThreshold());
@@ -172,10 +171,10 @@ public class PharmacyService {
             isUpdated = true;
         }
         if (isUpdated) {
-            logger.info("saved new updates");
+            LOG.info("saved new updates");
             pharmacy = pharmacyRepository.save(pharmacy);
         } else {
-            logger.info("no updates to save");
+            LOG.info("no updates to save");
         }
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
@@ -264,12 +263,12 @@ public class PharmacyService {
     }
 
     public Integer getTotalStockOfPharmacyDrug(Integer pharmacyId, Integer drugId) {
-        logger.info("getting total drugs stock for pharmacy: {}, drug: {}", pharmacyId, drugId);
+        LOG.info("getting total drugs stock for pharmacy: {}, drug: {}", pharmacyId, drugId);
         List<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getAllByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
         Integer totalStock =
                 drugs.stream().mapToInt(PharmacyDrug::getStock).reduce(0, Integer::sum);
-        logger.info("total stock: {}", totalStock);
+        LOG.info("total stock: {}", totalStock);
         return totalStock;
     }
 
@@ -292,21 +291,21 @@ public class PharmacyService {
         Map<OrderStatsId, OrderStats> drugOrderMap = new HashMap<>();
         Map<OrderStatsId, Integer> totalStock = new HashMap<>();
         List<PharmacyShortageDto> shortageDrugs = new ArrayList<>();
-        logger.info("fetching first page....");
+        LOG.info("fetching first page....");
         List<PharmacyDrug> drugs =
                 pharmacyDrugRepository
                         .getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable)
                         .getContent();
-        logger.info("done fetching first page....");
+        LOG.info("done fetching first page....");
         while (shortageDrugs.size() < pageable.getPageSize()) {
             if (drugs.isEmpty()) {
-                logger.info("empty drugs, stopping....");
+                LOG.info("empty drugs, stopping....");
                 break;
             }
             for (PharmacyDrug pd : drugs) {
                 OrderStatsId id = new OrderStatsId(pd.getDrug().getId(), pd.getPharmacy().getId());
                 if (totalStock.containsKey(id)) {
-                    logger.info("duplicate drug order id, skipping....");
+                    LOG.info("duplicate drug order id, skipping....");
                     continue;
                 }
                 totalStock.computeIfAbsent(
@@ -319,12 +318,12 @@ public class PharmacyService {
                                 id, i -> orderStatsRepository.getDrugOrderById(id).orElse(null));
 
                 int required = (order != null) ? order.getRequired() : 0;
-                logger.info("requiring {} of stock", required);
+                LOG.info("requiring {} of stock", required);
                 if (required > 0) {
                     int stock = totalStock.get(id);
-                    logger.info("total stock found: {}", stock);
+                    LOG.info("total stock found: {}", stock);
                     int shortage = Math.max(0, required - stock);
-                    logger.info("shortage found: {}", shortage);
+                    LOG.info("shortage found: {}", shortage);
                     if (shortage > 0) {
                         PharmacyShortageDto drugShortage = new PharmacyShortageDto();
                         drugShortage.setPharmacy(
@@ -338,15 +337,15 @@ public class PharmacyService {
                     }
                 }
             }
-            logger.info("fetching another page...");
+            LOG.info("fetching another page...");
             pageable = pageable.next();
             drugs =
                     pharmacyDrugRepository
                             .getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable)
                             .getContent();
-            logger.info("done fetching page...");
+            LOG.info("done fetching page...");
         }
-        logger.info("total shortage: {}", shortageDrugs.size());
+        LOG.info("total shortage: {}", shortageDrugs.size());
         return shortageDrugs;
     }
 
@@ -360,15 +359,15 @@ public class PharmacyService {
             Float upperPriceBound,
             String type,
             Pageable pageable) {
-        logger.info("applying all filters");
+        LOG.info("applying all filters");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
         Page<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
-        logger.info("found {} drugs", drugs.getTotalElements());
+        LOG.info("found {} drugs", drugs.getTotalElements());
         List<PharmacyDrug> drugsList = drugs.getContent();
         List<PharmacyDrug> filteredDrugs;
         if (query != null && !query.isEmpty()) {
-            logger.info("search term: {}", query);
+            LOG.info("search term: {}", query);
             filteredDrugs = searchDrugInPharmacy(query, pharmacyId, pageable);
         } else {
             filteredDrugs = new ArrayList<>(drugsList);
@@ -377,12 +376,12 @@ public class PharmacyService {
         LocalDate today = LocalDate.now();
 
         if (filterOptions == null) {
-            logger.info("filter options is null");
+            LOG.info("filter options is null");
             filterOptions = new ArrayList<>();
         }
 
         for (FilterOption option : filterOptions) {
-            logger.info("filter option: {}", option.name());
+            LOG.info("filter option: {}", option.name());
             switch (option) {
                 case AVAILABLE:
                     filteredDrugs =
@@ -573,7 +572,7 @@ public class PharmacyService {
         }
 
         if (drugId != null) {
-            logger.info("filtering by drug: {}", drugId);
+            LOG.info("filtering by drug: {}", drugId);
             filteredDrugs =
                     filteredDrugs.stream()
                             .filter(drug -> drug.getDrug().getId().equals(drugId))
@@ -581,7 +580,7 @@ public class PharmacyService {
         }
 
         if (sortOption != null) {
-            logger.info("sort option: {}", sortOption);
+            LOG.info("sort option: {}", sortOption);
             switch (sortOption) {
                 case EXPIRY_DATE_ASC:
                     filteredDrugs.sort(Comparator.comparing(PharmacyDrug::getExpiryDate));
@@ -609,7 +608,7 @@ public class PharmacyService {
                     break;
             }
         }
-        logger.info("done filtering.");
+        LOG.info("done filtering.");
         return filteredDrugs.stream()
                 .map(drug -> modelMapper.map(drug, PharmacyDrugDto.class))
                 .collect(Collectors.toList());
