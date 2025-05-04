@@ -186,7 +186,7 @@ public class PharmacyController {
 
     @GetMapping("/{id}/drugs/bulk")
     public ResponseEntity<List<PharmacyDrugDto>> bulkInfo(
-            @PathVariable("id") Integer phId, @RequestBody List<Integer> drugIds) {
+            @PathVariable("id") Integer phId, @RequestParam("ids") List<Integer> drugIds) {
         List<PharmacyDrugDto> drugs = new ArrayList<>();
         for (Integer id : drugIds) {
             PharmacyDrug drug = pharmacyService.getPharmacyDrugByIdOrThrow(id);

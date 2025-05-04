@@ -120,21 +120,26 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
 
     @Query(
             value =
-                    "select pd.* from pharmacy_drug pd "
-                            + " join drugs d on pd.drug_id = d.id"
-                            + " where pharmacy_id = :pId"
-                            + " and (d.search_vector @@ to_tsquery('english', :tsquery)"
-                            + " or d.name % :query or d.form % :query)"
-                            + " order by ts_rank(d.search_vector, to_tsquery('english', :tsquery)) desc,"
-                            + " similarity(d.name, :query) + similarity(d.form, :query)",
+                    "SELECT pd.* FROM pharmacy_drug pd " +
+                            "JOIN drugs d ON pd.drug_id = d.id " +
+                            "WHERE pharmacy_id = :pId " +
+                            "AND (" +
+                            "(:tsquery != '' AND d.search_vector @@ plainto_tsquery('english', :tsquery)) OR " +
+                            "(:query != '' AND (d.name % :query OR d.form % :query))" +
+                            ") " +
+                            "ORDER BY " +
+                            "CASE WHEN :tsquery != '' AND d.search_vector @@ plainto_tsquery('english', :tsquery) " +
+                            "     THEN ts_rank_cd(d.search_vector, plainto_tsquery('english', :tsquery)) ELSE 0 END DESC, " +
+                            "CASE WHEN :query != '' " +
+                            "     THEN greatest(similarity(d.name, :query), similarity(d.form, :query)) ELSE 0 END DESC",
             countQuery =
-                    "select count(*) from pharmacy_drug pd"
-                            + " join drugs d on pd.drug_id = d.id"
-                            + " where pharmacy_id = :pId"
-                            + " and (d.search_vector @@ to_tsquery('english', :tsquery)"
-                            + " or d.name % :query or d.form % :query)"
-                            + " order by ts_rank(d.search_vector, to_tsquery('english', :tsquery)) desc,"
-                            + " similarity(d.name, :query) + similarity(d.form, :query)",
+                    "SELECT COUNT(*) FROM pharmacy_drug pd " +
+                            "JOIN drugs d ON pd.drug_id = d.id " +
+                            "WHERE pharmacy_id = :pId " +
+                            "AND (" +
+                            "(:tsquery != '' AND d.search_vector @@ plainto_tsquery('english', :tsquery)) OR " +
+                            "(:query != '' AND (d.name % :query OR d.form % :query))" +
+                            ")",
             nativeQuery = true)
     Page<PharmacyDrug> searchByDrugName(
             @Param("pId") Integer pharmacyId,
