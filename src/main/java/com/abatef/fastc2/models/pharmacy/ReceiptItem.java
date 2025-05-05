@@ -26,7 +26,7 @@ public class ReceiptItem {
     private Receipt receipt;
 
     @MapsId
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "pharmacy_drug_id", nullable = false)
     private PharmacyDrug pharmacyDrug;

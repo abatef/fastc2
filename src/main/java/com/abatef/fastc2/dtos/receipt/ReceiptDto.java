@@ -21,6 +21,8 @@ public class ReceiptDto {
     private UserDto cashier;
     private Shift shift;
     private Float total;
+    private Float revenue;
+    private Float profit;
     private ReceiptStatus status;
     private Instant createdAt;
     private Instant updatedAt;

@@ -15,7 +15,6 @@ import com.abatef.fastc2.models.pharmacy.Receipt;
 import com.abatef.fastc2.models.pharmacy.ReceiptItem;
 import com.abatef.fastc2.repositories.OperationRepository;
 import com.abatef.fastc2.repositories.PharmacyDrugRepository;
-import com.abatef.fastc2.repositories.ReceiptItemRepository;
 import com.abatef.fastc2.repositories.ReceiptRepository;
 
 import org.modelmapper.ModelMapper;
@@ -51,6 +50,20 @@ public class ReceiptService {
         this.modelMapper = modelMapper;
         this.operationRepository = operationRepository;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
+    }
+
+    private static Receipt getReceipt(Integer id, Optional<Receipt> receiptOptional) {
+        Receipt receipt = receiptOptional.orElseThrow(() -> new ReceiptNotFoundException(id));
+        if (receipt.getStatus() == ReceiptStatus.RETURNED) {
+            throw new IllegalStateException("receipt is already returned");
+        }
+
+        if (receipt.getStatus() != ReceiptStatus.ISSUED
+                && receipt.getStatus() != ReceiptStatus.PARTIALLY_FULFILLED) {
+            throw new IllegalStateException(
+                    "can not return receipt with status: " + receipt.getStatus().name());
+        }
+        return receipt;
     }
 
     @Transactional
@@ -134,12 +147,13 @@ public class ReceiptService {
             receipt.setReceiptItems(items);
             receipt = receiptRepository.save(receipt);
         }
-
         return mapReceiptDto(receipt);
     }
 
     private ReceiptDto mapReceiptDto(Receipt receipt) {
         ReceiptDto info = modelMapper.map(receipt, ReceiptDto.class);
+        float revenue = 0.0f;
+        float total = 0.0f;
         for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
             ReceiptItemDto itemInfo = new ReceiptItemDto();
             itemInfo.setDrugName(receiptItem.getPharmacyDrug().getDrug().getName());
@@ -149,7 +163,11 @@ public class ReceiptService {
             itemInfo.setAmountDue(receiptItem.getAmountDue());
             info.setTotal(info.getTotal() + receiptItem.getAmountDue());
             info.getItems().add(itemInfo);
+            revenue += receiptItem.getAmountDue();
+            total += receiptItem.getPharmacyDrug().getDrug().getFullPrice();
         }
+        info.setRevenue(revenue);
+        info.setProfit(info.getRevenue() - total);
         return info;
     }
 
@@ -194,21 +212,6 @@ public class ReceiptService {
         }
         return mapReceiptDto(receipt);
     }
-
-    private static Receipt getReceipt(Integer id, Optional<Receipt> receiptOptional) {
-        Receipt receipt = receiptOptional.orElseThrow(() -> new ReceiptNotFoundException(id));
-        if (receipt.getStatus() == ReceiptStatus.RETURNED) {
-            throw new IllegalStateException("receipt is already returned");
-        }
-
-        if (receipt.getStatus() != ReceiptStatus.ISSUED
-                && receipt.getStatus() != ReceiptStatus.PARTIALLY_FULFILLED) {
-            throw new IllegalStateException(
-                    "can not return receipt with status: " + receipt.getStatus().name());
-        }
-        return receipt;
-    }
-
 
     public List<ReceiptDto> applyAllFilters(
             Integer cashierId,
