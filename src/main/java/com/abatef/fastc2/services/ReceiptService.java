@@ -59,6 +59,7 @@ public class ReceiptService {
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
+        receipt.setShift(cashier.getEmployee().getShift());
         receipt = receiptRepository.save(receipt);
         Operation operation = new Operation();
         operation.setCashier(cashier);

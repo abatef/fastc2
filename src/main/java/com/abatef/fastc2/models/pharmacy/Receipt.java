@@ -2,6 +2,7 @@ package com.abatef.fastc2.models.pharmacy;
 
 import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.models.shift.Shift;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
@@ -47,4 +48,11 @@ public class Receipt {
     @JsonIgnore
     @OneToMany(mappedBy = "receipt")
     private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "shift_id", nullable = false)
+    private Shift shift;
+
 }
