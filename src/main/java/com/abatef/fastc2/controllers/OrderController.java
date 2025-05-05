@@ -6,6 +6,7 @@ import com.abatef.fastc2.enums.OrderStatus;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.PharmacyService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +23,7 @@ public class OrderController {
         this.pharmacyService = pharmacyService;
     }
 
+    @Operation(summary = "Create a new Order")
     @PostMapping("/")
     public ResponseEntity<DrugOrderDto> createNewOrder(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
@@ -31,6 +33,7 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    @Operation(summary = "Get all orders with filters pharmacy_id, drug_id, user_id")
     @GetMapping("/all")
     public ResponseEntity<List<DrugOrderDto>> filterOrders(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
@@ -47,6 +50,7 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @Operation(summary = "Update Order Status")
     @PatchMapping("/status")
     public ResponseEntity<DrugOrderDto> updateOrderStatus(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
@@ -57,6 +61,7 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    @Operation(summary = "Cancel an Order")
     @PatchMapping("/cancel")
     public ResponseEntity<DrugOrderDto> cancelOrder(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
@@ -67,6 +72,7 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    @Operation(summary = "Approve an Order")
     @PatchMapping("/approve")
     public ResponseEntity<DrugOrderDto> approveOrder(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,

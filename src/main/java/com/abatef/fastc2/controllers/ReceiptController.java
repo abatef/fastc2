@@ -6,6 +6,7 @@ import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.ReceiptService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,7 @@ public class ReceiptController {
         this.receiptService = receiptService;
     }
 
+    @Operation(summary = "Create a new Receipt")
     @PostMapping
     public ResponseEntity<ReceiptDto> createANewReceipt(
             @Valid @RequestBody List<ReceiptCreationRequest> request,
@@ -37,6 +39,7 @@ public class ReceiptController {
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Get info of a Receipt by its Id")
     @GetMapping("/{receipt_id}")
     public ResponseEntity<ReceiptDto> getReceiptById(@PathVariable("receipt_id") Integer id) {
         ReceiptDto info = receiptService.getReceiptInfoById(id);
@@ -50,6 +53,7 @@ public class ReceiptController {
         return ResponseEntity.ok(receipts);
     }
 
+    @Operation(summary = "Get all Receipts infos with filters applied")
     @GetMapping("/filter")
     public ResponseEntity<List<ReceiptDto>> getReceiptsByFilters(
             @RequestParam(value = "cashier_id", required = false) Integer cashierId,

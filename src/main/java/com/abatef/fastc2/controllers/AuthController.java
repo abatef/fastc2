@@ -13,6 +13,7 @@ import com.abatef.fastc2.services.PharmacyService;
 import com.abatef.fastc2.services.UserService;
 import com.abatef.fastc2.utils.JwtUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
@@ -54,6 +55,7 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
+    @Operation(summary = "Sign up a new User")
     @PostMapping("/signup")
     public ResponseEntity<UserCreationResponse> signup(
             @Valid @RequestBody UserCreationRequest userCreationRequest) {
@@ -65,6 +67,7 @@ public class AuthController {
         return ResponseEntity.ok(new UserCreationResponse(userDto, jwtResponse));
     }
 
+    @Operation(summary = "Login with username and password")
     @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> login(
             @Valid @RequestBody JwtAuthenticationRequest request) {
@@ -80,6 +83,7 @@ public class AuthController {
         return ResponseEntity.ok(new JwtAuthenticationResponse(accessToken, refreshToken));
     }
 
+    @Operation(summary = "Refresh the JWT with the refresh token")
     @PostMapping("/refresh")
     public ResponseEntity<JwtAuthenticationResponse> refresh(
             @Valid @RequestBody RefreshTokenRequest request) {
@@ -91,6 +95,7 @@ public class AuthController {
         return ResponseEntity.ok(new JwtAuthenticationResponse(newAccessToken, newRefreshToken));
     }
 
+    @Operation(summary = "Update the user password")
     @PostMapping("/password")
     public ResponseEntity<JwtAuthenticationResponse> updatePassword(
             @RequestBody Map<String, Object> body, @AuthenticationPrincipal User user) {
@@ -101,6 +106,7 @@ public class AuthController {
         return login(request);
     }
 
+    @Operation(summary = "Get the current user info")
     @GetMapping("/me")
     public ResponseEntity<UserDto> getUser(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(modelMapper.map(user, UserDto.class));

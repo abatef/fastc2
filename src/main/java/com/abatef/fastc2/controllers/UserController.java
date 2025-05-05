@@ -5,6 +5,7 @@ import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @Operation(summary = "Update User info")
     @PatchMapping
     public ResponseEntity<UserDto> updateUserInfo(
             @RequestBody UserDto userDto, @AuthenticationPrincipal User user) {
@@ -28,12 +30,14 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @Operation(summary = "Delete User")
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal User user) {
         userService.deleteUser(user);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Get the pharmacies of the User")
     @GetMapping("/pharmacy")
     public ResponseEntity<List<PharmacyDto>> getPharmacyInfoByUser(
             @AuthenticationPrincipal User user) {

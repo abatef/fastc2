@@ -8,6 +8,7 @@ import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.DrugService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
@@ -30,6 +31,7 @@ public class DrugController {
         this.modelMapper = modelMapper;
     }
 
+    @Operation(summary = "Create a new General Drug")
     @PostMapping
     public ResponseEntity<Drug> createDrug(
             @Valid @RequestBody DrugCreationRequest request, @AuthenticationPrincipal User user) {
@@ -46,12 +48,14 @@ public class DrugController {
         return ResponseEntity.ok(drug);
     }
 
+    @Operation(summary = "Get General Drug Info By Id")
     @GetMapping("/{id}")
     public ResponseEntity<DrugDto> getDrugInfo(@PathVariable Integer id) {
         DrugDto drug = drugService.getDrugInfoById(id);
         return ResponseEntity.ok(drug);
     }
 
+    @Operation(summary = "Update General Drug Info")
     @PatchMapping
     public ResponseEntity<DrugDto> updateDrugInfo(
             @Valid @RequestBody DrugUpdateRequest info, @AuthenticationPrincipal User user) {
@@ -59,12 +63,14 @@ public class DrugController {
         return ResponseEntity.ok(drug);
     }
 
+    @Operation(summary = "Delete General Drug By Id")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDrug(@PathVariable Integer id) {
         drugService.deleteDrugById(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Search General Drug By Name")
     @GetMapping("/search")
     public ResponseEntity<List<DrugDto>> searchDrugs(
             @RequestParam("name") String name,
@@ -82,6 +88,7 @@ public class DrugController {
         return ResponseEntity.ok(drugDtos);
     }
 
+    @Operation(summary = "Get All General Drugs Infos")
     @GetMapping("/all")
     public ResponseEntity<List<DrugDto>> getAllDrugs(
             @RequestParam(value = "page", defaultValue = "0") int page,

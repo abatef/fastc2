@@ -15,6 +15,7 @@ import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
@@ -46,6 +47,7 @@ public class PharmacyController {
         this.modelMapper = modelMapper;
     }
 
+    @Operation(summary = "Create a new Pharmacy")
     @PostMapping
     public ResponseEntity<PharmacyDto> createPharmacy(
             @Valid @RequestBody PharmacyCreationRequest request,
@@ -54,12 +56,14 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Get Pharmacy Info by Id")
     @GetMapping("/{id}")
     public ResponseEntity<PharmacyDto> getPharmacyInfo(@PathVariable("id") Integer id) {
         PharmacyDto info = pharmacyService.getPharmacyInfoById(id);
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Delete Pharmacy By Id")
     @DeleteMapping
     public ResponseEntity<Void> deletePharmacy(
             @RequestParam("id") Integer id, @AuthenticationPrincipal User user) {
@@ -67,6 +71,7 @@ public class PharmacyController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Get All Pharmacies")
     @GetMapping("/all")
     public ResponseEntity<List<PharmacyDto>> getAllPharmacies(
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -79,6 +84,7 @@ public class PharmacyController {
         return ResponseEntity.ok(infos);
     }
 
+    @Operation(summary = "Search for Pharmacy By its Name")
     @GetMapping("/search")
     public ResponseEntity<List<PharmacyDto>> search(
             @RequestParam("name") String name,
@@ -101,6 +107,7 @@ public class PharmacyController {
         return ResponseEntity.ok(drugs);
     }
 
+    @Operation(summary = "Add a Drug to the Pharmacy")
     @PostMapping("/{id}/add")
     public ResponseEntity<PharmacyDrugDto> addDrugToPharmacy(
             @Valid @RequestBody PharmacyDrugCreationRequest request,
@@ -110,6 +117,7 @@ public class PharmacyController {
         return ResponseEntity.ok(drug);
     }
 
+    @Operation(summary = "Get Pharmacy Drug info by Pharmacy Drug Id")
     @GetMapping("/drug")
     public ResponseEntity<PharmacyDrugDto> getPharmacyDrugInfoById(
             @RequestParam("id") Integer id, @AuthenticationPrincipal User user) {
@@ -117,6 +125,7 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Get All Drugs infos in Pharmacy")
     @GetMapping("/{id}/drugs")
     public ResponseEntity<List<PharmacyDrugDto>> getDrugsOfPharmacy(
             @PathVariable("id") Integer id,
@@ -129,6 +138,7 @@ public class PharmacyController {
         return noContentOrReturn(drugs);
     }
 
+    @Operation(summary = "Get All Drugs with shortage in pharmacy with shortage info")
     @GetMapping("/{id}/shortage/info")
     public ResponseEntity<List<PharmacyShortageDto>> getShortageDrugs(
             @PathVariable("id") Integer id,
@@ -143,6 +153,7 @@ public class PharmacyController {
         return ResponseEntity.ok(shortages);
     }
 
+    @Operation(summary = "Get Order Stats of a Drug")
     @GetMapping("/{id}/drug/order-stats")
     public ResponseEntity<DrugStatsDto> getDrugOrderInfo(
             @PathVariable("id") Integer id, @RequestParam("drug_id") Integer drugId) {
@@ -153,6 +164,7 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Search for Drugs in the pharmacy with applied filters")
     @GetMapping("/{id}/drugs/search")
     public ResponseEntity<List<PharmacyDrugDto>> searchDrugs(
             @PathVariable("id") Integer id,
@@ -171,6 +183,7 @@ public class PharmacyController {
         return noContentOrReturn(drugs);
     }
 
+    @Operation(summary = "Get all drugs in pharmacy with filters applied")
     @GetMapping("/{id}/drugs/filter")
     public ResponseEntity<List<PharmacyDrugDto>> filterDrugs(
             @PathVariable("id") Integer id,
@@ -189,6 +202,7 @@ public class PharmacyController {
         return noContentOrReturn(drugs);
     }
 
+    @Operation(summary = "Get infos of the drugs in the pharmacy by bulk(multiple id at once)")
     @GetMapping("/{id}/drugs/bulk")
     public ResponseEntity<List<PharmacyDrugDto>> bulkInfo(
             @PathVariable("id") Integer phId, @RequestParam("ids") List<Integer> drugIds) {
@@ -203,6 +217,7 @@ public class PharmacyController {
         return noContentOrReturn(drugs);
     }
 
+    @Operation(summary = "Update Pharmacy Info")
     @PatchMapping
     public ResponseEntity<PharmacyDto> updatePharmacyInfo(
             @Valid @RequestBody PharmacyUpdateRequest pharmacyInfo,
@@ -211,6 +226,7 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Delete drug from pharmacy by id")
     @DeleteMapping("/{id}/drugs")
     public ResponseEntity<Void> deletePharmacyDrug(
             @RequestParam("drug_id") Integer drugId, @PathVariable("id") Integer pharmacyId) {
@@ -218,6 +234,7 @@ public class PharmacyController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Create a new shift in the Pharmacy")
     @PostMapping("/{id}/shifts")
     public ResponseEntity<PharmacyDto> createPharmacyShift(
             @RequestBody Shift shift,
@@ -227,6 +244,7 @@ public class PharmacyController {
         return ResponseEntity.ok(info);
     }
 
+    @Operation(summary = "Delete Shift from Pharmacy")
     @DeleteMapping("/{id}/shifts")
     public ResponseEntity<Void> deletePharmacyShift(
             @PathVariable("id") Integer id,
@@ -236,6 +254,7 @@ public class PharmacyController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Get all Shifts from the Pharmacy")
     @GetMapping("/{id}/shifts")
     public ResponseEntity<List<Shift>> getShiftsByPharmacy(@PathVariable("id") Integer id) {
         List<Shift> shifts = pharmacyService.getShiftsByPharmacyId(id);
@@ -245,6 +264,7 @@ public class PharmacyController {
         return ResponseEntity.ok(shifts);
     }
 
+    @Operation(summary = "Create a new Employee and Add it to the Pharmacy")
     @PostMapping("/{id}/employees")
     public ResponseEntity<EmployeeDto> addEmployeeToPharmacy(
             @PathVariable("id") Integer id,
@@ -255,6 +275,7 @@ public class PharmacyController {
         return ResponseEntity.ok(employee);
     }
 
+    @Operation(summary = "Delete an Employee from the Pharmacy")
     @DeleteMapping("/{id}/employees")
     public ResponseEntity<Void> deleteEmployeeFromPharmacy(
             @PathVariable("id") Integer id,
@@ -264,6 +285,7 @@ public class PharmacyController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Get All (ACTIVE or INACTIVE) Employees from the Pharmacy")
     @GetMapping("/{id}/employees")
     public ResponseEntity<List<EmployeeDto>> getEmployeesByPharmacy(
             @PathVariable("id") Integer id,
