@@ -80,6 +80,6 @@ public class Pharmacy {
     @Column(name = "expiry_threshold")
     private Short expiryThreshold;
 
-    @ManyToMany(mappedBy = "pharmacies")
+    @ManyToMany(mappedBy = "pharmacies", fetch = FetchType.EAGER)
     private Set<Shift> shifts = new LinkedHashSet<>();
 }
