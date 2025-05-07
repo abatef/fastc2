@@ -141,7 +141,12 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<PharmacyDto> getPharmacyInfoByUser(@AuthenticationPrincipal User user) {
-        List<Pharmacy> pharmacies = pharmacyRepository.getPharmaciesByOwner_Id(user.getId());
+        List<Pharmacy> pharmacies;
+        if (user.getRole() == UserRole.EMPLOYEE) {
+            pharmacies = List.of(user.getEmployee().getPharmacy());
+        } else {
+            pharmacies = pharmacyRepository.getPharmaciesByOwner_Id(user.getId());
+        }
         if (pharmacies.isEmpty()) {
             return null;
         }
