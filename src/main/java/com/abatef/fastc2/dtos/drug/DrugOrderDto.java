@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 public class DrugOrderDto {
     private Integer id;
+    private String name;
     private PharmacyDto pharmacy;
     private UserDto orderedBy;
     private OrderStatus status;

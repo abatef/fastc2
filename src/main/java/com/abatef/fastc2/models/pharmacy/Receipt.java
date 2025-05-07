@@ -46,7 +46,7 @@ public class Receipt {
     private Instant updatedAt;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "receipt")
+    @OneToMany(mappedBy = "receipt", fetch = FetchType.EAGER)
     private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
 
     @NotNull
@@ -54,5 +54,9 @@ public class Receipt {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "shift_id", nullable = false)
     private Shift shift;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pharmacy_id")
+    private Pharmacy pharmacy;
 
 }

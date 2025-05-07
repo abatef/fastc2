@@ -9,14 +9,16 @@ import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.security.auth.RefreshToken;
 import com.abatef.fastc2.security.auth.RefreshTokenService;
-import com.abatef.fastc2.services.PharmacyService;
 import com.abatef.fastc2.services.UserService;
 import com.abatef.fastc2.utils.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -58,19 +60,22 @@ public class AuthController {
     @Operation(summary = "Sign up a new User")
     @PostMapping("/signup")
     public ResponseEntity<UserCreationResponse> signup(
-            @Valid @RequestBody UserCreationRequest userCreationRequest) {
+            @Valid @RequestBody UserCreationRequest userCreationRequest,
+            @RequestHeader(value = HttpHeaders.USER_AGENT, defaultValue = "Web") String userAgent) {
         User user = userService.registerUser(userCreationRequest);
         UserDto userDto = modelMapper.map(user, UserDto.class);
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
-        JwtAuthenticationResponse jwtResponse = login(request).getBody();
+        JwtAuthenticationResponse jwtResponse = login(request, userAgent).getBody();
         return ResponseEntity.ok(new UserCreationResponse(userDto, jwtResponse));
     }
 
     @Operation(summary = "Login with username and password")
     @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> login(
-            @Valid @RequestBody JwtAuthenticationRequest request) {
+            @Valid @RequestBody JwtAuthenticationRequest request,
+            @RequestHeader(value = HttpHeaders.USER_AGENT, defaultValue = "Android")
+                    String userAgent) {
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -79,6 +84,15 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String accessToken = jwtUtil.generateAccessToken(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (userAgent.equals("Web")) {
+            if (userDetails.getAuthorities() != null && !userDetails.getAuthorities().isEmpty()) {
+                if (userDetails.getAuthorities().stream()
+                        .noneMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))) {
+                    return new ResponseEntity<>(
+                            new JwtAuthenticationResponse(null, null), HttpStatus.UNAUTHORIZED);
+                }
+            }
+        }
         String refreshToken = refreshTokenService.generateRefreshToken(userDetails).getToken();
         return ResponseEntity.ok(new JwtAuthenticationResponse(accessToken, refreshToken));
     }
@@ -103,7 +117,7 @@ public class AuthController {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), (String) body.get("password"));
-        return login(request);
+        return login(request, "Web");
     }
 
     @Operation(summary = "Get the current user info")

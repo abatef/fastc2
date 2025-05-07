@@ -5,7 +5,9 @@ import com.abatef.fastc2.enums.ItemStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.hibernate.annotations.ColumnDefault;
@@ -16,16 +18,18 @@ import org.hibernate.annotations.OnDeleteAction;
 @Setter
 @Entity
 @Table(name = "sales_receipt")
+@AllArgsConstructor
+@NoArgsConstructor
 public class ReceiptItem {
     @EmbeddedId private ReceiptItemId id;
 
-    @MapsId
+    @MapsId("receiptId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "receipt_id", nullable = false)
     private Receipt receipt;
 
-    @MapsId
+    @MapsId("pharmacyDrugId")
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "pharmacy_drug_id", nullable = false)

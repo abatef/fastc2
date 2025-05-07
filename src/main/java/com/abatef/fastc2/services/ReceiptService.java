@@ -6,20 +6,21 @@ import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
 import com.abatef.fastc2.enums.ItemStatus;
 import com.abatef.fastc2.enums.OperationType;
 import com.abatef.fastc2.enums.ReceiptStatus;
+import com.abatef.fastc2.enums.UserRole;
+import com.abatef.fastc2.exceptions.NotEmployeeException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.ReceiptNotFoundException;
 import com.abatef.fastc2.models.User;
-import com.abatef.fastc2.models.pharmacy.Operation;
-import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
-import com.abatef.fastc2.models.pharmacy.Receipt;
-import com.abatef.fastc2.models.pharmacy.ReceiptItem;
+import com.abatef.fastc2.models.pharmacy.*;
 import com.abatef.fastc2.repositories.OperationRepository;
 import com.abatef.fastc2.repositories.PharmacyDrugRepository;
+import com.abatef.fastc2.repositories.ReceiptItemRepository;
 import com.abatef.fastc2.repositories.ReceiptRepository;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,18 +39,21 @@ public class ReceiptService {
     private final ModelMapper modelMapper;
     private final OperationRepository operationRepository;
     private final PharmacyDrugRepository pharmacyDrugRepository;
+    private final ReceiptItemRepository receiptItemRepository;
 
     public ReceiptService(
             ReceiptRepository receiptRepository,
             PharmacyService pharmacyService,
             ModelMapper modelMapper,
             OperationRepository operationRepository,
-            PharmacyDrugRepository pharmacyDrugRepository) {
+            PharmacyDrugRepository pharmacyDrugRepository,
+            ReceiptItemRepository receiptItemRepository) {
         this.receiptRepository = receiptRepository;
         this.pharmacyService = pharmacyService;
         this.modelMapper = modelMapper;
         this.operationRepository = operationRepository;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
+        this.receiptItemRepository = receiptItemRepository;
     }
 
     private static Receipt getReceipt(Integer id, Optional<Receipt> receiptOptional) {
@@ -66,9 +70,15 @@ public class ReceiptService {
         return receipt;
     }
 
+    @PreAuthorize("hasRole('EMPLOYEE')")
     @Transactional
     public ReceiptDto createANewReceipt(
             List<ReceiptCreationRequest> requests, Integer pharmacyId, User cashier) {
+        if (cashier.getRole() == UserRole.EMPLOYEE) {
+            if (!cashier.getEmployee().getPharmacy().getId().equals(pharmacyId)) {
+                throw new NotEmployeeException("user is not employee in this pharmacy");
+            }
+        }
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
@@ -143,11 +153,35 @@ public class ReceiptService {
 
             item.setPack(request.getPacks());
             item.setUnits(request.getUnits());
-            items.add(item);
-            receipt.setReceiptItems(items);
-            receipt = receiptRepository.save(receipt);
+            ReceiptItemId id = new ReceiptItemId();
+            id.setReceiptId(receipt.getId());
+            id.setPharmacyDrugId(pharmacyId);
+            item.setId(id);
+            receiptItemRepository.save(item);
         }
-        return mapReceiptDto(receipt);
+
+        ReceiptDto info = modelMapper.map(receipt, ReceiptDto.class);
+        float revenue = 0.0f;
+        float total = 0.0f;
+        info.setTotal(total);
+        List<ReceiptItem> receiptItems =
+                receiptItemRepository.findReceiptItemsByReceipt_Id(receipt.getId());
+        for (ReceiptItem receiptItem : receiptItems) {
+            ReceiptItemDto itemInfo = new ReceiptItemDto();
+            itemInfo.setDrugName(receiptItem.getPharmacyDrug().getDrug().getName());
+            itemInfo.setDiscount(receiptItem.getDiscount());
+            itemInfo.setPack(receiptItem.getPack());
+            itemInfo.setUnits(receiptItem.getUnits());
+            itemInfo.setAmountDue(receiptItem.getAmountDue());
+            itemInfo.setStatus(receiptItem.getStatus());
+            info.setTotal(info.getTotal() + receiptItem.getAmountDue());
+            info.getItems().add(itemInfo);
+            revenue += receiptItem.getAmountDue();
+            total += receiptItem.getPharmacyDrug().getDrug().getFullPrice();
+        }
+        info.setRevenue(revenue);
+        info.setProfit(info.getRevenue() - total);
+        return info;
     }
 
     private ReceiptDto mapReceiptDto(Receipt receipt) {
@@ -161,6 +195,7 @@ public class ReceiptService {
             itemInfo.setPack(receiptItem.getPack());
             itemInfo.setUnits(receiptItem.getUnits());
             itemInfo.setAmountDue(receiptItem.getAmountDue());
+            itemInfo.setStatus(receiptItem.getStatus());
             info.setTotal(info.getTotal() + receiptItem.getAmountDue());
             info.getItems().add(itemInfo);
             revenue += receiptItem.getAmountDue();
@@ -191,26 +226,56 @@ public class ReceiptService {
 
     @Transactional
     public ReceiptDto returnReceipt(Integer id, User cashier) {
+        Optional<Receipt> receiptOptional = receiptRepository.findById(id);
+        Receipt receipt = getReceipt(id, receiptOptional);
+        if (cashier.getRole() == UserRole.EMPLOYEE) {
+            if (!cashier.getEmployee()
+                    .getPharmacy()
+                    .getId()
+                    .equals(receipt.getPharmacy().getId())) {
+                throw new NotEmployeeException("You are not the employee of the cashier");
+            }
+        }
         Operation operation = new Operation();
         operation.setCashier(cashier);
         operation.setType(OperationType.RECEIPT_RETURNED);
-        Optional<Receipt> receiptOptional = receiptRepository.findById(id);
-        Receipt receipt = getReceipt(id, receiptOptional);
 
         operation.setReceipt(receipt);
         operationRepository.save(operation);
+
         receipt.setStatus(ReceiptStatus.RETURNED);
         receiptRepository.save(receipt);
+
         for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
             if (receiptItem.getStatus() != ItemStatus.SATISFIED) {
                 continue;
             }
+
             PharmacyDrug pd = receiptItem.getPharmacyDrug();
-            int stock = (receiptItem.getPack() * pd.getDrug().getUnits()) + receiptItem.getUnits();
-            pd.setStock(pd.getStock() + stock);
+            int unitsPerPack = pd.getDrug().getUnits();
+
+            int totalUnitsSold = 0;
+            if (receiptItem.getPack() != null) {
+                totalUnitsSold += receiptItem.getPack() * unitsPerPack;
+            }
+            if (receiptItem.getUnits() != null) {
+                totalUnitsSold += receiptItem.getUnits();
+            }
+
+            pd.setStock(pd.getStock() + totalUnitsSold);
             pharmacyDrugRepository.save(pd);
         }
+
         return mapReceiptDto(receipt);
+    }
+
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    @Transactional
+    public ReceiptDto updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {
+        if (status == ReceiptStatus.RETURNED) {
+            return returnReceipt(id, cashier);
+        }
+        return null;
     }
 
     public List<ReceiptDto> applyAllFilters(

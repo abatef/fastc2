@@ -7,6 +7,7 @@ import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.ReceiptService;
 
 import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.PageRequest;
@@ -51,6 +52,16 @@ public class ReceiptController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(receipts);
+    }
+
+    @Operation(summary = "Update receipt status")
+    @PostMapping("/{receipt_id}/status")
+    public ResponseEntity<ReceiptDto> updateReceiptStatus(
+            @PathVariable("receipt_id") Integer id,
+            @RequestBody ReceiptStatus status,
+            @AuthenticationPrincipal User user) {
+        ReceiptDto info = receiptService.updateReceiptStatus(id, status, user);
+        return ResponseEntity.ok(info);
     }
 
     @Operation(summary = "Get all Receipts infos with filters applied")

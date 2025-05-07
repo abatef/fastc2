@@ -50,6 +50,9 @@ public class DrugOrder {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
+    @Column(name = "name")
+    private String name;
+
     @CreationTimestamp
     @Column(name = "ordered_at")
     private Instant orderedAt;

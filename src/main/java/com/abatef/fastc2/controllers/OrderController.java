@@ -1,6 +1,7 @@
 package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.drug.DrugOrderDto;
+import com.abatef.fastc2.dtos.drug.OrderCreationRequest;
 import com.abatef.fastc2.dtos.drug.OrderItemRequest;
 import com.abatef.fastc2.enums.OrderStatus;
 import com.abatef.fastc2.models.User;
@@ -27,7 +28,7 @@ public class OrderController {
     @PostMapping("/")
     public ResponseEntity<DrugOrderDto> createNewOrder(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
-            @RequestBody List<OrderItemRequest> request,
+            @RequestBody OrderCreationRequest request,
             @AuthenticationPrincipal User user) {
         DrugOrderDto order = pharmacyService.orderDrug(request, pharmacyId, user);
         return ResponseEntity.ok(order);
@@ -37,13 +38,14 @@ public class OrderController {
     @GetMapping("/all")
     public ResponseEntity<List<DrugOrderDto>> filterOrders(
             @RequestParam(value = "pharmacy_id") Integer pharmacyId,
+            @AuthenticationPrincipal User user,
             @RequestParam(value = "drug_id", required = false) Integer drugId,
             @RequestParam(value = "user_id", required = false) Integer userId,
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "20") Integer size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<DrugOrderDto> orders =
-                pharmacyService.getAllOrders(pharmacyId, drugId, userId, pageable);
+                pharmacyService.getAllOrders(pharmacyId, drugId, userId, pageable, user);
         if (orders.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

@@ -203,7 +203,7 @@ create table pharmacy_drug
 
 create index pharmacy_drug_idx on pharmacy_drug (id, drug_id, pharmacy_id, added_by, expiry_date);
 
-create table drug_order
+create table order_stats
 (
     drug_id     int not null,
     pharmacy_id int not null,
@@ -214,7 +214,37 @@ create table drug_order
     primary key (drug_id, pharmacy_id)
 );
 
-create index drug_order_idx on drug_order (drug_id, pharmacy_id);
+
+create index order_stats_idx on order_stats (drug_id, pharmacy_id);
+
+
+create table drug_order
+(
+    id          serial primary key,
+    pharmacy_id int not null,
+    ordered_by  int not null,
+    status      text      default false,
+    ordered_at  timestamp default current_timestamp,
+    received_at timestamp default current_timestamp,
+    constraint fk_phar_id foreign key (pharmacy_id) references pharmacies (id) on delete cascade,
+    constraint fk_user_id foreign key (ordered_by) references users (id) on delete set null
+);
+
+alter table drug_order add column name text;
+
+create index drug_order_idx on drug_order (id, pharmacy_id, ordered_by, status);
+
+create table order_item
+(
+    order_id int not null,
+    drug_id int not null,
+    required int not null default 0,
+    constraint fk_order_id foreign key (order_id) references drug_order(id) on delete cascade,
+    constraint fk_drug_id foreign key (drug_id) references drugs (id) on delete cascade,
+    primary key (order_id, drug_id)
+);
+
+create index order_item_idx on order_item(order_id, drug_id, required);
 
 create table receipt
 (
@@ -227,21 +257,30 @@ create table receipt
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
 
+alter table receipt add column pharmacy_id int;
+alter table receipt add constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies(id);
+
 create table operation
 (
-    id               serial primary key,
-    cashier          int not null,
-    type             text,
-    completed_at     timestamp default current_timestamp,
-    receipt_id       int,
+    id           serial primary key,
+    cashier      int not null,
+    type         text,
+    completed_at timestamp default current_timestamp,
+    receipt_id   int,
+    order_id     int,
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null,
-    constraint fk_receipt_id foreign key (receipt_id) references receipt (id) on delete set null
+    constraint fk_receipt_id foreign key (receipt_id) references receipt (id) on delete set null,
+    constraint fk_order_id foreign key (order_id) references drug_order(id) on delete set null
 );
 
 
-create index operation_cashier_idx on operation (id, cashier, type);
+
+create index operation_cashier_idx on operation (id, cashier, type, receipt_id, order_id);
 
 create index receipt_idx on receipt (id, cashier, status);
+
+
+drop table sales_receipt;
 
 create table sales_receipt
 (

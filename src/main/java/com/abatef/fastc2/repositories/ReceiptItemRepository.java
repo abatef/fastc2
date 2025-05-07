@@ -5,4 +5,8 @@ import com.abatef.fastc2.models.pharmacy.ReceiptItemId;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ReceiptItemRepository extends JpaRepository<ReceiptItem, ReceiptItemId> {}
+import java.util.List;
+
+public interface ReceiptItemRepository extends JpaRepository<ReceiptItem, ReceiptItemId> {
+    List<ReceiptItem> findReceiptItemsByReceipt_Id(Integer receiptId);
+}

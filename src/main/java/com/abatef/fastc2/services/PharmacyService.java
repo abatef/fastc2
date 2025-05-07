@@ -7,6 +7,8 @@ import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.enums.*;
+import com.abatef.fastc2.exceptions.NotEmployeeException;
+import com.abatef.fastc2.exceptions.NotOwnerException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.*;
@@ -27,7 +29,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -35,17 +36,15 @@ import java.util.stream.Collectors;
 
 @Service
 public class PharmacyService {
+    public final Logger LOG = LoggerFactory.getLogger(this.getClass());
     private final PharmacyRepository pharmacyRepository;
     private final DrugService drugService;
     private final ModelMapper modelMapper;
     private final ShiftService shiftService;
-
     private final PharmacyDrugRepository pharmacyDrugRepository;
     private final PharmacyShiftRepository pharmacyShiftRepository;
     private final EmployeeRepository employeeRepository;
     private final OrderStatsRepository orderStatsRepository;
-
-    public final Logger LOG = LoggerFactory.getLogger(this.getClass());
     private final DrugOrderRepository drugOrderRepository;
     private final OperationRepository operationRepository;
 
@@ -74,7 +73,7 @@ public class PharmacyService {
 
     @Transactional
     public PharmacyDto createPharmacy(
-            @RequestBody PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
+            PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
         LOG.info("Creating pharmacy");
         Pharmacy pharmacy = new Pharmacy();
         pharmacy.setName(request.getName());
@@ -111,9 +110,23 @@ public class PharmacyService {
         throw new PharmacyNotFoundException(id);
     }
 
-    public PharmacyDto getPharmacyInfoById(Integer id) {
+    public PharmacyDto getPharmacyInfoById(Integer id, User user) {
         LOG.info("trying to get pharmacy info by id: {}", id);
-        return modelMapper.map(getPharmacyByIdOrThrow(id), PharmacyDto.class);
+        if (user.getRole() == UserRole.EMPLOYEE) {
+            LOG.info("employee role");
+            if (user.getEmployee().getPharmacy().getId().equals(id)) {
+                return modelMapper.map(getPharmacyByIdOrThrow(id), PharmacyDto.class);
+            }
+            throw new NotEmployeeException("user is not a employee");
+        }
+        if (user.getRole() == UserRole.MANAGER) {
+            LOG.info("manager role");
+            Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
+            if (pharmacy.getOwner().getId().equals(user.getId())) {
+                return modelMapper.map(pharmacy, PharmacyDto.class);
+            }
+        }
+        throw new NotOwnerException("user is not a manager");
     }
 
     public List<PharmacyDto> getAllPharmacies(Pageable pageable) {
@@ -123,17 +136,29 @@ public class PharmacyService {
                 .toList();
     }
 
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
-    public void deletePharmacyById(Integer id) {
-        pharmacyRepository.deleteById(id);
+    public void deletePharmacyById(Integer id, User user) {
+        Pharmacy ph = getPharmacyByIdOrThrow(id);
+        if (ph != null) {
+            if (ph.getOwner().getId().equals(user.getId())) {
+                pharmacyRepository.deleteById(id);
+                return;
+            }
+            throw new NotOwnerException("user is not owner of pharmacy");
+        }
     }
 
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public PharmacyDto updatePharmacyInfo(
             @NotNull PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
         LOG.info("updating pharmacy info");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyInfo.getId());
+        managerOrEmployeeOrThrow(user, pharmacy);
+        if (!Objects.equals(pharmacy.getOwner().getId(), user.getId())) {
+            throw new NotOwnerException("user is not owner of pharmacy");
+        }
         boolean isUpdated = false;
         if (pharmacyInfo.getName() != null && !pharmacyInfo.getName().isEmpty()) {
             LOG.info(
@@ -179,10 +204,12 @@ public class PharmacyService {
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER')")
     @Transactional
     public PharmacyDrugDto addDrugToPharmacy(
             PharmacyDrugCreationRequest request, Integer pharmacyId, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
         Drug drug = drugService.getDrugByIdOrThrow(request.getDrugId());
         PharmacyDrug pharmacyDrug = new PharmacyDrug();
         pharmacyDrug.setDrug(drug);
@@ -221,10 +248,44 @@ public class PharmacyService {
         throw new PharmacyDrugNotFoundException(id);
     }
 
-    public PharmacyDrugDto getPharmacyDrugInfoById(Integer id) {
-        return modelMapper.map(getPharmacyDrugByIdOrThrow(id), PharmacyDrugDto.class);
+    public void managerOrEmployeeOrThrow(User user, Integer pharmacyId) {
+        if (user.getRole() == UserRole.MANAGER) {
+            Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+            if (pharmacy.getOwner().getId().equals(user.getId())) {
+                return;
+            }
+            throw new NotOwnerException("user is not owner of pharmacy");
+        }
+        if (user.getRole() == UserRole.EMPLOYEE) {
+            if (user.getEmployee().getPharmacy().getId().equals(pharmacyId)) {
+                return;
+            }
+            throw new NotEmployeeException("user is not employee in this pharmacy");
+        }
     }
 
+    public void managerOrEmployeeOrThrow(User user, Pharmacy pharmacy) {
+        if (user.getRole() == UserRole.MANAGER) {
+            if (pharmacy.getOwner().getId().equals(user.getId())) {
+                return;
+            }
+            throw new NotOwnerException("user is not owner of pharmacy");
+        }
+        if (user.getRole() == UserRole.EMPLOYEE) {
+            if (user.getEmployee().getPharmacy().getId().equals(pharmacy.getId())) {
+                return;
+            }
+            throw new NotEmployeeException("user is not employee in this pharmacy");
+        }
+    }
+
+    public PharmacyDrugDto getPharmacyDrugInfoById(Integer id, User user) {
+        PharmacyDrug pd = getPharmacyDrugByIdOrThrow(id);
+        managerOrEmployeeOrThrow(user, pd.getPharmacy().getId());
+        return modelMapper.map(pd, PharmacyDrugDto.class);
+    }
+
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public void removeDrugFromPharmacy(Integer id) {
         pharmacyDrugRepository.deleteById(id);
@@ -244,7 +305,10 @@ public class PharmacyService {
         return drugs.stream().min(Comparator.comparing(PharmacyDrug::getExpiryDate)).orElse(null);
     }
 
-    public List<PharmacyDrugDto> getDrugsByPharmacyId(Integer pharmacyId, Pageable pageable) {
+
+    public List<PharmacyDrugDto> getDrugsByPharmacyId(
+            Integer pharmacyId, Pageable pageable, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         Page<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
         return streamAndReturn(drugs);
@@ -272,7 +336,9 @@ public class PharmacyService {
         return totalStock;
     }
 
-    public DrugStatsDto getDrugOrderInfoByPharmacyAndDrugIds(Integer pharmacyId, Integer drugId) {
+    public DrugStatsDto getDrugOrderInfoByPharmacyAndDrugIds(
+            Integer pharmacyId, Integer drugId, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         Optional<OrderStats> drugOrder =
                 orderStatsRepository.getDrugOrderByPharmacy_IdAndDrug_Id(pharmacyId, drugId);
         if (drugOrder.isPresent()) {
@@ -287,7 +353,8 @@ public class PharmacyService {
     }
 
     public List<PharmacyShortageDto> getAllShortageDrugsByPharmacyId(
-            Integer pharmacyId, Pageable pageable) {
+            Integer pharmacyId, Pageable pageable, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         Map<OrderStatsId, OrderStats> drugOrderMap = new HashMap<>();
         Map<OrderStatsId, Integer> totalStock = new HashMap<>();
         List<PharmacyShortageDto> shortageDrugs = new ArrayList<>();
@@ -349,6 +416,7 @@ public class PharmacyService {
         return shortageDrugs;
     }
 
+    @PreAuthorize("hasAnyRole('MANAGER', 'EMPLOYEE')")
     public List<PharmacyDrugDto> applyAllFilters(
             Integer pharmacyId,
             Integer drugId,
@@ -358,9 +426,11 @@ public class PharmacyService {
             Integer N,
             Float upperPriceBound,
             String type,
-            Pageable pageable) {
+            Pageable pageable,
+            User user) {
         LOG.info("applying all filters");
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
         Page<PharmacyDrug> drugs =
                 pharmacyDrugRepository.getPharmacyDrugsByPharmacy_Id(pharmacyId, pageable);
         LOG.info("found {} drugs", drugs.getTotalElements());
@@ -625,8 +695,9 @@ public class PharmacyService {
 
     @Transactional
     public PharmacyDto addShiftToPharmacy(Integer pharmacyId, Shift shift, User user) {
-        shift = shiftService.create(shift);
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
+        shift = shiftService.create(shift);
         PharmacyShiftId id = new PharmacyShiftId();
         id.setPharmacyId(pharmacyId);
         id.setShiftId(shift.getId());
@@ -638,34 +709,47 @@ public class PharmacyService {
         return modelMapper.map(getPharmacyByIdOrThrow(pharmacyId), PharmacyDto.class);
     }
 
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public void removeShiftFromPharmacy(Integer pharmacyId, Integer shiftId, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         PharmacyShiftId id = new PharmacyShiftId();
         id.setPharmacyId(pharmacyId);
         id.setShiftId(shiftId);
         pharmacyShiftRepository.deleteById(id);
     }
 
-    public List<Shift> getShiftsByPharmacyId(Integer pharmacyId) {
+    @PreAuthorize("hasRole('MANAGER')")
+    public List<Shift> getShiftsByPharmacyId(Integer pharmacyId, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
         return pharmacy.getShifts().stream().toList();
     }
 
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
-    public List<EmployeeDto> getEmployeesByPharmacyId(Integer pharmacyId, EmployeeStatus status, Pageable pageable) {
+    public List<EmployeeDto> getEmployeesByPharmacyId(
+            Integer pharmacyId, EmployeeStatus status, Pageable pageable, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         Page<Employee> employees;
         if (status == EmployeeStatus.INACTIVE) {
-            employees = employeeRepository.findEmployeesByEndDateIsNotNullAndPharmacy_Id(pharmacyId, pageable);
+            employees =
+                    employeeRepository.findEmployeesByEndDateIsNotNullAndPharmacy_Id(
+                            pharmacyId, pageable);
         } else if (status == EmployeeStatus.ACTIVE) {
-             employees = employeeRepository.findEmployeesByEndDateIsNullAndPharmacy_Id(pharmacyId, pageable);
+            employees =
+                    employeeRepository.findEmployeesByEndDateIsNullAndPharmacy_Id(
+                            pharmacyId, pageable);
         } else {
             employees = employeeRepository.findEmployeesByPharmacy_Id(pharmacyId, pageable);
         }
         return employees.stream().map(emp -> modelMapper.map(emp, EmployeeDto.class)).toList();
     }
 
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public void removeEmployeeFromPharmacy(Integer pharmacyId, Integer employeeId, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         Optional<Employee> employee =
                 employeeRepository.getEmployeeByIdAndPharmacy_Id(employeeId, pharmacyId);
         if (employee.isPresent()) {
@@ -685,15 +769,17 @@ public class PharmacyService {
     }
 
     @Transactional
-    public DrugOrderDto orderDrug(List<OrderItemRequest> request, Integer pharmacyId, User user) {
+    public DrugOrderDto orderDrug(OrderCreationRequest request, Integer pharmacyId, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
         DrugOrder order = new DrugOrder();
+        order.setName(request.getName());
         order.setOrderedBy(user);
         order.setPharmacy(pharmacy);
         order.setStatus(OrderStatus.ISSUED);
         order = drugOrderRepository.save(order);
         float orderTotal = 0.0f;
-        for (OrderItemRequest item : request) {
+        for (OrderItemRequest item : request.getItems()) {
             OrderItemId id = new OrderItemId();
             id.setOrderId(order.getId());
             id.setDrugId(item.getDrugId());
@@ -715,6 +801,7 @@ public class PharmacyService {
     @Transactional
     public DrugOrderDto changeOrderStatus(
             Integer pharmacyId, Integer orderId, OrderStatus orderStatus, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
         order.setStatus(orderStatus);
         order = drugOrderRepository.save(order);
@@ -729,7 +816,8 @@ public class PharmacyService {
     }
 
     public List<DrugOrderDto> getAllOrders(
-            Integer pharmacyId, Integer drugId, Integer userId, Pageable pageable) {
+            Integer pharmacyId, Integer drugId, Integer userId, Pageable pageable, User user) {
+        managerOrEmployeeOrThrow(user, pharmacyId);
         Page<DrugOrder> orders =
                 drugOrderRepository.findDrugOrdersFiltered(drugId, pharmacyId, userId, pageable);
         if (orders.getTotalElements() == 0) {

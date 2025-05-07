@@ -16,6 +16,7 @@ import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
 
 import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
@@ -58,8 +59,9 @@ public class PharmacyController {
 
     @Operation(summary = "Get Pharmacy Info by Id")
     @GetMapping("/{id}")
-    public ResponseEntity<PharmacyDto> getPharmacyInfo(@PathVariable("id") Integer id) {
-        PharmacyDto info = pharmacyService.getPharmacyInfoById(id);
+    public ResponseEntity<PharmacyDto> getPharmacyInfo(
+            @PathVariable("id") Integer id, @AuthenticationPrincipal User user) {
+        PharmacyDto info = pharmacyService.getPharmacyInfoById(id, user);
         return ResponseEntity.ok(info);
     }
 
@@ -67,7 +69,7 @@ public class PharmacyController {
     @DeleteMapping
     public ResponseEntity<Void> deletePharmacy(
             @RequestParam("id") Integer id, @AuthenticationPrincipal User user) {
-        pharmacyService.deletePharmacyById(id);
+        pharmacyService.deletePharmacyById(id, user);
         return ResponseEntity.noContent().build();
     }
 
@@ -121,7 +123,7 @@ public class PharmacyController {
     @GetMapping("/drug")
     public ResponseEntity<PharmacyDrugDto> getPharmacyDrugInfoById(
             @RequestParam("id") Integer id, @AuthenticationPrincipal User user) {
-        PharmacyDrugDto info = pharmacyService.getPharmacyDrugInfoById(id);
+        PharmacyDrugDto info = pharmacyService.getPharmacyDrugInfoById(id, user);
         return ResponseEntity.ok(info);
     }
 
@@ -134,19 +136,21 @@ public class PharmacyController {
             @RequestParam(value = "size", defaultValue = "75") int size,
             @RequestParam(value = "sort", defaultValue = "expiryDate") String sort) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sort).ascending());
-        List<PharmacyDrugDto> drugs = pharmacyService.getDrugsByPharmacyId(id, pageable);
-        return noContentOrReturn(drugs);
+        List<PharmacyDrugDto> drugs = pharmacyService.getDrugsByPharmacyId(id, pageable, user);
+        return ResponseEntity.ok(drugs);
     }
 
     @Operation(summary = "Get All Drugs with shortage in pharmacy with shortage info")
     @GetMapping("/{id}/shortage/info")
     public ResponseEntity<List<PharmacyShortageDto>> getShortageDrugs(
             @PathVariable("id") Integer id,
+            @RequestParam("drug_id") Integer drugId,
+            @AuthenticationPrincipal User user,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<PharmacyShortageDto> shortages =
-                pharmacyService.getAllShortageDrugsByPharmacyId(id, pageable);
+                pharmacyService.getAllShortageDrugsByPharmacyId(id, pageable, user);
         if (shortages.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -156,8 +160,10 @@ public class PharmacyController {
     @Operation(summary = "Get Order Stats of a Drug")
     @GetMapping("/{id}/drug/order-stats")
     public ResponseEntity<DrugStatsDto> getDrugOrderInfo(
-            @PathVariable("id") Integer id, @RequestParam("drug_id") Integer drugId) {
-        DrugStatsDto info = pharmacyService.getDrugOrderInfoByPharmacyAndDrugIds(id, drugId);
+            @PathVariable("id") Integer id,
+            @RequestParam("drug_id") Integer drugId,
+            @AuthenticationPrincipal User user) {
+        DrugStatsDto info = pharmacyService.getDrugOrderInfoByPharmacyAndDrugIds(id, drugId, user);
         if (info == null) {
             return ResponseEntity.noContent().build();
         }
@@ -175,11 +181,12 @@ public class PharmacyController {
             @RequestParam(value = "from", required = false) String from,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size,
-            @RequestParam(value = "sort", required = false) SortOption sort) {
+            @RequestParam(value = "sort", required = false) SortOption sort,
+            @AuthenticationPrincipal User user) {
         PageRequest pageable = PageRequest.of(page, size);
         List<PharmacyDrugDto> drugs =
                 pharmacyService.applyAllFilters(
-                        id, null, query, filters, sort, N, price, from, pageable);
+                        id, null, query, filters, sort, N, price, from, pageable, user);
         return noContentOrReturn(drugs);
     }
 
@@ -194,18 +201,22 @@ public class PharmacyController {
             @RequestParam(value = "from", required = false) String from,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size,
-            @RequestParam(value = "sort", required = false) SortOption sort) {
+            @RequestParam(value = "sort", required = false) SortOption sort,
+            @AuthenticationPrincipal User user) {
         PageRequest pageable = PageRequest.of(page, size);
         List<PharmacyDrugDto> drugs =
                 pharmacyService.applyAllFilters(
-                        id, drugId, null, filters, sort, N, price, from, pageable);
+                        id, drugId, null, filters, sort, N, price, from, pageable, user);
         return noContentOrReturn(drugs);
     }
 
     @Operation(summary = "Get infos of the drugs in the pharmacy by bulk(multiple id at once)")
     @GetMapping("/{id}/drugs/bulk")
     public ResponseEntity<List<PharmacyDrugDto>> bulkInfo(
-            @PathVariable("id") Integer phId, @RequestParam("ids") List<Integer> drugIds) {
+            @PathVariable("id") Integer phId,
+            @RequestParam("ids") List<Integer> drugIds,
+            @AuthenticationPrincipal User user) {
+        pharmacyService.managerOrEmployeeOrThrow(user, phId);
         List<PharmacyDrugDto> drugs = new ArrayList<>();
         LOG.info("bulk request");
         for (Integer id : drugIds) {
@@ -256,8 +267,9 @@ public class PharmacyController {
 
     @Operation(summary = "Get all Shifts from the Pharmacy")
     @GetMapping("/{id}/shifts")
-    public ResponseEntity<List<Shift>> getShiftsByPharmacy(@PathVariable("id") Integer id) {
-        List<Shift> shifts = pharmacyService.getShiftsByPharmacyId(id);
+    public ResponseEntity<List<Shift>> getShiftsByPharmacy(
+            @PathVariable("id") Integer id, @AuthenticationPrincipal User user) {
+        List<Shift> shifts = pharmacyService.getShiftsByPharmacyId(id, user);
         if (shifts.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -289,12 +301,13 @@ public class PharmacyController {
     @GetMapping("/{id}/employees")
     public ResponseEntity<List<EmployeeDto>> getEmployeesByPharmacy(
             @PathVariable("id") Integer id,
+            @AuthenticationPrincipal User user,
             @RequestParam(value = "status", required = false) EmployeeStatus status,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "75") int size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<EmployeeDto> employees =
-                pharmacyService.getEmployeesByPharmacyId(id, status, pageable);
+                pharmacyService.getEmployeesByPharmacyId(id, status, pageable, user);
         if (employees.isEmpty()) {
             return ResponseEntity.noContent().build();
         }

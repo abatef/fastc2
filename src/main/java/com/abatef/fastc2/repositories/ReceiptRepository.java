@@ -73,4 +73,5 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
             @Param("toDate") Instant toDate,
             Pageable pageable);
 
+    Receipt getReceiptById(Integer id);
 }

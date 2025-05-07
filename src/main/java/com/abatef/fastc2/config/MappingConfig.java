@@ -77,19 +77,6 @@ public class MappingConfig {
         modelMapper
                 .createTypeMap(PharmacyDrug.class, PharmacyDrugDto.class)
                 .setConverter(pharmacyDrugPharmacyInfoConverter);
-        Converter<ReceiptItem, ReceiptItemDto> receiptItemReceiptItemInfoConverter =
-                (ctx) -> {
-                    ReceiptItem item = ctx.getSource();
-                    ReceiptItemDto info = new ReceiptItemDto();
-                    info.setDrugName(item.getPharmacyDrug().getDrug().getName());
-                    info.setPack(item.getPack());
-                    info.setUnits(item.getUnits());
-                    info.setAmountDue(item.getAmountDue());
-                    return info;
-                };
-        modelMapper
-                .createTypeMap(ReceiptItem.class, ReceiptItemDto.class)
-                .setConverter(receiptItemReceiptItemInfoConverter);
         return modelMapper;
     }
 }

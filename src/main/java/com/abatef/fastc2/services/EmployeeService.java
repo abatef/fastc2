@@ -3,7 +3,9 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
 import com.abatef.fastc2.dtos.user.EmployeeUpdateRequest;
+import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.exceptions.EmployeeNotFoundException;
+import com.abatef.fastc2.exceptions.NotOwnerException;
 import com.abatef.fastc2.exceptions.PharmacyNotFoundException;
 import com.abatef.fastc2.models.Employee;
 import com.abatef.fastc2.models.User;
@@ -40,9 +42,16 @@ public class EmployeeService {
         this.modelMapper = modelMapper;
     }
 
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public EmployeeDto createNewEmployee(EmployeeCreationRequest request, User principal) {
+        Pharmacy pharmacy =
+                pharmacyRepository
+                        .getPharmacyById(request.getPharmacyId())
+                        .orElseThrow(() -> new PharmacyNotFoundException(request.getPharmacyId()));
+        if (!pharmacy.getOwner().getId().equals(principal.getId())) {
+            throw new NotOwnerException("user is not owner of pharmacy");
+        }
         request.getUser().setManagedUser(true);
         User userInfo = userService.registerUser(request.getUser());
         Employee employee = new Employee();
@@ -52,10 +61,6 @@ public class EmployeeService {
         employee.setGender(request.getGender());
         Shift shift = shiftService.getByIdOrThrow(request.getShiftId());
         employee.setShift(shift);
-        Pharmacy pharmacy =
-                pharmacyRepository
-                        .getPharmacyById(request.getPharmacyId())
-                        .orElseThrow(() -> new PharmacyNotFoundException(request.getPharmacyId()));
         employee.setPharmacy(pharmacy);
         employee = employeeRepository.save(employee);
         return modelMapper.map(employee, EmployeeDto.class);
@@ -73,10 +78,13 @@ public class EmployeeService {
         return modelMapper.map(getEmployeeByIdOrThrow(employeeId), EmployeeDto.class);
     }
 
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public EmployeeDto updateEmployee(EmployeeUpdateRequest employeeInfo, User principal) {
         Employee employee = getEmployeeByIdOrThrow(employeeInfo.getId());
+        if (!employee.getPharmacy().getOwner().getId().equals(principal.getId())) {
+            throw new NotOwnerException("user is not owner of employee");
+        }
         if (employeeInfo.getSalary() != null) {
             employee.setSalary(employeeInfo.getSalary());
         }
@@ -101,9 +109,13 @@ public class EmployeeService {
         return modelMapper.map(employee, EmployeeDto.class);
     }
 
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasRole('MANAGER')")
     @Transactional
     public void deleteEmployee(Integer employeeId, User principal) {
+        Employee employee = getEmployeeByIdOrThrow(employeeId);
+        if (!employee.getPharmacy().getOwner().getId().equals(principal.getId())) {
+            throw new NotOwnerException("user is not owner of employee");
+        }
         employeeRepository.deleteById(employeeId);
     }
 }
