@@ -4,10 +4,9 @@
 name: Build and deploy JAR app to Azure Web App - fastc2
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
-      - deployment
+      - deploy
   workflow_dispatch:
 
 jobs:
@@ -58,9 +57,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E8EAA56C5A944580A6F1DBCD99678A9D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6ED0CA06B7B24B93987902B5A6BBA628 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_BE5D0AFD5A404F069D6560DC87C494D9 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F8548889683042FFAD0E068868D39B99 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_72CA7C05890442B08E3E527B7A7C5B69 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B16465A7A6C14C1FB837DC0F56BDD5EA }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
