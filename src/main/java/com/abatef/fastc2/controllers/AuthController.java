@@ -18,7 +18,6 @@ import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -66,33 +65,21 @@ public class AuthController {
         UserDto userDto = modelMapper.map(user, UserDto.class);
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), userCreationRequest.getPassword());
-        JwtAuthenticationResponse jwtResponse = login(request, userAgent).getBody();
+        JwtAuthenticationResponse jwtResponse = login(request).getBody();
         return ResponseEntity.ok(new UserCreationResponse(userDto, jwtResponse));
     }
 
     @Operation(summary = "Login with username and password")
     @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> login(
-            @Valid @RequestBody JwtAuthenticationRequest request,
-            @RequestHeader(value = HttpHeaders.USER_AGENT, defaultValue = "Android")
-                    String userAgent) {
+            @Valid @RequestBody JwtAuthenticationRequest request) {
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
                                 request.getUsername(), request.getPassword()));
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String accessToken = jwtUtil.generateAccessToken(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        if (userAgent.equals("Web")) {
-            if (userDetails.getAuthorities() != null && !userDetails.getAuthorities().isEmpty()) {
-                if (userDetails.getAuthorities().stream()
-                        .noneMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))) {
-                    return new ResponseEntity<>(
-                            new JwtAuthenticationResponse(null, null), HttpStatus.UNAUTHORIZED);
-                }
-            }
-        }
         String refreshToken = refreshTokenService.generateRefreshToken(userDetails).getToken();
         return ResponseEntity.ok(new JwtAuthenticationResponse(accessToken, refreshToken));
     }
@@ -117,7 +104,7 @@ public class AuthController {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         JwtAuthenticationRequest request =
                 new JwtAuthenticationRequest(user.getUsername(), (String) body.get("password"));
-        return login(request, "Web");
+        return login(request);
     }
 
     @Operation(summary = "Get the current user info")
