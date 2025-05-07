@@ -70,11 +70,11 @@ public class ReceiptService {
         return receipt;
     }
 
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER')")
     @Transactional
     public ReceiptDto createANewReceipt(
             List<ReceiptCreationRequest> requests, Integer pharmacyId, User cashier) {
-        if (cashier.getRole() == UserRole.EMPLOYEE) {
+        if (cashier.getRole() == UserRole.EMPLOYEE || cashier.getRole() == UserRole.MANAGER) {
             if (!cashier.getEmployee().getPharmacy().getId().equals(pharmacyId)) {
                 throw new NotEmployeeException("user is not employee in this pharmacy");
             }
@@ -228,7 +228,7 @@ public class ReceiptService {
     public ReceiptDto returnReceipt(Integer id, User cashier) {
         Optional<Receipt> receiptOptional = receiptRepository.findById(id);
         Receipt receipt = getReceipt(id, receiptOptional);
-        if (cashier.getRole() == UserRole.EMPLOYEE) {
+        if (cashier.getRole() == UserRole.EMPLOYEE || cashier.getRole() == UserRole.MANAGER) {
             if (!cashier.getEmployee()
                     .getPharmacy()
                     .getId()
@@ -269,7 +269,7 @@ public class ReceiptService {
         return mapReceiptDto(receipt);
     }
 
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'EMPLOYEE')")
     @Transactional
     public ReceiptDto updateReceiptStatus(Integer id, ReceiptStatus status, User cashier) {
         if (status == ReceiptStatus.RETURNED) {

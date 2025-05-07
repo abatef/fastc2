@@ -112,15 +112,15 @@ public class PharmacyService {
 
     public PharmacyDto getPharmacyInfoById(Integer id, User user) {
         LOG.info("trying to get pharmacy info by id: {}", id);
-        if (user.getRole() == UserRole.EMPLOYEE) {
-            LOG.info("employee role");
+        if (user.getRole() == UserRole.EMPLOYEE || user.getRole() == UserRole.MANAGER) {
+            LOG.info("{} role", user.getRole().name());
             if (user.getEmployee().getPharmacy().getId().equals(id)) {
                 return modelMapper.map(getPharmacyByIdOrThrow(id), PharmacyDto.class);
             }
             throw new NotEmployeeException("user is not a employee");
         }
-        if (user.getRole() == UserRole.MANAGER) {
-            LOG.info("manager role");
+        if (user.getRole() == UserRole.OWNER) {
+            LOG.info("{} role", user.getRole().name());
             Pharmacy pharmacy = getPharmacyByIdOrThrow(id);
             if (pharmacy.getOwner().getId().equals(user.getId())) {
                 return modelMapper.map(pharmacy, PharmacyDto.class);
@@ -136,7 +136,7 @@ public class PharmacyService {
                 .toList();
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public void deletePharmacyById(Integer id, User user) {
         Pharmacy ph = getPharmacyByIdOrThrow(id);
@@ -149,7 +149,7 @@ public class PharmacyService {
         }
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
     @Transactional
     public PharmacyDto updatePharmacyInfo(
             @NotNull PharmacyUpdateRequest pharmacyInfo, @AuthenticationPrincipal User user) {
@@ -204,7 +204,7 @@ public class PharmacyService {
         return modelMapper.map(pharmacy, PharmacyDto.class);
     }
 
-    @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER', 'OWNER')")
     @Transactional
     public PharmacyDrugDto addDrugToPharmacy(
             PharmacyDrugCreationRequest request, Integer pharmacyId, User user) {
@@ -249,14 +249,14 @@ public class PharmacyService {
     }
 
     public void managerOrEmployeeOrThrow(User user, Integer pharmacyId) {
-        if (user.getRole() == UserRole.MANAGER) {
+        if (user.getRole() == UserRole.OWNER) {
             Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
             if (pharmacy.getOwner().getId().equals(user.getId())) {
                 return;
             }
             throw new NotOwnerException("user is not owner of pharmacy");
         }
-        if (user.getRole() == UserRole.EMPLOYEE) {
+        if (user.getRole() == UserRole.EMPLOYEE || user.getRole() == UserRole.MANAGER) {
             if (user.getEmployee().getPharmacy().getId().equals(pharmacyId)) {
                 return;
             }
@@ -265,13 +265,13 @@ public class PharmacyService {
     }
 
     public void managerOrEmployeeOrThrow(User user, Pharmacy pharmacy) {
-        if (user.getRole() == UserRole.MANAGER) {
+        if (user.getRole() == UserRole.OWNER) {
             if (pharmacy.getOwner().getId().equals(user.getId())) {
                 return;
             }
             throw new NotOwnerException("user is not owner of pharmacy");
         }
-        if (user.getRole() == UserRole.EMPLOYEE) {
+        if (user.getRole() == UserRole.EMPLOYEE || user.getRole() == UserRole.MANAGER) {
             if (user.getEmployee().getPharmacy().getId().equals(pharmacy.getId())) {
                 return;
             }
@@ -285,7 +285,7 @@ public class PharmacyService {
         return modelMapper.map(pd, PharmacyDrugDto.class);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('OWNER')")
     @Transactional
     public void removeDrugFromPharmacy(Integer id) {
         pharmacyDrugRepository.deleteById(id);
@@ -416,7 +416,7 @@ public class PharmacyService {
         return shortageDrugs;
     }
 
-    @PreAuthorize("hasAnyRole('MANAGER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'EMPLOYEE', 'OWNER')")
     public List<PharmacyDrugDto> applyAllFilters(
             Integer pharmacyId,
             Integer drugId,
@@ -693,6 +693,7 @@ public class PharmacyService {
                 .toList();
     }
 
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
     @Transactional
     public PharmacyDto addShiftToPharmacy(Integer pharmacyId, Shift shift, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
@@ -709,7 +710,7 @@ public class PharmacyService {
         return modelMapper.map(getPharmacyByIdOrThrow(pharmacyId), PharmacyDto.class);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
     @Transactional
     public void removeShiftFromPharmacy(Integer pharmacyId, Integer shiftId, User user) {
         managerOrEmployeeOrThrow(user, pharmacyId);
@@ -719,14 +720,14 @@ public class PharmacyService {
         pharmacyShiftRepository.deleteById(id);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
     public List<Shift> getShiftsByPharmacyId(Integer pharmacyId, User user) {
         Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
         managerOrEmployeeOrThrow(user, pharmacy);
         return pharmacy.getShifts().stream().toList();
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
     @Transactional
     public List<EmployeeDto> getEmployeesByPharmacyId(
             Integer pharmacyId, EmployeeStatus status, Pageable pageable, User user) {
@@ -746,7 +747,7 @@ public class PharmacyService {
         return employees.stream().map(emp -> modelMapper.map(emp, EmployeeDto.class)).toList();
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
     @Transactional
     public void removeEmployeeFromPharmacy(Integer pharmacyId, Integer employeeId, User user) {
         managerOrEmployeeOrThrow(user, pharmacyId);

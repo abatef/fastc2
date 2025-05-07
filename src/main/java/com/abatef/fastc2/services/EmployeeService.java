@@ -42,7 +42,7 @@ public class EmployeeService {
         this.modelMapper = modelMapper;
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
     @Transactional
     public EmployeeDto createNewEmployee(EmployeeCreationRequest request, User principal) {
         Pharmacy pharmacy =
@@ -78,7 +78,7 @@ public class EmployeeService {
         return modelMapper.map(getEmployeeByIdOrThrow(employeeId), EmployeeDto.class);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER')")
     @Transactional
     public EmployeeDto updateEmployee(EmployeeUpdateRequest employeeInfo, User principal) {
         Employee employee = getEmployeeByIdOrThrow(employeeInfo.getId());
@@ -109,7 +109,7 @@ public class EmployeeService {
         return modelMapper.map(employee, EmployeeDto.class);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
     @Transactional
     public void deleteEmployee(Integer employeeId, User principal) {
         Employee employee = getEmployeeByIdOrThrow(employeeId);
