@@ -4,11 +4,9 @@ import com.abatef.fastc2.dtos.drug.DrugDto;
 import com.abatef.fastc2.dtos.drug.PharmacyDrugDto;
 import com.abatef.fastc2.dtos.pharmacy.Location;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
-import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
 import com.abatef.fastc2.dtos.user.UserDto;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
-import com.abatef.fastc2.models.pharmacy.ReceiptItem;
 
 import org.locationtech.jts.geom.Point;
 import org.modelmapper.Converter;

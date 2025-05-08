@@ -4,16 +4,16 @@ import com.abatef.fastc2.dtos.drug.*;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
+import com.abatef.fastc2.dtos.pharmacy.SalesOperationDto;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
-import com.abatef.fastc2.enums.EmployeeStatus;
-import com.abatef.fastc2.enums.FilterOption;
-import com.abatef.fastc2.enums.SortOption;
+import com.abatef.fastc2.enums.*;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
+import com.abatef.fastc2.services.ReportingService;
 
 import io.swagger.v3.oas.annotations.Operation;
 
@@ -38,14 +38,17 @@ public class PharmacyController {
     private final EmployeeService employeeService;
     private final ModelMapper modelMapper;
     private final Logger LOG = LoggerFactory.getLogger(PharmacyController.class);
+    private final ReportingService reportingService;
 
     public PharmacyController(
             PharmacyService pharmacyService,
             EmployeeService employeeService,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            ReportingService reportingService) {
         this.pharmacyService = pharmacyService;
         this.employeeService = employeeService;
         this.modelMapper = modelMapper;
+        this.reportingService = reportingService;
     }
 
     @Operation(summary = "Create a new Pharmacy")
@@ -312,5 +315,27 @@ public class PharmacyController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(employees);
+    }
+
+    @Operation(
+            summary =
+                    "Get all Sales Reports in the Pharmacy, you can filter by drug_id, type, or status")
+    @GetMapping("/{id}/reports")
+    public ResponseEntity<List<SalesOperationDto>> getAllReportsByPharmacy(
+            @PathVariable("id") Integer pharmacyId,
+            @RequestParam(value = "drug_id", required = false) Integer drugId,
+            @RequestParam(value = "status", required = false) OperationStatus status,
+            @RequestParam(value = "type", required = false) OperationType type,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @AuthenticationPrincipal User user) {
+        PageRequest pageable = PageRequest.of(page, size);
+        List<SalesOperationDto> reports =
+                reportingService.getSalesOperations(
+                        pharmacyId, drugId, status, type, pageable, user);
+        if (reports.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(reports);
     }
 }

@@ -47,6 +47,8 @@ public class PharmacyService {
     private final OrderStatsRepository orderStatsRepository;
     private final DrugOrderRepository drugOrderRepository;
     private final OperationRepository operationRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final SalesOperationsRepository salesOperationsRepository;
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
@@ -58,7 +60,9 @@ public class PharmacyService {
             EmployeeRepository employeeRepository,
             OrderStatsRepository orderStatsRepository,
             DrugOrderRepository drugOrderRepository,
-            OperationRepository operationRepository) {
+            OperationRepository operationRepository,
+            OrderItemRepository orderItemRepository,
+            SalesOperationsRepository salesOperationsRepository) {
         this.pharmacyRepository = pharmacyRepository;
         this.drugService = drugService;
         this.modelMapper = modelMapper;
@@ -69,6 +73,8 @@ public class PharmacyService {
         this.orderStatsRepository = orderStatsRepository;
         this.drugOrderRepository = drugOrderRepository;
         this.operationRepository = operationRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.salesOperationsRepository = salesOperationsRepository;
     }
 
     @Transactional
@@ -218,6 +224,13 @@ public class PharmacyService {
         pharmacyDrug.setPrice(drug.getFullPrice());
         pharmacyDrug.setStock(request.getStock() * drug.getUnits());
         pharmacyDrug.setAddedBy(user);
+        SalesOperation salesOperation = new SalesOperation();
+        salesOperation.setPharmacy(pharmacy);
+        salesOperation.setDrug(drug);
+        salesOperation.setQuantity(request.getStock());
+        salesOperation.setType(OperationType.DIRECT_ADDITION);
+        salesOperation.setStatus(OperationStatus.COMPLETED);
+        salesOperationsRepository.save(salesOperation);
         pharmacyDrug = pharmacyDrugRepository.save(pharmacyDrug);
         OrderStatsId id = new OrderStatsId(drug.getId(), pharmacy.getId());
         Optional<OrderStats> drugOrderOptional = orderStatsRepository.getDrugOrderById(id);
@@ -304,7 +317,6 @@ public class PharmacyService {
                         pharmacyId, drugId, 0);
         return drugs.stream().min(Comparator.comparing(PharmacyDrug::getExpiryDate)).orElse(null);
     }
-
 
     public List<PharmacyDrugDto> getDrugsByPharmacyId(
             Integer pharmacyId, Pageable pageable, User user) {
@@ -787,9 +799,18 @@ public class PharmacyService {
             OrderItem orderItem = new OrderItem();
             orderItem.setId(id);
             orderItem.setRequired(item.getRequired());
+            orderItemRepository.save(orderItem);
             Drug drug = drugService.getDrugByIdOrThrow(item.getDrugId());
             orderItem.setDrug(drug);
             orderTotal += drug.getFullPrice() * item.getRequired();
+            SalesOperation salesOperation = new SalesOperation();
+            salesOperation.setPharmacy(pharmacy);
+            salesOperation.setDrug(drug);
+            salesOperation.setOrder(order);
+            salesOperation.setStatus(OperationStatus.COMPLETED);
+            salesOperation.setType(OperationType.ORDER_ISSUED);
+            salesOperation.setQuantity(item.getRequired());
+            salesOperationsRepository.save(salesOperation);
             order.getOrderItems().add(orderItem);
         }
         order = drugOrderRepository.save(order);
@@ -806,6 +827,10 @@ public class PharmacyService {
         DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
         order.setStatus(orderStatus);
         order = drugOrderRepository.save(order);
+        for (OrderItem item : order.getOrderItems()) {
+            SalesOperation salesOperation = recordSalesOperation(orderStatus, item, order);
+            salesOperationsRepository.save(salesOperation);
+        }
 
         if (orderStatus == OrderStatus.CANCELLED) {
             createOperation(user, OperationType.ORDER_CANCELLED, order);
@@ -814,6 +839,22 @@ public class PharmacyService {
             createOperation(user, OperationType.ORDER_COMPLETED, order);
         }
         return modelMapper.map(order, DrugOrderDto.class);
+    }
+
+    private static SalesOperation recordSalesOperation(OrderStatus orderStatus, OrderItem item, DrugOrder order) {
+        SalesOperation salesOperation = new SalesOperation();
+        salesOperation.setOrder(order);
+        salesOperation.setDrug(item.getDrug());
+        salesOperation.setPharmacy(order.getPharmacy());
+        salesOperation.setQuantity(item.getRequired());
+        salesOperation.setStatus(OperationStatus.COMPLETED);
+        if (orderStatus == OrderStatus.CANCELLED) {
+            salesOperation.setType(OperationType.ORDER_CANCELLED);
+        } else if (orderStatus == OrderStatus.COMPLETED
+                || orderStatus == OrderStatus.PARTIAL_COMPLETION) {
+            salesOperation.setType(OperationType.ORDER_COMPLETED);
+        }
+        return salesOperation;
     }
 
     public List<DrugOrderDto> getAllOrders(

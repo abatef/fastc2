@@ -3,19 +3,13 @@ package com.abatef.fastc2.services;
 import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
 import com.abatef.fastc2.dtos.receipt.ReceiptDto;
 import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
-import com.abatef.fastc2.enums.ItemStatus;
-import com.abatef.fastc2.enums.OperationType;
-import com.abatef.fastc2.enums.ReceiptStatus;
-import com.abatef.fastc2.enums.UserRole;
+import com.abatef.fastc2.enums.*;
 import com.abatef.fastc2.exceptions.NotEmployeeException;
 import com.abatef.fastc2.exceptions.PharmacyDrugNotFoundException;
 import com.abatef.fastc2.exceptions.ReceiptNotFoundException;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.*;
-import com.abatef.fastc2.repositories.OperationRepository;
-import com.abatef.fastc2.repositories.PharmacyDrugRepository;
-import com.abatef.fastc2.repositories.ReceiptItemRepository;
-import com.abatef.fastc2.repositories.ReceiptRepository;
+import com.abatef.fastc2.repositories.*;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -40,6 +34,7 @@ public class ReceiptService {
     private final OperationRepository operationRepository;
     private final PharmacyDrugRepository pharmacyDrugRepository;
     private final ReceiptItemRepository receiptItemRepository;
+    private final SalesOperationsRepository salesOperationsRepository;
 
     public ReceiptService(
             ReceiptRepository receiptRepository,
@@ -47,13 +42,15 @@ public class ReceiptService {
             ModelMapper modelMapper,
             OperationRepository operationRepository,
             PharmacyDrugRepository pharmacyDrugRepository,
-            ReceiptItemRepository receiptItemRepository) {
+            ReceiptItemRepository receiptItemRepository,
+            SalesOperationsRepository salesOperationsRepository) {
         this.receiptRepository = receiptRepository;
         this.pharmacyService = pharmacyService;
         this.modelMapper = modelMapper;
         this.operationRepository = operationRepository;
         this.pharmacyDrugRepository = pharmacyDrugRepository;
         this.receiptItemRepository = receiptItemRepository;
+        this.salesOperationsRepository = salesOperationsRepository;
     }
 
     private static Receipt getReceipt(Integer id, Optional<Receipt> receiptOptional) {
@@ -70,6 +67,22 @@ public class ReceiptService {
         return receipt;
     }
 
+    private static SalesOperation recordSalesOperation(
+            ReceiptItem item, Receipt receipt, Pharmacy pharmacy, OperationType operationType) {
+        SalesOperation salesOperation = new SalesOperation();
+        salesOperation.setDrug(item.getPharmacyDrug().getDrug());
+        salesOperation.setQuantity(
+                (Integer.valueOf(item.getUnits())
+                                + (Integer.valueOf(item.getPack())
+                                        * item.getPharmacyDrug().getDrug().getUnits()))
+                        / item.getPharmacyDrug().getDrug().getUnits());
+        salesOperation.setReceipt(receipt);
+        salesOperation.setStatus(OperationStatus.COMPLETED);
+        salesOperation.setPharmacy(pharmacy);
+        salesOperation.setType(operationType);
+        return salesOperation;
+    }
+
     @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER')")
     @Transactional
     public ReceiptDto createANewReceipt(
@@ -79,6 +92,7 @@ public class ReceiptService {
                 throw new NotEmployeeException("user is not employee in this pharmacy");
             }
         }
+        Pharmacy pharmacy = pharmacyService.getPharmacyByIdOrThrow(pharmacyId);
         Receipt receipt = new Receipt();
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
@@ -157,6 +171,10 @@ public class ReceiptService {
             id.setReceiptId(receipt.getId());
             id.setPharmacyDrugId(pharmacyId);
             item.setId(id);
+            OperationType operationType = operation.getType();
+            SalesOperation salesOperation =
+                    recordSalesOperation(item, receipt, pharmacy, operationType);
+            salesOperationsRepository.save(salesOperation);
             receiptItemRepository.save(item);
         }
 
@@ -220,9 +238,7 @@ public class ReceiptService {
     }
 
     private List<ReceiptDto> streamAndMap(List<Receipt> receipts) {
-        return receipts.stream()
-                .map(this::mapReceiptDto)
-                .toList();
+        return receipts.stream().map(this::mapReceiptDto).toList();
     }
 
     @Transactional
@@ -265,8 +281,11 @@ public class ReceiptService {
 
             pd.setStock(pd.getStock() + totalUnitsSold);
             pharmacyDrugRepository.save(pd);
+            SalesOperation salesOperation =
+                    recordSalesOperation(
+                            receiptItem, receipt, receipt.getPharmacy(), operation.getType());
+            salesOperationsRepository.save(salesOperation);
         }
-
         return mapReceiptDto(receipt);
     }
 

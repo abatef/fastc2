@@ -4,5 +4,8 @@ public enum OrderStatus {
     ISSUED,
     COMPLETED,
     CANCELLED,
-    PARTIAL_COMPLETION
+    PARTIAL_COMPLETION,
+    RETURNED,
+    ORDERED,
+    SOLD
 }
