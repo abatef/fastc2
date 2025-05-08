@@ -1,9 +1,7 @@
 package com.abatef.fastc2.exceptions.handler;
 
 import com.abatef.fastc2.enums.ErrorType;
-import com.abatef.fastc2.exceptions.DuplicateValueException;
-import com.abatef.fastc2.exceptions.ErrorResponse;
-import com.abatef.fastc2.exceptions.NonExistingValueException;
+import com.abatef.fastc2.exceptions.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,5 +31,17 @@ public class UserExceptionsHandler {
         errorResponse.setValueType(ErrorResponse.getValueType(e));
         errorResponse.setDetails(e.getValue());
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(exception = {NotOwnerException.class, NotEmployeeException.class})
+    public ResponseEntity<ErrorResponse> handleNotOwnerException(Exception e) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setErrorMessage(e.getMessage());
+        if (e instanceof NotOwnerException) {
+            errorResponse.setErrorType(ErrorType.NOT_OWNER_OF_PHARMACY);
+        } else if (e instanceof NotEmployeeException) {
+            errorResponse.setErrorType(ErrorType.NOT_EMPLOYEE_OR_MANAGER);
+        }
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 }

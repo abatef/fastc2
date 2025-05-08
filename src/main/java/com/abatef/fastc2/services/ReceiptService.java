@@ -188,6 +188,7 @@ public class ReceiptService {
         ReceiptDto info = modelMapper.map(receipt, ReceiptDto.class);
         float revenue = 0.0f;
         float total = 0.0f;
+        info.setTotal(total);
         for (ReceiptItem receiptItem : receipt.getReceiptItems()) {
             ReceiptItemDto itemInfo = new ReceiptItemDto();
             itemInfo.setDrugName(receiptItem.getPharmacyDrug().getDrug().getName());
@@ -220,7 +221,7 @@ public class ReceiptService {
 
     private List<ReceiptDto> streamAndMap(List<Receipt> receipts) {
         return receipts.stream()
-                .map(receipt -> modelMapper.map(receipt, ReceiptDto.class))
+                .map(this::mapReceiptDto)
                 .toList();
     }
 

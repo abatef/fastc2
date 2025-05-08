@@ -50,7 +50,7 @@ public class Receipt {
     private Set<ReceiptItem> receiptItems = new LinkedHashSet<>();
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "shift_id", nullable = false)
     private Shift shift;
