@@ -51,23 +51,25 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
             value =
                     "select r from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"
+                            + " join ri.pharmacyDrug pd"
                             + " where (:cashierId is null or r.cashier.id = :cashierId)"
-                            + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
-                            + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
+                            + " and (:drugId is null or pd.drug.id = :drugId)"
+                            + " and (:pharmacyId is null or pd.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
                             + " and (:status is null or r.status = :status)"
-                            + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
-                            + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))",
+                            + " and (cast(:fromDate as java.time.Instant) is null or r.createdAt >= :fromDate)"
+                            + " and (cast(:toDate as java.time.Instant) is null or r.createdAt <= :toDate)",
             countQuery =
-                    "select count(r) from Receipt r"
+                    "select count(distinct r) from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"
+                            + " join ri.pharmacyDrug pd"
                             + " where (:cashierId is null or r.cashier.id = :cashierId)"
-                            + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
-                            + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
+                            + " and (:drugId is null or pd.drug.id = :drugId)"
+                            + " and (:pharmacyId is null or pd.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
                             + " and (:status is null or r.status = :status)"
-                            + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
-                            + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))")
+                            + " and (cast(:fromDate as java.time.Instant) is null or r.createdAt >= :fromDate)"
+                            + " and (cast(:toDate as java.time.Instant) is null or r.createdAt <= :toDate)")
     Page<Receipt> applyAllFilters(
             @Param("cashierId") Integer cashierId,
             @Param("drugId") Integer drugId,
