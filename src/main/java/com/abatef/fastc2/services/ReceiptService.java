@@ -308,80 +308,12 @@ public class ReceiptService {
             Instant fromDate,
             Instant toDate,
             Pageable pageable) {
-        Page<Receipt> receipts = receiptRepository.findAll(pageable);
+
+        Page<Receipt> receipts =
+                receiptRepository.applyAllFilters(
+                        cashierId, drugId, pharmacyId, shiftId, status, fromDate, toDate, pageable);
+
         List<Receipt> receiptList = receipts.getContent();
-        if (cashierId != null) {
-            receiptList =
-                    receiptList.stream()
-                            .filter(r -> Objects.equals(r.getCashier().getId(), cashierId))
-                            .toList();
-        }
-
-        if (pharmacyId != null) {
-            receiptList =
-                    receiptList.stream()
-                            .filter(
-                                    receipt ->
-                                            !receipt.getReceiptItems().stream()
-                                                    .filter(
-                                                            r ->
-                                                                    r.getPharmacyDrug()
-                                                                            .getPharmacy()
-                                                                            .getId()
-                                                                            .equals(pharmacyId))
-                                                    .toList()
-                                                    .isEmpty())
-                            .toList();
-        }
-
-        if (drugId != null) {
-            receiptList =
-                    receiptList.stream()
-                            .filter(
-                                    receipt ->
-                                            !receipt.getReceiptItems().stream()
-                                                    .filter(
-                                                            r ->
-                                                                    r.getPharmacyDrug()
-                                                                            .getDrug()
-                                                                            .getId()
-                                                                            .equals(drugId))
-                                                    .toList()
-                                                    .isEmpty())
-                            .toList();
-        }
-
-        if (shiftId != null) {
-            receiptList =
-                    receiptList.stream()
-                            .filter(
-                                    receipt ->
-                                            receipt.getCashier()
-                                                    .getEmployee()
-                                                    .getShift()
-                                                    .getId()
-                                                    .equals(shiftId))
-                            .toList();
-        }
-
-        if (status != null) {
-            receiptList =
-                    receiptList.stream().filter(receipt -> receipt.getStatus() == status).toList();
-        }
-
-        if (fromDate != null) {
-            receiptList =
-                    receiptList.stream()
-                            .filter(receipt -> receipt.getCreatedAt().isAfter(fromDate))
-                            .toList();
-        }
-
-        if (toDate != null) {
-            receiptList =
-                    receiptList.stream()
-                            .filter(receipt -> receipt.getCreatedAt().isBefore(toDate))
-                            .toList();
-        }
 
         return streamAndMap(receiptList);
     }

@@ -1,5 +1,6 @@
 package com.abatef.fastc2.repositories;
 
+import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.pharmacy.Receipt;
 
 import jakarta.validation.constraints.NotNull;
@@ -54,6 +55,7 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
                             + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
                             + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
+                            + " and (:status is null or r.status = :status)"
                             + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
                             + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))",
             countQuery =
@@ -63,6 +65,7 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
                             + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
                             + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
+                            + " and (:status is null or r.status = :status)"
                             + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
                             + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))")
     Page<Receipt> applyAllFilters(
@@ -70,9 +73,11 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
             @Param("drugId") Integer drugId,
             @Param("pharmacyId") Integer pharmacyId,
             @Param("shiftId") Integer shiftId,
+            @Param("status") ReceiptStatus status,
             @Param("fromDate") Instant fromDate,
             @Param("toDate") Instant toDate,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     Receipt getReceiptById(Integer id);
 
