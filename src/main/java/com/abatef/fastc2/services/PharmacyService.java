@@ -935,4 +935,9 @@ public class PharmacyService {
         }
         return orders.stream().map(order -> modelMapper.map(order, DrugOrderDto.class)).toList();
     }
+
+    public DrugOrderDto getOrderById(Integer orderId, User user) {
+        DrugOrder order = drugOrderRepository.getDrugOrderById(orderId);
+        return modelMapper.map(order, DrugOrderDto.class);
+    }
 }

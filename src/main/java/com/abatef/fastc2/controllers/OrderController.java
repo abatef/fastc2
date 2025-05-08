@@ -2,12 +2,12 @@ package com.abatef.fastc2.controllers;
 
 import com.abatef.fastc2.dtos.drug.DrugOrderDto;
 import com.abatef.fastc2.dtos.drug.OrderCreationRequest;
-import com.abatef.fastc2.dtos.drug.OrderItemRequest;
 import com.abatef.fastc2.enums.OrderStatus;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.services.PharmacyService;
 
 import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,6 +50,13 @@ public class OrderController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(orders);
+    }
+
+    @Operation(summary = "Get Order By its Id")
+    @GetMapping("/order/{id}")
+    public ResponseEntity<DrugOrderDto> getOrder(
+            @PathVariable Integer id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(pharmacyService.getOrderById(id, user));
     }
 
     @Operation(summary = "Update Order Status")
