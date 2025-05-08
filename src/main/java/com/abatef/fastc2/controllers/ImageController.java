@@ -10,6 +10,7 @@ import com.abatef.fastc2.repositories.DrugRepository;
 import com.abatef.fastc2.repositories.ImageRepository;
 import com.abatef.fastc2.services.StorageService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -61,7 +62,8 @@ public class ImageController {
     }
 
     @GetMapping
-    public List<String> getAllImages(@RequestParam("id") Integer drugId) {
+    @Operation(summary = "get all urls of the images of the drug with drug_id")
+    public List<String> getAllImages(@RequestParam("drug_id") Integer drugId) {
         List<Image> images = imageRepository.findAllByDrug_Id(drugId);
         return images.stream().map(Image::getUrl).collect(Collectors.toList());
     }
