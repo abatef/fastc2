@@ -30,6 +30,7 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AZURE_CONN_STR: ${{ secrets.AZURE_CONN_STR }}
         run: mvn clean install
 
       - name: Upload artifact for deployment job
