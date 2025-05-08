@@ -77,6 +77,22 @@ public class PharmacyService {
         this.salesOperationsRepository = salesOperationsRepository;
     }
 
+    private static SalesOperation recordSalesOperation(OrderStatus orderStatus, OrderItem item, DrugOrder order) {
+        SalesOperation salesOperation = new SalesOperation();
+        salesOperation.setOrder(order);
+        salesOperation.setDrug(item.getDrug());
+        salesOperation.setPharmacy(order.getPharmacy());
+        salesOperation.setQuantity(item.getRequired());
+        salesOperation.setStatus(OperationStatus.COMPLETED);
+        if (orderStatus == OrderStatus.CANCELLED) {
+            salesOperation.setType(OperationType.ORDER_CANCELLED);
+        } else if (orderStatus == OrderStatus.COMPLETED
+                || orderStatus == OrderStatus.PARTIAL_COMPLETION) {
+            salesOperation.setType(OperationType.ORDER_COMPLETED);
+        }
+        return salesOperation;
+    }
+
     @Transactional
     public PharmacyDto createPharmacy(
             PharmacyCreationRequest request, @AuthenticationPrincipal User user) {
@@ -436,7 +452,7 @@ public class PharmacyService {
             SortOption sort,
             Integer N,
             Float price,
-            String from,
+            String form,
             Pageable pageable,
             User user) {
 
@@ -455,6 +471,9 @@ public class PharmacyService {
             LOG.info("Filter options is null");
             filterOptions = new ArrayList<>();
         }
+
+        // Check if filter options is empty
+        boolean filterOptionsEmpty = filterOptions.isEmpty();
 
         // Create boolean flags for each filter option
         boolean availableFilter = filterOptions.contains(FilterOption.AVAILABLE);
@@ -475,9 +494,9 @@ public class PharmacyService {
         boolean discountedFilter = filterOptions.contains(FilterOption.DISCOUNTED);
 
         // Execute the JPQL query with all filters
-        List<PharmacyDrug> filteredDrugs = pharmacyDrugRepository.applyAllFiltersJpql(
-                pharmacyId, drugId, query, filterOptions, sort,
-                N, price, from, today, dateAfterN, approachingDate,
+        Page<PharmacyDrug> filteredDrugs = pharmacyDrugRepository.applyAllFiltersJpql(
+                pharmacyId, drugId, query, filterOptions, filterOptionsEmpty, sort,
+                N, price, form, today, dateAfterN, approachingDate,
                 availableFilter, shortageFilter, unavailableShortageFilter, unavailableFilter,
                 expiresAfterNFilter, stockOverNFilter, stockUnderNFilter, outOfStockFilter,
                 expiredFilter, approachingExpiryFilter, notExpiredFilter, byFormFilter,
@@ -485,7 +504,7 @@ public class PharmacyService {
                 pageable
         );
 
-        LOG.info("Found {} drugs after filtering", filteredDrugs.size());
+        LOG.info("Found {} drugs after filtering", filteredDrugs.getTotalElements());
 
         // Convert to DTOs
         return filteredDrugs.stream()
@@ -904,22 +923,6 @@ public class PharmacyService {
             createOperation(user, OperationType.ORDER_COMPLETED, order);
         }
         return modelMapper.map(order, DrugOrderDto.class);
-    }
-
-    private static SalesOperation recordSalesOperation(OrderStatus orderStatus, OrderItem item, DrugOrder order) {
-        SalesOperation salesOperation = new SalesOperation();
-        salesOperation.setOrder(order);
-        salesOperation.setDrug(item.getDrug());
-        salesOperation.setPharmacy(order.getPharmacy());
-        salesOperation.setQuantity(item.getRequired());
-        salesOperation.setStatus(OperationStatus.COMPLETED);
-        if (orderStatus == OrderStatus.CANCELLED) {
-            salesOperation.setType(OperationType.ORDER_CANCELLED);
-        } else if (orderStatus == OrderStatus.COMPLETED
-                || orderStatus == OrderStatus.PARTIAL_COMPLETION) {
-            salesOperation.setType(OperationType.ORDER_COMPLETED);
-        }
-        return salesOperation;
     }
 
     public List<DrugOrderDto> getAllOrders(

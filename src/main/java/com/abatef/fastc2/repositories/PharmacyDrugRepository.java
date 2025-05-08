@@ -148,6 +148,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             @Param("query") String query,
             @Param("tsquery") String tsquery,
             Pageable pageable);
+
     @Query(value = """
         SELECT pd FROM PharmacyDrug pd
         LEFT JOIN OrderStats os ON os.id.drugId = pd.drug.id AND os.id.pharmacyId = pd.pharmacy.id
@@ -157,7 +158,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
              LOWER(pd.drug.name) LIKE LOWER(CONCAT('%', :query, '%')) OR 
              LOWER(pd.drug.form) LIKE LOWER(CONCAT('%', :query, '%')))
         AND (
-            :filterOptions IS EMPTY
+            COALESCE(:filterOptionsEmpty, TRUE) = TRUE
             OR (
                 (:availableFilter = false OR pd.stock > 0)
                 AND (:shortageFilter = false OR (
@@ -200,11 +201,12 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             CASE WHEN :sortOption = 'STOCK_ASC' THEN pd.stock END ASC,
             CASE WHEN :sortOption = 'STOCK_DESC' THEN pd.stock END DESC
     """)
-    List<PharmacyDrug> applyAllFiltersJpql(
+    Page<PharmacyDrug> applyAllFiltersJpql(
             @Param("pharmacyId") Integer pharmacyId,
             @Param("drugId") Integer drugId,
             @Param("query") String query,
             @Param("filterOptions") List<FilterOption> filterOptions,
+            @Param("filterOptionsEmpty") Boolean filterOptionsEmpty,
             @Param("sortOption") SortOption sortOption,
             @Param("n") Integer n,
             @Param("upperPriceBound") Float upperPriceBound,
@@ -229,6 +231,7 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             @Param("priceBetweenFilter") boolean priceBetweenFilter,
             @Param("discountedFilter") boolean discountedFilter,
             Pageable pageable);
+
     List<PharmacyDrug> getAllByPharmacy_IdAndDrug_Id(Integer pharmacyId, Integer drugId);
 
     List<PharmacyDrug> getAllByPharmacy_Id(Integer pharmacyId);
