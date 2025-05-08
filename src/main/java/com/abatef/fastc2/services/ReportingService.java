@@ -8,16 +8,20 @@ import com.abatef.fastc2.exceptions.NotEmployeeException;
 import com.abatef.fastc2.exceptions.NotOwnerException;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.Pharmacy;
+import com.abatef.fastc2.models.pharmacy.SalesOperation;
 import com.abatef.fastc2.repositories.ReceiptRepository;
 import com.abatef.fastc2.repositories.SalesOperationsRepository;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportingService {
@@ -82,5 +86,35 @@ public class ReportingService {
         }
 
         return salesOperationsRepository.findAllByPharmacy_Id(pharmacyId, pageable);
+    }
+
+    public List<SalesOperationDto> applyAllFilters(
+            Integer drugId,
+            Integer pharmacyId,
+            Integer receiptId,
+            Integer orderId,
+            OperationType type,
+            OperationStatus status,
+            Integer cashierId,
+            Instant fromDate,
+            Instant toDate,
+            Pageable pageable) {
+
+        Page<SalesOperation> salesOperations = salesOperationsRepository.applyAllFilters(
+                drugId,
+                pharmacyId,
+                receiptId,
+                orderId,
+                type,
+                status,
+                cashierId,
+                fromDate,
+                toDate,
+                pageable
+        );
+
+        return salesOperations.getContent().stream()
+                .map(so -> modelMapper.map(so, SalesOperationDto.class))
+                .collect(Collectors.toList());
     }
 }
