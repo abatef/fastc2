@@ -97,6 +97,7 @@ public class ReceiptService {
         receipt.setCashier(cashier);
         receipt.setStatus(ReceiptStatus.ISSUED);
         receipt.setShift(cashier.getEmployee().getShift());
+        receipt.setPharmacy(pharmacy);
         receipt = receiptRepository.save(receipt);
         Operation operation = new Operation();
         operation.setCashier(cashier);
