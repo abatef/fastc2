@@ -1,5 +1,7 @@
 package com.abatef.fastc2.repositories;
 
+import com.abatef.fastc2.enums.FilterOption;
+import com.abatef.fastc2.enums.SortOption;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 
 import org.springframework.data.domain.Page;
@@ -146,7 +148,87 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             @Param("query") String query,
             @Param("tsquery") String tsquery,
             Pageable pageable);
-
+    @Query(value = """
+        SELECT pd FROM PharmacyDrug pd
+        LEFT JOIN OrderStats os ON os.id.drugId = pd.drug.id AND os.id.pharmacyId = pd.pharmacy.id
+        WHERE pd.pharmacy.id = :pharmacyId
+        AND (:drugId IS NULL OR pd.drug.id = :drugId)
+        AND (:query IS NULL OR :query = '' OR 
+             LOWER(pd.drug.name) LIKE LOWER(CONCAT('%', :query, '%')) OR 
+             LOWER(pd.drug.form) LIKE LOWER(CONCAT('%', :query, '%')))
+        AND (
+            :filterOptions IS EMPTY
+            OR (
+                (:availableFilter = false OR pd.stock > 0)
+                AND (:shortageFilter = false OR (
+                    pd.stock > 0 AND os.required IS NOT NULL AND pd.stock < os.required
+                ))
+                AND (:unavailableShortageFilter = false OR (
+                    pd.stock = 0 AND os.required IS NOT NULL AND os.required > 0
+                ))
+                AND (:unavailableFilter = false OR (
+                    pd.stock = 0 AND (os.required IS NULL OR os.required = 0)
+                ))
+                AND (:expiresAfterNFilter = false OR pd.expiryDate > :dateAfterN)
+                AND (:stockOverNFilter = false OR pd.stock > :n)
+                AND (:stockUnderNFilter = false OR (pd.stock < :n AND pd.stock > 0))
+                AND (:outOfStockFilter = false OR pd.stock = 0)
+                AND (:expiredFilter = false OR pd.expiryDate <= :today)
+                AND (:approachingExpiryFilter = false OR (
+                    pd.expiryDate > :today AND pd.expiryDate <= :approachingDate
+                ))
+                AND (:notExpiredFilter = false OR pd.expiryDate > :today)
+                AND (:byFormFilter = false OR (
+                    pd.drug.form IS NOT NULL AND LOWER(pd.drug.form) = LOWER(:type)
+                ))
+                AND (:priceBelowNFilter = false OR pd.price < :n)
+                AND (:priceAboveNFilter = false OR pd.price > :n)
+                AND (:priceBetweenFilter = false OR (
+                    pd.price >= :n AND (:upperPriceBound IS NULL OR pd.price <= :upperPriceBound)
+                ))
+                AND (:discountedFilter = false OR EXISTS (
+                    SELECT 1 FROM ReceiptItem ri 
+                    WHERE ri.pharmacyDrug = pd AND ri.discount IS NOT NULL AND ri.discount > 0
+                ))
+            )
+        )
+        ORDER BY
+            CASE WHEN :sortOption = 'EXPIRY_DATE_ASC' THEN pd.expiryDate END ASC,
+            CASE WHEN :sortOption = 'EXPIRY_DATE_DESC' THEN pd.expiryDate END DESC,
+            CASE WHEN :sortOption = 'PRICE_ASC' THEN pd.price END ASC,
+            CASE WHEN :sortOption = 'PRICE_DESC' THEN pd.price END DESC,
+            CASE WHEN :sortOption = 'STOCK_ASC' THEN pd.stock END ASC,
+            CASE WHEN :sortOption = 'STOCK_DESC' THEN pd.stock END DESC
+    """)
+    List<PharmacyDrug> applyAllFiltersJpql(
+            @Param("pharmacyId") Integer pharmacyId,
+            @Param("drugId") Integer drugId,
+            @Param("query") String query,
+            @Param("filterOptions") List<FilterOption> filterOptions,
+            @Param("sortOption") SortOption sortOption,
+            @Param("n") Integer n,
+            @Param("upperPriceBound") Float upperPriceBound,
+            @Param("type") String type,
+            @Param("today") LocalDate today,
+            @Param("dateAfterN") LocalDate dateAfterN,
+            @Param("approachingDate") LocalDate approachingDate,
+            @Param("availableFilter") boolean availableFilter,
+            @Param("shortageFilter") boolean shortageFilter,
+            @Param("unavailableShortageFilter") boolean unavailableShortageFilter,
+            @Param("unavailableFilter") boolean unavailableFilter,
+            @Param("expiresAfterNFilter") boolean expiresAfterNFilter,
+            @Param("stockOverNFilter") boolean stockOverNFilter,
+            @Param("stockUnderNFilter") boolean stockUnderNFilter,
+            @Param("outOfStockFilter") boolean outOfStockFilter,
+            @Param("expiredFilter") boolean expiredFilter,
+            @Param("approachingExpiryFilter") boolean approachingExpiryFilter,
+            @Param("notExpiredFilter") boolean notExpiredFilter,
+            @Param("byFormFilter") boolean byFormFilter,
+            @Param("priceBelowNFilter") boolean priceBelowNFilter,
+            @Param("priceAboveNFilter") boolean priceAboveNFilter,
+            @Param("priceBetweenFilter") boolean priceBetweenFilter,
+            @Param("discountedFilter") boolean discountedFilter,
+            Pageable pageable);
     List<PharmacyDrug> getAllByPharmacy_IdAndDrug_Id(Integer pharmacyId, Integer drugId);
 
     List<PharmacyDrug> getAllByPharmacy_Id(Integer pharmacyId);

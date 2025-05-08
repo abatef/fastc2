@@ -186,11 +186,15 @@ public class PharmacyController {
             @RequestParam(value = "size", defaultValue = "75") int size,
             @RequestParam(value = "sort", required = false) SortOption sort,
             @AuthenticationPrincipal User user) {
+
+        LOG.info("Searching drugs with filters for pharmacy: {}", id);
+
         PageRequest pageable = PageRequest.of(page, size);
-        List<PharmacyDrugDto> drugs =
-                pharmacyService.applyAllFilters(
-                        id, null, query, filters, sort, N, price, from, pageable, user);
-        return noContentOrReturn(drugs);
+
+        List<PharmacyDrugDto> filteredDrugs = pharmacyService.applyAllFiltersJpql(
+                id, null, query, filters, sort, N, price, from, pageable, user);
+
+        return noContentOrReturn(filteredDrugs);
     }
 
     @Operation(summary = "Get all drugs in pharmacy with filters applied")

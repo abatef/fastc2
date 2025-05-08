@@ -428,6 +428,71 @@ public class PharmacyService {
         return shortageDrugs;
     }
 
+    public List<PharmacyDrugDto> applyAllFiltersJpql(
+            Integer pharmacyId,
+            Integer drugId,
+            String query,
+            List<FilterOption> filters,
+            SortOption sort,
+            Integer N,
+            Float price,
+            String from,
+            Pageable pageable,
+            User user) {
+
+        LOG.info("Applying all filters with JPQL");
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
+
+        LocalDate today = LocalDate.now();
+        LocalDate dateAfterN = (N != null) ? today.plusDays(N) : null;
+        LocalDate approachingDate = today.plusDays(pharmacy.getExpiryThreshold());
+
+        // Map parameters to maintain backward compatibility
+        List<FilterOption> filterOptions = filters;
+
+        if (filterOptions == null) {
+            LOG.info("Filter options is null");
+            filterOptions = new ArrayList<>();
+        }
+
+        // Create boolean flags for each filter option
+        boolean availableFilter = filterOptions.contains(FilterOption.AVAILABLE);
+        boolean shortageFilter = filterOptions.contains(FilterOption.SHORTAGE);
+        boolean unavailableShortageFilter = filterOptions.contains(FilterOption.UNAVAILABLE_SHORTAGE);
+        boolean unavailableFilter = filterOptions.contains(FilterOption.UNAVAILABLE);
+        boolean expiresAfterNFilter = filterOptions.contains(FilterOption.EXPIRES_AFTER_N);
+        boolean stockOverNFilter = filterOptions.contains(FilterOption.STOCK_OVER_N);
+        boolean stockUnderNFilter = filterOptions.contains(FilterOption.STOCK_UNDER_N);
+        boolean outOfStockFilter = filterOptions.contains(FilterOption.OUT_OF_STOCK);
+        boolean expiredFilter = filterOptions.contains(FilterOption.EXPIRED);
+        boolean approachingExpiryFilter = filterOptions.contains(FilterOption.APPROACHING_EXPIRY);
+        boolean notExpiredFilter = filterOptions.contains(FilterOption.NOT_EXPIRED);
+        boolean byFormFilter = filterOptions.contains(FilterOption.BY_FORM);
+        boolean priceBelowNFilter = filterOptions.contains(FilterOption.PRICE_BELOW_N);
+        boolean priceAboveNFilter = filterOptions.contains(FilterOption.PRICE_ABOVE_N);
+        boolean priceBetweenFilter = filterOptions.contains(FilterOption.PRICE_BETWEEN);
+        boolean discountedFilter = filterOptions.contains(FilterOption.DISCOUNTED);
+
+        // Execute the JPQL query with all filters
+        List<PharmacyDrug> filteredDrugs = pharmacyDrugRepository.applyAllFiltersJpql(
+                pharmacyId, drugId, query, filterOptions, sort,
+                N, price, from, today, dateAfterN, approachingDate,
+                availableFilter, shortageFilter, unavailableShortageFilter, unavailableFilter,
+                expiresAfterNFilter, stockOverNFilter, stockUnderNFilter, outOfStockFilter,
+                expiredFilter, approachingExpiryFilter, notExpiredFilter, byFormFilter,
+                priceBelowNFilter, priceAboveNFilter, priceBetweenFilter, discountedFilter,
+                pageable
+        );
+
+        LOG.info("Found {} drugs after filtering", filteredDrugs.size());
+
+        // Convert to DTOs
+        return filteredDrugs.stream()
+                .map(drug -> modelMapper.map(drug, PharmacyDrugDto.class))
+                .collect(Collectors.toList());
+    }
+
     @PreAuthorize("hasAnyRole('MANAGER', 'EMPLOYEE', 'OWNER')")
     public List<PharmacyDrugDto> applyAllFilters(
             Integer pharmacyId,
