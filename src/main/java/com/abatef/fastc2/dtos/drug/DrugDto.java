@@ -1,5 +1,6 @@
 package com.abatef.fastc2.dtos.drug;
 
+import com.abatef.fastc2.dtos.ImageDto;
 import com.abatef.fastc2.dtos.user.UserDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,6 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -39,6 +42,8 @@ public class DrugDto {
             description = "The full price of the drug",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Float fullPrice;
+
+    private List<ImageDto> images = new ArrayList<>();
 
     @Schema(
             description = "The Date Which The Drug was Created At.",

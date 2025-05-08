@@ -318,23 +318,28 @@ create table sales_operation
     constraint fk_order_id foreign key (order_id) references drug_order (id) on delete cascade
 );
 
-alter table sales_operation add column status text;
+alter table sales_operation
+    add column status text;
 
-alter table sales_operation add column amount int;
+alter table sales_operation
+    add column amount int;
 
 
-create index sales_operation_idx on sales_operation(id, drug_id, pharmacy_id, receipt_id, order_id, type, status);
+create index sales_operation_idx on sales_operation (id, drug_id, pharmacy_id, receipt_id, order_id, type, status);
 
 -- TODO: add separate revenue, profit
 
 -- TODO: add transactions history
 
-create table image
+create table images
 (
     id         serial primary key,
     url        text not null,
     drug_id    int  not null,
-    created_by varchar(20),
+    created_by int not null,
     foreign key (drug_id) references drugs (id) on delete cascade,
-    foreign key (created_by) references users (username) on delete cascade
+    foreign key (created_by) references users (id) on delete cascade
 );
+
+alter table images add column created_at timestamp;
+alter table images add column updated_at timestamp;
