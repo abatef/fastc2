@@ -14,9 +14,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SalesOperationDto {
     private DrugDto drug;
-    private ReceiptDto receipt;
-    private DrugOrderDto order;
-    private PharmacyDto pharmacy;
     private Integer quantity;
     private OperationType type;
     private OperationStatus status;
