@@ -319,6 +319,14 @@ create table sales_operation
 );
 
 alter table sales_operation
+    add column cashier_id int;
+alter table sales_operation
+    add constraint fk_cashier_id foreign key (cashier_id) references users (id) on delete cascade;
+
+alter table sales_operation add column created_at timestamp;
+alter table sales_operation add column updated_at timestamp;
+
+alter table sales_operation
     add column status text;
 
 alter table sales_operation

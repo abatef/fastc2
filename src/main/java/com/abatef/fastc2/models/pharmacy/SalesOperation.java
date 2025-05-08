@@ -5,15 +5,18 @@ import com.abatef.fastc2.enums.OperationType;
 import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.Drug;
 
+import com.abatef.fastc2.models.User;
 import jakarta.persistence.*;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
+
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -65,4 +68,18 @@ public class SalesOperation {
 
     @Column(name = "status")
     private OperationStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "cashier_id")
+    private User cashier;
+
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
 }
