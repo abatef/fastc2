@@ -17,6 +17,8 @@ public class SalesOperationDto {
     private DrugDto drug;
     private UserDto cashier;
     private Integer quantity;
+    private Float revenue;
+    private Float profit;
     private OperationType type;
     private OperationStatus status;
 }

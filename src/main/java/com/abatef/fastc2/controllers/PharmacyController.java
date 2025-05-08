@@ -327,7 +327,7 @@ public class PharmacyController {
     @Operation(
             summary =
                     "Get all Sales Reports in the Pharmacy, you can filter by drug_id, type, or status")
-    @GetMapping("/{id}/reports")
+    @GetMapping("/{id}/reports/history")
     public ResponseEntity<List<SalesOperationDto>> getAllSalesOperations(
             @PathVariable("id") Integer pharmacyId,
             @RequestParam(required = false) Integer drugId,
