@@ -49,7 +49,7 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
 
     @Query(
             value =
-                    "select r from Receipt r"
+                    "select DISTINCT r from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"
                             + " join ri.pharmacyDrug pd"
                             + " where (:cashierId is null or r.cashier.id = :cashierId)"
@@ -70,7 +70,7 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
                             + " and (:status is null or r.status = :status)"
                             + " and (cast(:fromDate as java.time.Instant) is null or r.createdAt >= :fromDate)"
                             + " and (cast(:toDate as java.time.Instant) is null or r.createdAt <= :toDate)")
-    Page<Receipt> applyAllFilters(
+    List<Receipt> applyAllFilters(
             @Param("cashierId") Integer cashierId,
             @Param("drugId") Integer drugId,
             @Param("pharmacyId") Integer pharmacyId,

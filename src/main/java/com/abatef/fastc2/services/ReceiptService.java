@@ -12,7 +12,6 @@ import com.abatef.fastc2.models.pharmacy.*;
 import com.abatef.fastc2.repositories.*;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -23,10 +22,6 @@ import java.util.*;
 
 @Service
 public class ReceiptService {
-    /*
-     * filter -> date, shifts, custom time(shift), employee(may be multiple)
-     * filter by drugs
-     * */
 
     private final ReceiptRepository receiptRepository;
     private final PharmacyService pharmacyService;
@@ -238,10 +233,6 @@ public class ReceiptService {
         return modelMapper.map(getReceiptByIdOrThrow(id), ReceiptDto.class);
     }
 
-    private List<ReceiptDto> streamAndMap(List<Receipt> receipts) {
-        return receipts.stream().map(this::mapReceiptDto).toList();
-    }
-
     @Transactional
     public ReceiptDto returnReceipt(Integer id, User cashier) {
         Optional<Receipt> receiptOptional = receiptRepository.findById(id);
@@ -309,12 +300,13 @@ public class ReceiptService {
             Instant toDate,
             Pageable pageable) {
 
-        Page<Receipt> receipts =
+        List<Receipt> receipts =
                 receiptRepository.applyAllFilters(
                         cashierId, drugId, pharmacyId, shiftId, status, fromDate, toDate, pageable);
 
-        List<Receipt> receiptList = receipts.getContent();
-
-        return streamAndMap(receiptList);
+        return receipts.stream()
+                .sorted(Comparator.comparingInt(Receipt::getId))
+                .map(this::mapReceiptDto)
+                .toList();
     }
 }
