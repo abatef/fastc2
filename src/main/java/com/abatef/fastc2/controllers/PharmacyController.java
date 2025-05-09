@@ -150,7 +150,6 @@ public class PharmacyController {
     @GetMapping("/{id}/shortage/info")
     public ResponseEntity<List<PharmacyShortageDto>> getShortageDrugs(
             @PathVariable("id") Integer id,
-            @RequestParam("drug_id") Integer drugId,
             @AuthenticationPrincipal User user,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
