@@ -45,6 +45,8 @@ public class DrugDto {
 
     private List<ImageDto> images = new ArrayList<>();
 
+    private Integer modelId;
+
     @Schema(
             description = "The Date Which The Drug was Created At.",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)

@@ -100,4 +100,11 @@ public class DrugController {
         }
         return ResponseEntity.ok(drugDtos);
     }
+
+    @Operation(summary = "Get Model Id by Drug Id")
+    @GetMapping("/model-id")
+    public ResponseEntity<Integer> getModelId(@RequestParam("drug_id") Integer id) {
+        DrugDto dto = drugService.getDrugInfoById(id);
+        return ResponseEntity.ok(dto.getModelId());
+    }
 }

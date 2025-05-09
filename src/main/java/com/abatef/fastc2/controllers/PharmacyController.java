@@ -194,8 +194,9 @@ public class PharmacyController {
 
         PageRequest pageable = PageRequest.of(page, size);
 
-        List<PharmacyDrugDto> filteredDrugs = pharmacyService.applyAllFiltersJpql(
-                id, null, query, filters, sort, N, price, from, pageable, user);
+        List<PharmacyDrugDto> filteredDrugs =
+                pharmacyService.applyAllFiltersJpql(
+                        id, null, query, filters, sort, N, price, from, pageable, user);
 
         return noContentOrReturn(filteredDrugs);
     }
@@ -215,7 +216,7 @@ public class PharmacyController {
             @AuthenticationPrincipal User user) {
         PageRequest pageable = PageRequest.of(page, size);
         List<PharmacyDrugDto> drugs =
-                pharmacyService.applyAllFilters(
+                pharmacyService.applyAllFiltersJpql(
                         id, drugId, null, filters, sort, N, price, from, pageable, user);
         return noContentOrReturn(drugs);
     }
@@ -336,30 +337,32 @@ public class PharmacyController {
             @RequestParam(required = false) OperationType type,
             @RequestParam(required = false) OperationStatus status,
             @RequestParam(required = false) Integer cashierId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant toDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                    Instant fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                    Instant toDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("asc") ?
-                Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort.Direction direction =
+                sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        List<SalesOperationDto> salesOperations = reportingService.applyAllFilters(
-                drugId,
-                pharmacyId,
-                receiptId,
-                orderId,
-                type,
-                status,
-                cashierId,
-                fromDate,
-                toDate,
-                pageable
-        );
+        List<SalesOperationDto> salesOperations =
+                reportingService.applyAllFilters(
+                        drugId,
+                        pharmacyId,
+                        receiptId,
+                        orderId,
+                        type,
+                        status,
+                        cashierId,
+                        fromDate,
+                        toDate,
+                        pageable);
 
         if (salesOperations.isEmpty()) {
             return ResponseEntity.noContent().build();

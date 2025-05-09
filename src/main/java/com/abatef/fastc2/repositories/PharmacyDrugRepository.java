@@ -98,28 +98,6 @@ public interface PharmacyDrugRepository extends JpaRepository<PharmacyDrug, Inte
             nativeQuery = true)
     Page<PharmacyDrug> getUnavailablePharmacyDrugs(Integer pharmacyId, Pageable pageable);
 
-    //    @Query(
-    //            value =
-    //                    "SELECT new com.abatef.fastc2.dtos.drug.PharmacyDrugShortage("
-    //                            + "pd.drug, pd.pharmacy,"
-    //                            + "COALESCE(dr.required - COALESCE(SUM(pd.stock), 0), 0) ) "
-    //                            + "FROM PharmacyDrug pd "
-    //                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
-    //                            + "AND pd.pharmacy.id = dr.pharmacy.id "
-    //                            + "WHERE pd.pharmacy.id = :pharmacyId "
-    //                            + "GROUP BY pd.drug.id, pd.pharmacy.id, dr.required  "
-    //                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
-    //            countQuery =
-    //                    "SELECT COUNT(DISTINCT pd) "
-    //                            + "FROM PharmacyDrug pd "
-    //                            + "JOIN DrugOrder dr ON pd.drug.id = dr.drug.id "
-    //                            + "AND pd.pharmacy.id = dr.pharmacy.id "
-    //                            + "WHERE pd.pharmacy.id = :pharmacyId "
-    //                            + "HAVING COALESCE(SUM(pd.stock), 0) < dr.required",
-    //            nativeQuery = false)
-    //    Page<PharmacyDrugShortage> getShortageDrugsByPharmacyId(Integer pharmacyId, Pageable
-    // pageable);
-
     @Query(
             value =
                     "SELECT pd.* FROM pharmacy_drug pd " +

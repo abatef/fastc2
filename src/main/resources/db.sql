@@ -16,8 +16,6 @@ create table users
 
 create index on users (id);
 
-
-
 create table pharmacies
 (
     id               serial primary key,
@@ -75,8 +73,6 @@ create index pharmacy_address_trigram_index on pharmacies using gin (address gin
 -- FUZZY SEARCH
 
 -- POSTGRESQL Full-Text Search -- PHARMACIES
-
--- TODO: add shifts table
 
 
 CREATE TABLE employees
@@ -142,6 +138,8 @@ create table drugs
     updated_at    timestamp             default CURRENT_TIMESTAMP,
     constraint fk_created_by foreign key (created_by) references users (id) on delete cascade
 );
+
+alter table drugs add column model_id int;
 
 create index drug_idx on drugs (id, name, form);
 
@@ -277,13 +275,10 @@ create table operation
 );
 
 
-
 create index operation_cashier_idx on operation (id, cashier, type, receipt_id, order_id);
 
 create index receipt_idx on receipt (id, cashier, status);
 
-
-drop table sales_receipt;
 
 create table sales_receipt
 (
@@ -334,10 +329,6 @@ alter table sales_operation
 
 
 create index sales_operation_idx on sales_operation (id, drug_id, pharmacy_id, receipt_id, order_id, type, status);
-
--- TODO: add separate revenue, profit
-
--- TODO: add transactions history
 
 create table images
 (
