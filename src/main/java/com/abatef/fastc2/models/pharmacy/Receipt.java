@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import org.checkerframework.checker.units.qual.C;
 import org.hibernate.annotations.*;
 
 import java.time.Instant;
@@ -39,7 +40,9 @@ public class Receipt {
     @Enumerated(EnumType.STRING)
     private ReceiptStatus status;
 
-    @CreationTimestamp private Instant createdAt;
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private Instant createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
@@ -58,5 +61,4 @@ public class Receipt {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pharmacy_id")
     private Pharmacy pharmacy;
-
 }

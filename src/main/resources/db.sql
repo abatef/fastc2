@@ -230,21 +230,22 @@ create table drug_order
     constraint fk_user_id foreign key (ordered_by) references users (id) on delete set null
 );
 
-alter table drug_order add column name text;
+alter table drug_order
+    add column name text;
 
 create index drug_order_idx on drug_order (id, pharmacy_id, ordered_by, status);
 
 create table order_item
 (
     order_id int not null,
-    drug_id int not null,
+    drug_id  int not null,
     required int not null default 0,
-    constraint fk_order_id foreign key (order_id) references drug_order(id) on delete cascade,
+    constraint fk_order_id foreign key (order_id) references drug_order (id) on delete cascade,
     constraint fk_drug_id foreign key (drug_id) references drugs (id) on delete cascade,
     primary key (order_id, drug_id)
 );
 
-create index order_item_idx on order_item(order_id, drug_id, required);
+create index order_item_idx on order_item (order_id, drug_id, required);
 
 create table receipt
 (
@@ -257,8 +258,10 @@ create table receipt
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null
 );
 
-alter table receipt add column pharmacy_id int;
-alter table receipt add constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies(id);
+alter table receipt
+    add column pharmacy_id int;
+alter table receipt
+    add constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies (id);
 
 create table operation
 (
@@ -270,7 +273,7 @@ create table operation
     order_id     int,
     constraint fk_cashier foreign key (cashier) references users (id) on delete set null,
     constraint fk_receipt_id foreign key (receipt_id) references receipt (id) on delete set null,
-    constraint fk_order_id foreign key (order_id) references drug_order(id) on delete set null
+    constraint fk_order_id foreign key (order_id) references drug_order (id) on delete set null
 );
 
 
@@ -301,17 +304,50 @@ alter table sales_receipt
 
 create index sales_receipt_id on sales_receipt (receipt_id, pharmacy_drug_id);
 
+create table sales_operation
+(
+    id          serial primary key,
+    drug_id     int  not null,
+    pharmacy_id int  not null,
+    receipt_id  int,
+    order_id    int,
+    type        text not null,
+    constraint fk_drug_id foreign key (drug_id) references drugs (id) on delete cascade,
+    constraint fk_pharmacy_id foreign key (pharmacy_id) references pharmacies (id) on delete cascade,
+    constraint fk_receipt_item_id foreign key (receipt_id) references receipt (id) on delete cascade,
+    constraint fk_order_id foreign key (order_id) references drug_order (id) on delete cascade
+);
+
+alter table sales_operation
+    add column cashier_id int;
+alter table sales_operation
+    add constraint fk_cashier_id foreign key (cashier_id) references users (id) on delete cascade;
+
+alter table sales_operation add column created_at timestamp;
+alter table sales_operation add column updated_at timestamp;
+
+alter table sales_operation
+    add column status text;
+
+alter table sales_operation
+    add column amount int;
+
+
+create index sales_operation_idx on sales_operation (id, drug_id, pharmacy_id, receipt_id, order_id, type, status);
 
 -- TODO: add separate revenue, profit
 
 -- TODO: add transactions history
 
-create table image
+create table images
 (
     id         serial primary key,
     url        text not null,
     drug_id    int  not null,
-    created_by varchar(20),
+    created_by int not null,
     foreign key (drug_id) references drugs (id) on delete cascade,
-    foreign key (created_by) references users (username) on delete cascade
+    foreign key (created_by) references users (id) on delete cascade
 );
+
+alter table images add column created_at timestamp;
+alter table images add column updated_at timestamp;

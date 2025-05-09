@@ -9,4 +9,6 @@ public enum OperationType {
     ORDER_ISSUED,
     ORDER_COMPLETED,
     ORDER_CANCELLED,
+
+    DIRECT_ADDITION,
 }

@@ -47,6 +47,8 @@ public class PharmacyService {
     private final OrderStatsRepository orderStatsRepository;
     private final DrugOrderRepository drugOrderRepository;
     private final OperationRepository operationRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final SalesOperationsRepository salesOperationsRepository;
 
     public PharmacyService(
             PharmacyRepository pharmacyRepository,
@@ -58,7 +60,9 @@ public class PharmacyService {
             EmployeeRepository employeeRepository,
             OrderStatsRepository orderStatsRepository,
             DrugOrderRepository drugOrderRepository,
-            OperationRepository operationRepository) {
+            OperationRepository operationRepository,
+            OrderItemRepository orderItemRepository,
+            SalesOperationsRepository salesOperationsRepository) {
         this.pharmacyRepository = pharmacyRepository;
         this.drugService = drugService;
         this.modelMapper = modelMapper;
@@ -69,6 +73,24 @@ public class PharmacyService {
         this.orderStatsRepository = orderStatsRepository;
         this.drugOrderRepository = drugOrderRepository;
         this.operationRepository = operationRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.salesOperationsRepository = salesOperationsRepository;
+    }
+
+    private static SalesOperation recordSalesOperation(OrderStatus orderStatus, OrderItem item, DrugOrder order) {
+        SalesOperation salesOperation = new SalesOperation();
+        salesOperation.setOrder(order);
+        salesOperation.setDrug(item.getDrug());
+        salesOperation.setPharmacy(order.getPharmacy());
+        salesOperation.setQuantity(item.getRequired());
+        salesOperation.setStatus(OperationStatus.COMPLETED);
+        if (orderStatus == OrderStatus.CANCELLED) {
+            salesOperation.setType(OperationType.ORDER_CANCELLED);
+        } else if (orderStatus == OrderStatus.COMPLETED
+                || orderStatus == OrderStatus.PARTIAL_COMPLETION) {
+            salesOperation.setType(OperationType.ORDER_COMPLETED);
+        }
+        return salesOperation;
     }
 
     @Transactional
@@ -218,6 +240,13 @@ public class PharmacyService {
         pharmacyDrug.setPrice(drug.getFullPrice());
         pharmacyDrug.setStock(request.getStock() * drug.getUnits());
         pharmacyDrug.setAddedBy(user);
+        SalesOperation salesOperation = new SalesOperation();
+        salesOperation.setPharmacy(pharmacy);
+        salesOperation.setDrug(drug);
+        salesOperation.setQuantity(request.getStock());
+        salesOperation.setType(OperationType.DIRECT_ADDITION);
+        salesOperation.setStatus(OperationStatus.COMPLETED);
+        salesOperationsRepository.save(salesOperation);
         pharmacyDrug = pharmacyDrugRepository.save(pharmacyDrug);
         OrderStatsId id = new OrderStatsId(drug.getId(), pharmacy.getId());
         Optional<OrderStats> drugOrderOptional = orderStatsRepository.getDrugOrderById(id);
@@ -304,7 +333,6 @@ public class PharmacyService {
                         pharmacyId, drugId, 0);
         return drugs.stream().min(Comparator.comparing(PharmacyDrug::getExpiryDate)).orElse(null);
     }
-
 
     public List<PharmacyDrugDto> getDrugsByPharmacyId(
             Integer pharmacyId, Pageable pageable, User user) {
@@ -414,6 +442,74 @@ public class PharmacyService {
         }
         LOG.info("total shortage: {}", shortageDrugs.size());
         return shortageDrugs;
+    }
+
+    public List<PharmacyDrugDto> applyAllFiltersJpql(
+            Integer pharmacyId,
+            Integer drugId,
+            String query,
+            List<FilterOption> filters,
+            SortOption sort,
+            Integer N,
+            Float price,
+            String form,
+            Pageable pageable,
+            User user) {
+
+        LOG.info("Applying all filters with JPQL");
+        Pharmacy pharmacy = getPharmacyByIdOrThrow(pharmacyId);
+        managerOrEmployeeOrThrow(user, pharmacy);
+
+        LocalDate today = LocalDate.now();
+        LocalDate dateAfterN = (N != null) ? today.plusDays(N) : null;
+        LocalDate approachingDate = today.plusDays(pharmacy.getExpiryThreshold());
+
+        // Map parameters to maintain backward compatibility
+        List<FilterOption> filterOptions = filters;
+
+        if (filterOptions == null) {
+            LOG.info("Filter options is null");
+            filterOptions = new ArrayList<>();
+        }
+
+        // Check if filter options is empty
+        boolean filterOptionsEmpty = filterOptions.isEmpty();
+
+        // Create boolean flags for each filter option
+        boolean availableFilter = filterOptions.contains(FilterOption.AVAILABLE);
+        boolean shortageFilter = filterOptions.contains(FilterOption.SHORTAGE);
+        boolean unavailableShortageFilter = filterOptions.contains(FilterOption.UNAVAILABLE_SHORTAGE);
+        boolean unavailableFilter = filterOptions.contains(FilterOption.UNAVAILABLE);
+        boolean expiresAfterNFilter = filterOptions.contains(FilterOption.EXPIRES_AFTER_N);
+        boolean stockOverNFilter = filterOptions.contains(FilterOption.STOCK_OVER_N);
+        boolean stockUnderNFilter = filterOptions.contains(FilterOption.STOCK_UNDER_N);
+        boolean outOfStockFilter = filterOptions.contains(FilterOption.OUT_OF_STOCK);
+        boolean expiredFilter = filterOptions.contains(FilterOption.EXPIRED);
+        boolean approachingExpiryFilter = filterOptions.contains(FilterOption.APPROACHING_EXPIRY);
+        boolean notExpiredFilter = filterOptions.contains(FilterOption.NOT_EXPIRED);
+        boolean byFormFilter = filterOptions.contains(FilterOption.BY_FORM);
+        boolean priceBelowNFilter = filterOptions.contains(FilterOption.PRICE_BELOW_N);
+        boolean priceAboveNFilter = filterOptions.contains(FilterOption.PRICE_ABOVE_N);
+        boolean priceBetweenFilter = filterOptions.contains(FilterOption.PRICE_BETWEEN);
+        boolean discountedFilter = filterOptions.contains(FilterOption.DISCOUNTED);
+
+        // Execute the JPQL query with all filters
+        Page<PharmacyDrug> filteredDrugs = pharmacyDrugRepository.applyAllFiltersJpql(
+                pharmacyId, drugId, query, filterOptions, filterOptionsEmpty, sort,
+                N, price, form, today, dateAfterN, approachingDate,
+                availableFilter, shortageFilter, unavailableShortageFilter, unavailableFilter,
+                expiresAfterNFilter, stockOverNFilter, stockUnderNFilter, outOfStockFilter,
+                expiredFilter, approachingExpiryFilter, notExpiredFilter, byFormFilter,
+                priceBelowNFilter, priceAboveNFilter, priceBetweenFilter, discountedFilter,
+                pageable
+        );
+
+        LOG.info("Found {} drugs after filtering", filteredDrugs.getTotalElements());
+
+        // Convert to DTOs
+        return filteredDrugs.stream()
+                .map(drug -> modelMapper.map(drug, PharmacyDrugDto.class))
+                .collect(Collectors.toList());
     }
 
     @PreAuthorize("hasAnyRole('MANAGER', 'EMPLOYEE', 'OWNER')")
@@ -787,9 +883,18 @@ public class PharmacyService {
             OrderItem orderItem = new OrderItem();
             orderItem.setId(id);
             orderItem.setRequired(item.getRequired());
+            orderItemRepository.save(orderItem);
             Drug drug = drugService.getDrugByIdOrThrow(item.getDrugId());
             orderItem.setDrug(drug);
             orderTotal += drug.getFullPrice() * item.getRequired();
+            SalesOperation salesOperation = new SalesOperation();
+            salesOperation.setPharmacy(pharmacy);
+            salesOperation.setDrug(drug);
+            salesOperation.setOrder(order);
+            salesOperation.setStatus(OperationStatus.COMPLETED);
+            salesOperation.setType(OperationType.ORDER_ISSUED);
+            salesOperation.setQuantity(item.getRequired());
+            salesOperationsRepository.save(salesOperation);
             order.getOrderItems().add(orderItem);
         }
         order = drugOrderRepository.save(order);
@@ -806,6 +911,10 @@ public class PharmacyService {
         DrugOrder order = drugOrderRepository.getDrugOrderByIdAndPharmacy_Id(orderId, pharmacyId);
         order.setStatus(orderStatus);
         order = drugOrderRepository.save(order);
+        for (OrderItem item : order.getOrderItems()) {
+            SalesOperation salesOperation = recordSalesOperation(orderStatus, item, order);
+            salesOperationsRepository.save(salesOperation);
+        }
 
         if (orderStatus == OrderStatus.CANCELLED) {
             createOperation(user, OperationType.ORDER_CANCELLED, order);
@@ -825,5 +934,10 @@ public class PharmacyService {
             return Collections.emptyList();
         }
         return orders.stream().map(order -> modelMapper.map(order, DrugOrderDto.class)).toList();
+    }
+
+    public DrugOrderDto getOrderById(Integer orderId, User user) {
+        DrugOrder order = drugOrderRepository.getDrugOrderById(orderId);
+        return modelMapper.map(order, DrugOrderDto.class);
     }
 }

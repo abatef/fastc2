@@ -10,14 +10,16 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Entity
-@Table(name = "image")
+@Table(name = "images", schema = "public")
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ColumnDefault("nextval('image_id_seq')")
+    @ColumnDefault("nextval('images_id_seq')")
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -31,8 +33,16 @@ public class Image {
     @JoinColumn(name = "drug_id", nullable = false)
     private Drug drug;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "created_by", referencedColumnName = "username")
+    @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
 }

@@ -1,5 +1,6 @@
 package com.abatef.fastc2.repositories;
 
+import com.abatef.fastc2.enums.ReceiptStatus;
 import com.abatef.fastc2.models.pharmacy.Receipt;
 
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 
 @Repository
 public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
@@ -47,31 +49,39 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
 
     @Query(
             value =
-                    "select r from Receipt r"
+                    "select DISTINCT r from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"
+                            + " join ri.pharmacyDrug pd"
                             + " where (:cashierId is null or r.cashier.id = :cashierId)"
-                            + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
-                            + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
+                            + " and (:drugId is null or pd.drug.id = :drugId)"
+                            + " and (:pharmacyId is null or pd.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
-                            + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
-                            + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))",
+                            + " and (:status is null or r.status = :status)"
+                            + " and (cast(:fromDate as java.time.Instant) is null or r.createdAt >= :fromDate)"
+                            + " and (cast(:toDate as java.time.Instant) is null or r.createdAt <= :toDate)",
             countQuery =
-                    "select count(r) from Receipt r"
+                    "select count(distinct r) from Receipt r"
                             + " join ReceiptItem ri on r.id = ri.receipt.id"
+                            + " join ri.pharmacyDrug pd"
                             + " where (:cashierId is null or r.cashier.id = :cashierId)"
-                            + " and (:drugId is null or ri.pharmacyDrug.drug.id = :drugId)"
-                            + " and (:pharmacyId is null or ri.pharmacyDrug.pharmacy.id = :pharmacyId)"
+                            + " and (:drugId is null or pd.drug.id = :drugId)"
+                            + " and (:pharmacyId is null or pd.pharmacy.id = :pharmacyId)"
                             + " and (:shiftId is null or r.cashier.employee.shift.id = :shiftId)"
-                            + " and (:fromDate is null or r.createdAt >= cast(:fromDate as timestamp))"
-                            + " and (:toDate is null or r.createdAt <= cast(:toDate as timestamp))")
-    Page<Receipt> applyAllFilters(
+                            + " and (:status is null or r.status = :status)"
+                            + " and (cast(:fromDate as java.time.Instant) is null or r.createdAt >= :fromDate)"
+                            + " and (cast(:toDate as java.time.Instant) is null or r.createdAt <= :toDate)")
+    List<Receipt> applyAllFilters(
             @Param("cashierId") Integer cashierId,
             @Param("drugId") Integer drugId,
             @Param("pharmacyId") Integer pharmacyId,
             @Param("shiftId") Integer shiftId,
+            @Param("status") ReceiptStatus status,
             @Param("fromDate") Instant fromDate,
             @Param("toDate") Instant toDate,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     Receipt getReceiptById(Integer id);
+
+    List<Receipt> findReceiptsByPharmacy_Id(Integer pharmacyId, Pageable pageable);
 }

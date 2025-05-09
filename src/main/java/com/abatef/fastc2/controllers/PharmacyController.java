@@ -4,16 +4,16 @@ import com.abatef.fastc2.dtos.drug.*;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyUpdateRequest;
+import com.abatef.fastc2.dtos.pharmacy.SalesOperationDto;
 import com.abatef.fastc2.dtos.user.EmployeeCreationRequest;
 import com.abatef.fastc2.dtos.user.EmployeeDto;
-import com.abatef.fastc2.enums.EmployeeStatus;
-import com.abatef.fastc2.enums.FilterOption;
-import com.abatef.fastc2.enums.SortOption;
+import com.abatef.fastc2.enums.*;
 import com.abatef.fastc2.models.User;
 import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
+import com.abatef.fastc2.services.ReportingService;
 
 import io.swagger.v3.oas.annotations.Operation;
 
@@ -23,11 +23,14 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,14 +41,17 @@ public class PharmacyController {
     private final EmployeeService employeeService;
     private final ModelMapper modelMapper;
     private final Logger LOG = LoggerFactory.getLogger(PharmacyController.class);
+    private final ReportingService reportingService;
 
     public PharmacyController(
             PharmacyService pharmacyService,
             EmployeeService employeeService,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            ReportingService reportingService) {
         this.pharmacyService = pharmacyService;
         this.employeeService = employeeService;
         this.modelMapper = modelMapper;
+        this.reportingService = reportingService;
     }
 
     @Operation(summary = "Create a new Pharmacy")
@@ -183,11 +189,15 @@ public class PharmacyController {
             @RequestParam(value = "size", defaultValue = "75") int size,
             @RequestParam(value = "sort", required = false) SortOption sort,
             @AuthenticationPrincipal User user) {
+
+        LOG.info("Searching drugs with filters for pharmacy: {}", id);
+
         PageRequest pageable = PageRequest.of(page, size);
-        List<PharmacyDrugDto> drugs =
-                pharmacyService.applyAllFilters(
-                        id, null, query, filters, sort, N, price, from, pageable, user);
-        return noContentOrReturn(drugs);
+
+        List<PharmacyDrugDto> filteredDrugs = pharmacyService.applyAllFiltersJpql(
+                id, null, query, filters, sort, N, price, from, pageable, user);
+
+        return noContentOrReturn(filteredDrugs);
     }
 
     @Operation(summary = "Get all drugs in pharmacy with filters applied")
@@ -312,5 +322,49 @@ public class PharmacyController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(employees);
+    }
+
+    @Operation(
+            summary =
+                    "Get all Sales Reports in the Pharmacy, you can filter by drug_id, type, or status")
+    @GetMapping("/{id}/reports/history")
+    public ResponseEntity<List<SalesOperationDto>> getAllSalesOperations(
+            @PathVariable("id") Integer pharmacyId,
+            @RequestParam(required = false) Integer drugId,
+            @RequestParam(required = false) Integer receiptId,
+            @RequestParam(required = false) Integer orderId,
+            @RequestParam(required = false) OperationType type,
+            @RequestParam(required = false) OperationStatus status,
+            @RequestParam(required = false) Integer cashierId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant toDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("asc") ?
+                Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        List<SalesOperationDto> salesOperations = reportingService.applyAllFilters(
+                drugId,
+                pharmacyId,
+                receiptId,
+                orderId,
+                type,
+                status,
+                cashierId,
+                fromDate,
+                toDate,
+                pageable
+        );
+
+        if (salesOperations.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(salesOperations);
     }
 }
