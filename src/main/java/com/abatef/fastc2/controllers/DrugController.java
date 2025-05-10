@@ -6,6 +6,7 @@ import com.abatef.fastc2.dtos.drug.DrugUpdateRequest;
 import com.abatef.fastc2.enums.UserRole;
 import com.abatef.fastc2.models.Drug;
 import com.abatef.fastc2.models.User;
+import com.abatef.fastc2.repositories.DrugRepository;
 import com.abatef.fastc2.services.DrugService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,10 +26,12 @@ import java.util.stream.Collectors;
 public class DrugController {
     private final DrugService drugService;
     private final ModelMapper modelMapper;
+    private final DrugRepository drugRepository;
 
-    public DrugController(DrugService drugService, ModelMapper modelMapper) {
+    public DrugController(DrugService drugService, ModelMapper modelMapper, DrugRepository drugRepository) {
         this.drugService = drugService;
         this.modelMapper = modelMapper;
+        this.drugRepository = drugRepository;
     }
 
     @Operation(summary = "Create a new General Drug")
@@ -101,10 +104,17 @@ public class DrugController {
         return ResponseEntity.ok(drugDtos);
     }
 
-    @Operation(summary = "Get Model Id by Drug Id")
-    @GetMapping("/model-id")
-    public ResponseEntity<Integer> getModelId(@RequestParam("drug_id") Integer id) {
-        DrugDto dto = drugService.getDrugInfoById(id);
-        return ResponseEntity.ok(dto.getModelId());
+    @Operation(summary = "Get Drug Id by Model Id")
+    @GetMapping("/ai")
+    public ResponseEntity<Integer> getModelId(@RequestParam("model_id") Integer id) {
+        Drug drug = drugRepository.getDrugByModelId(id);
+        return ResponseEntity.ok(drug.getId());
+    }
+
+    @Operation(summary = "Get Drug Info By Model Id")
+    @GetMapping("/ai/info")
+    public ResponseEntity<DrugDto> getDrugInfoByModelId(@RequestParam("model_id") Integer modelId) {
+        Drug drug = drugRepository.getDrugByModelId(modelId);
+        return ResponseEntity.ok(modelMapper.map(drug, DrugDto.class));
     }
 }

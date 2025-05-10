@@ -1,5 +1,6 @@
 package com.abatef.fastc2.repositories;
 
+import com.abatef.fastc2.dtos.drug.DrugDto;
 import com.abatef.fastc2.models.Drug;
 
 import org.springframework.data.domain.Page;
@@ -37,4 +38,6 @@ public interface DrugRepository extends JpaRepository<Drug, Integer> {
     Page<Drug> searchDrugByNamePaginated(@Param("query") String query, Pageable pageable);
 
     Boolean existsDrugById(Integer id);
+
+    Drug getDrugByModelId(Integer modelId);
 }
