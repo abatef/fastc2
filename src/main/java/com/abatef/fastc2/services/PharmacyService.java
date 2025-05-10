@@ -883,9 +883,9 @@ public class PharmacyService {
             OrderItem orderItem = new OrderItem();
             orderItem.setId(id);
             orderItem.setRequired(item.getRequired());
-            orderItemRepository.save(orderItem);
             Drug drug = drugService.getDrugByIdOrThrow(item.getDrugId());
             orderItem.setDrug(drug);
+            orderItemRepository.save(orderItem);
             orderTotal += drug.getFullPrice() * item.getRequired();
             SalesOperation salesOperation = new SalesOperation();
             salesOperation.setPharmacy(pharmacy);
