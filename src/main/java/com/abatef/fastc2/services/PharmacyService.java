@@ -883,6 +883,7 @@ public class PharmacyService {
             OrderItem orderItem = new OrderItem();
             orderItem.setId(id);
             orderItem.setRequired(item.getRequired());
+            orderItem.setOrder(order);
             Drug drug = drugService.getDrugByIdOrThrow(item.getDrugId());
             orderItem.setDrug(drug);
             orderItemRepository.save(orderItem);

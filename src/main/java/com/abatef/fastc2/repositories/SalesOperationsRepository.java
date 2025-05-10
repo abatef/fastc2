@@ -27,7 +27,7 @@ public interface SalesOperationsRepository extends JpaRepository<SalesOperation,
     Page<SalesOperation> findAllByPharmacy_IdAndType(
             Integer pharmacyId, OperationType type, Pageable pageable);
 
-    List<SalesOperationDto> findAllByPharmacy_Id(Integer pharmacyId, Pageable pageable);
+    List<SalesOperation> findAllByPharmacy_Id(Integer pharmacyId, Pageable pageable);
 
 
     @Query(

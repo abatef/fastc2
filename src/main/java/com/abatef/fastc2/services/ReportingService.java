@@ -44,54 +44,6 @@ public class ReportingService {
         this.salesOperationsRepository = salesOperationsRepository;
     }
 
-    @PreAuthorize("hasAnyRole('MANAGER', 'OWNER')")
-    @Transactional
-    public List<SalesOperationDto> getSalesOperations(
-            Integer pharmacyId,
-            Integer drugId,
-            OperationStatus status,
-            OperationType type,
-            Pageable pageable,
-            User user) {
-        if (user.getRole() == UserRole.MANAGER) {
-            if (!user.getEmployee().getPharmacy().getId().equals(pharmacyId)) {
-                throw new NotEmployeeException("this user is not employee");
-            }
-        }
-        if (user.getRole() == UserRole.OWNER) {
-            Pharmacy pharmacy = pharmacyService.getPharmacyByIdOrThrow(pharmacyId);
-            if (!pharmacy.getOwner().getId().equals(user.getId())) {
-                throw new NotOwnerException("this user is not owner");
-            }
-        }
-
-        if (drugId != null) {
-            return salesOperationsRepository
-                    .findAllByPharmacy_IdAndDrug_Id(pharmacyId, drugId, pageable)
-                    .stream()
-                    .map(so -> modelMapper.map(so, SalesOperationDto.class))
-                    .toList();
-        }
-
-        if (status != null) {
-            return salesOperationsRepository
-                    .findAllByPharmacy_IdAndStatus(pharmacyId, status, pageable)
-                    .stream()
-                    .map(so -> modelMapper.map(so, SalesOperationDto.class))
-                    .toList();
-        }
-
-        if (type != null) {
-            return salesOperationsRepository
-                    .findAllByPharmacy_IdAndType(pharmacyId, type, pageable)
-                    .stream()
-                    .map(so -> modelMapper.map(so, SalesOperationDto.class))
-                    .toList();
-        }
-
-        return salesOperationsRepository.findAllByPharmacy_Id(pharmacyId, pageable);
-    }
-
     public List<SalesOperationDto> applyAllFilters(
             Integer drugId,
             Integer pharmacyId,
