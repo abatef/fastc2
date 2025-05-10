@@ -42,7 +42,7 @@ public class OrderController {
             @RequestParam(value = "drug_id", required = false) Integer drugId,
             @RequestParam(value = "user_id", required = false) Integer userId,
             @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "20") Integer size) {
+            @RequestParam(value = "size", defaultValue = "100") Integer size) {
         PageRequest pageable = PageRequest.of(page, size);
         List<DrugOrderDto> orders =
                 pharmacyService.getAllOrders(pharmacyId, drugId, userId, pageable, user);

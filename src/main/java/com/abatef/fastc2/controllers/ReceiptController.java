@@ -67,6 +67,7 @@ public class ReceiptController {
     @Operation(summary = "Get all Receipts infos with filters applied")
     @GetMapping("/filter")
     public ResponseEntity<List<ReceiptDto>> getReceiptsByFilters(
+            @RequestParam(value = "receipt_id", required = false) Integer id,
             @RequestParam(value = "cashier_id", required = false) Integer cashierId,
             @RequestParam(value = "drug_id", required = false) Integer drugId,
             @RequestParam(value = "pharmacy_id", required = false) Integer pharmacyId,
@@ -88,6 +89,11 @@ public class ReceiptController {
                 (toDate != null)
                         ? toDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant()
                         : null;
+
+        if (id != null) {
+            ReceiptDto info = receiptService.getReceiptInfoById(id);
+            return noContentOrReturn(List.of(info));
+        }
 
         List<ReceiptDto> receipts =
                 receiptService.applyAllFilters(
