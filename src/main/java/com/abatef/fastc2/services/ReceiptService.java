@@ -1,5 +1,6 @@
 package com.abatef.fastc2.services;
 
+import com.abatef.fastc2.dtos.Report;
 import com.abatef.fastc2.dtos.receipt.ReceiptCreationRequest;
 import com.abatef.fastc2.dtos.receipt.ReceiptDto;
 import com.abatef.fastc2.dtos.receipt.ReceiptItemDto;
@@ -12,6 +13,7 @@ import com.abatef.fastc2.models.pharmacy.*;
 import com.abatef.fastc2.repositories.*;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -308,5 +310,38 @@ public class ReceiptService {
                 .sorted(Comparator.comparingInt(Receipt::getId))
                 .map(this::mapReceiptDto)
                 .toList();
+    }
+
+    public Report getTotalRevenueAndProfit(
+            Integer cashierId,
+            Integer drugId,
+            Integer pharmacyId,
+            Integer shiftId,
+            ReceiptStatus status,
+            Instant fromDate,
+            Instant toDate) {
+        PageRequest pageRequest = PageRequest.ofSize(99999);
+        List<ReceiptDto> receipts =
+                applyAllFilters(
+                        cashierId,
+                        drugId,
+                        pharmacyId,
+                        shiftId,
+                        status,
+                        fromDate,
+                        toDate,
+                        pageRequest);
+        Double totalRevenue = 0.0;
+        Double totalProfit = 0.0;
+        for (ReceiptDto receipt : receipts) {
+            totalRevenue += receipt.getRevenue();
+            totalProfit += receipt.getProfit();
+        }
+        Report report = new Report();
+        report.setRevenue(totalRevenue);
+        report.setProfit(totalProfit);
+        report.setNumberOfReceipts(receipts.size());
+        report.setMedianReceipt(totalRevenue / receipts.size());
+        return report;
     }
 }

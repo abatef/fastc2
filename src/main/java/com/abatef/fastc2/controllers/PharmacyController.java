@@ -1,5 +1,6 @@
 package com.abatef.fastc2.controllers;
 
+import com.abatef.fastc2.dtos.Report;
 import com.abatef.fastc2.dtos.drug.*;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyCreationRequest;
 import com.abatef.fastc2.dtos.pharmacy.PharmacyDto;
@@ -13,6 +14,7 @@ import com.abatef.fastc2.models.pharmacy.PharmacyDrug;
 import com.abatef.fastc2.models.shift.Shift;
 import com.abatef.fastc2.services.EmployeeService;
 import com.abatef.fastc2.services.PharmacyService;
+import com.abatef.fastc2.services.ReceiptService;
 import com.abatef.fastc2.services.ReportingService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,16 +44,19 @@ public class PharmacyController {
     private final ModelMapper modelMapper;
     private final Logger LOG = LoggerFactory.getLogger(PharmacyController.class);
     private final ReportingService reportingService;
+    private final ReceiptService receiptService;
 
     public PharmacyController(
             PharmacyService pharmacyService,
             EmployeeService employeeService,
             ModelMapper modelMapper,
-            ReportingService reportingService) {
+            ReportingService reportingService,
+            ReceiptService receiptService) {
         this.pharmacyService = pharmacyService;
         this.employeeService = employeeService;
         this.modelMapper = modelMapper;
         this.reportingService = reportingService;
+        this.receiptService = receiptService;
     }
 
     @Operation(summary = "Create a new Pharmacy")
@@ -368,5 +373,23 @@ public class PharmacyController {
         }
 
         return ResponseEntity.ok(salesOperations);
+    }
+
+    @Operation(summary = "Get Reports")
+    @GetMapping("/{id}/reports/analysis")
+    public ResponseEntity<Report> getReportByPharmacy(
+            @PathVariable("id") Integer pharmacyId,
+            @RequestParam(required = false) Integer drugId,
+            @RequestParam(required = false) Integer shiftId,
+            @RequestParam(required = false) ReceiptStatus status,
+            @RequestParam(required = false) Integer cashierId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                    Instant fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                    Instant toDate) {
+        Report report =
+                receiptService.getTotalRevenueAndProfit(
+                        cashierId, drugId, pharmacyId, shiftId, status, fromDate, toDate);
+        return ResponseEntity.ok(report);
     }
 }
