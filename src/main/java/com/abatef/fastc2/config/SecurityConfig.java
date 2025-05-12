@@ -86,7 +86,7 @@ public class SecurityConfig {
                                     .permitAll()
                                     .requestMatchers("/v3/api-docs*/**")
                                     .permitAll();
-
+                            request.requestMatchers("/api/v1/images/**").authenticated();
                             request.requestMatchers("/api/v1/receipts/**").authenticated();
                             request.requestMatchers("/api/v1/users/**").authenticated();
                         })
