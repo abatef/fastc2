@@ -33,6 +33,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -341,10 +343,12 @@ public class PharmacyController {
             @RequestParam(required = false) OperationType type,
             @RequestParam(required = false) OperationStatus status,
             @RequestParam(required = false) Integer cashierId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                    Instant fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                    Instant toDate,
+            @RequestParam(value = "from_date", required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate fromDate,
+            @RequestParam(value = "to_date", required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate toDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -355,6 +359,14 @@ public class PharmacyController {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
+        ZoneId zone = ZoneId.systemDefault();
+
+        Instant from = (fromDate != null) ? fromDate.atStartOfDay(zone).toInstant() : null;
+        Instant to =
+                (toDate != null)
+                        ? toDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant()
+                        : null;
+
         List<SalesOperationDto> salesOperations =
                 reportingService.applyAllFilters(
                         drugId,
@@ -364,8 +376,8 @@ public class PharmacyController {
                         type,
                         status,
                         cashierId,
-                        fromDate,
-                        toDate,
+                        from,
+                        to,
                         pageable);
 
         if (salesOperations.isEmpty()) {
@@ -383,13 +395,22 @@ public class PharmacyController {
             @RequestParam(required = false) Integer shiftId,
             @RequestParam(required = false) ReceiptStatus status,
             @RequestParam(required = false) Integer cashierId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                    Instant fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                    Instant toDate) {
+            @RequestParam(value = "from_date", required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate fromDate,
+            @RequestParam(value = "to_date", required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate toDate) {
+        ZoneId zone = ZoneId.systemDefault();
+
+        Instant from = (fromDate != null) ? fromDate.atStartOfDay(zone).toInstant() : null;
+        Instant to =
+                (toDate != null)
+                        ? toDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant()
+                        : null;
         Report report =
                 receiptService.getTotalRevenueAndProfit(
-                        cashierId, drugId, pharmacyId, shiftId, status, fromDate, toDate);
+                        cashierId, drugId, pharmacyId, shiftId, status, from, to);
         return ResponseEntity.ok(report);
     }
 }
